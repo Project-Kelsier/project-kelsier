@@ -12,3 +12,6 @@ dist-ssr
 __unconfig*
 todos.json
 src/routeTree.gen.ts
+coverage
+playwright-report
+test-results
