@@ -3,6 +3,7 @@ import { createRootRoute, HeadContent, Scripts } from "@tanstack/react-router";
 import { TanStackRouterDevtoolsPanel } from "@tanstack/react-router-devtools";
 import Footer from "../components/Footer";
 import Header from "../components/Header";
+import type { ReactNode } from "react";
 
 import appCss from "../styles.css?url";
 
@@ -32,7 +33,7 @@ export const Route = createRootRoute({
 	shellComponent: RootDocument,
 });
 
-function RootDocument({ children }: { children: React.ReactNode }) {
+function RootDocument({ children }: { children: ReactNode }) {
 	return (
 		<html lang="en" suppressHydrationWarning>
 			<head>
