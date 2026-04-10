@@ -4,7 +4,20 @@
 
 This file gives human contributors and coding agents a shared operating guide for this repository. It is intentionally more specific than a generic contribution guide: it explains how the app is structured today, which parts are generated or tool-owned, and how to extend the codebase without creating avoidable cleanup work later.
 
-Use this file when planning or implementing changes in this repo. If a change affects workflow, architecture, or conventions, update this file in the same PR.
+In an open source context, this file exists to reduce contributor guesswork and maintainer review overhead. Use it when planning or implementing changes in this repo. If a change affects workflow, architecture, or conventions, update this file in the same PR.
+
+## Open Source Expectations
+
+This repo should be easy for a new contributor to understand without private context. Changes should optimize for:
+
+- Clear intent: contributors should be able to tell why a pattern exists.
+- Low surprise: docs, scripts, CI, and code structure should agree with each other.
+- Reviewability: changes should be scoped so maintainers can validate them quickly.
+- Maintainability: avoid introducing abstractions or dependencies before they are needed.
+- Respect for contributor time: required checks and expectations should be explicit.
+- Respect for maintainer time: PRs should not create avoidable cleanup, hidden regressions, or undocumented conventions.
+
+`README.md` explains the project, `CONTRIBUTING.md` explains contribution workflow, and this `AGENTS.md` explains how to operate safely inside the codebase.
 
 ## Repo Snapshot
 
@@ -44,6 +57,7 @@ If the codebase and this file disagree, prefer preserving the working code and u
 - Respect generated files and tool-owned outputs.
 - Favor accessibility and responsive behavior by default.
 - Keep the visual language intentional. This project is not aiming for generic placeholder UI.
+- Prefer conventions that a first-time open source contributor can follow without tribal knowledge.
 
 ## Directory Intent
 
@@ -210,6 +224,60 @@ When making edits:
 - Preserve comments that document non-obvious framework or platform workarounds.
 - Do not remove devtools, CI steps, or config exceptions casually; many are there for concrete TanStack Start or Windows reasons.
 
+## Maintainer Expectations
+
+Contributors and agents should assume maintainers value:
+
+- Small PRs with a single clear purpose
+- Predictable file placement and naming
+- Evidence that the relevant checks were considered
+- Updated tests when behavior changes
+- Updated docs when contributor-facing behavior changes
+- Avoidance of speculative architecture
+
+If a change is technically valid but makes the repo harder to reason about, prefer the simpler option.
+
+## PR Scope
+
+Good pull requests in this repo usually:
+
+- Solve one problem or ship one cohesive improvement
+- Avoid mixing formatting churn with product or architecture changes
+- Include tests or an explanation for why tests were not added
+- Keep commit diffs readable and intentional
+- Mention follow-up work separately instead of bundling it into the same PR
+
+Avoid PRs that combine:
+
+- tooling changes plus feature work
+- broad file moves plus behavior changes
+- design rewrites plus unrelated cleanup
+
+If a change needs multiple phases, split it into follow-up PRs.
+
+## Backward Compatibility
+
+When the app gains more routes, components, or data flows, contributors should preserve compatibility where practical.
+
+- Do not break existing routes, navigation, or primary calls to action without a clear product reason.
+- Treat public URLs and major user-visible flows as stable unless the change explicitly redefines them.
+- If a refactor changes shared APIs, props, helpers, or route contracts, update all current call sites in the same change.
+- Prefer additive changes before destructive ones when introducing new patterns.
+
+For early-stage apps, backward compatibility does not mean freezing the design. It means avoiding accidental breakage and communicating intentional change clearly.
+
+## Community Norms
+
+This repository should be approachable to new contributors.
+
+- Write code and docs that can be understood without insider context.
+- Prefer plain language over team-specific shorthand.
+- Leave concise comments only where they prevent real confusion.
+- Be explicit when something is generated, temporary, or intentionally constrained.
+- When reviewing or handing off work, call out risks directly and respectfully.
+
+Assume future contributors may be unfamiliar with TanStack Start, Tailwind v4, or the repo’s visual direction. Good docs should help them succeed quickly.
+
 ## Safe Refactor Boundaries
 
 These changes are usually safe when covered by tests:
@@ -250,6 +318,7 @@ A change is ready to hand off when:
 - Relevant checks were run, or skipped checks were called out explicitly.
 - Tests were added or updated where behavior changed.
 - Docs were updated if contributors or agents would otherwise guess.
+- The PR scope remains focused enough for an open source maintainer to review efficiently.
 
 ## Handoff Template
 
