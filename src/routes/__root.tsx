@@ -1,9 +1,15 @@
 import { TanStackDevtools } from "@tanstack/react-devtools";
-import { createRootRoute, HeadContent, Scripts } from "@tanstack/react-router";
+import {
+	createRootRoute,
+	HeadContent,
+	Scripts,
+	useRouterState,
+} from "@tanstack/react-router";
 import { TanStackRouterDevtoolsPanel } from "@tanstack/react-router-devtools";
 import type { ReactNode } from "react";
 import Header from "../components/Header";
-
+import { getBodyClassName, shouldRenderGlobalHeader } from "../lib/appShell";
+import kelsierCss from "../styles/kelsier.css?url";
 import appCss from "../styles.css?url";
 
 export const Route = createRootRoute({
@@ -17,12 +23,12 @@ export const Route = createRootRoute({
 				content: "width=device-width, initial-scale=1",
 			},
 			{
-				title: "Nova Atelier | Design-led digital launches",
+				title: "Kelsier | Behavioural team intelligence",
 			},
 			{
 				name: "description",
 				content:
-					"NOVA Atelier creates bold landing experiences for modern product launches.",
+					"Kelsier reveals the hidden behavioural dynamics shaping every team decision, conflict, and breakthrough.",
 			},
 		],
 		links: [
@@ -30,19 +36,27 @@ export const Route = createRootRoute({
 				rel: "stylesheet",
 				href: appCss,
 			},
+			{
+				rel: "stylesheet",
+				href: kelsierCss,
+			},
 		],
 	}),
 	shellComponent: RootDocument,
 });
 
 function RootDocument({ children }: { children: ReactNode }) {
+	const pathname = useRouterState({
+		select: (state) => state.location.pathname,
+	});
+
 	return (
 		<html lang="en">
 			<head>
 				<HeadContent />
 			</head>
-			<body className="font-sans antialiased [overflow-wrap:anywhere] selection:bg-[rgba(79,184,178,0.24)]">
-				<Header />
+			<body className={getBodyClassName(pathname)}>
+				{shouldRenderGlobalHeader(pathname) ? <Header /> : null}
 				{children}
 				<TanStackDevtools
 					config={{
