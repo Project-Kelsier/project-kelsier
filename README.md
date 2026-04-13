@@ -1,6 +1,8 @@
-# project-kelsier
+#Project Kelsier
 
-TanStack Start app scaffolded for feature work with Biome, Vitest, Playwright, and GitHub Actions CI.
+Open-source exploration of cognition, communication patterns, and human-centered collaboration.
+
+[[Live Demo](https://project-kelsier.mindphreak.workers.dev/)] | [Docs] | [Roadmap]
 
 ## Commands
 
