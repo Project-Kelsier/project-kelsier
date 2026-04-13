@@ -1,4 +1,4 @@
-#Project Kelsier
+# Project Kelsier
 
 Open-source exploration of cognition, communication patterns, and human-centered collaboration.
 
