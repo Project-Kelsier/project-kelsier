@@ -102,16 +102,25 @@ const QUESTIONS: Question[] = [
 	},
 ];
 
+function getStarValue(seed: number) {
+	const value = Math.sin(seed) * 10000;
+	return value - Math.floor(value);
+}
+
 function StarField() {
 	const stars = useMemo(
 		() =>
-			Array.from({ length: 60 }, (_, index) => ({
-				id: index,
-				size: Math.random() * 1.4 + 0.4,
-				top: Math.random() * 100,
-				left: Math.random() * 100,
-				opacity: Math.random() * 0.35 + 0.05,
-			})),
+			Array.from({ length: 60 }, (_, index) => {
+				const seed = index + 1;
+
+				return {
+					id: index,
+					size: `${(getStarValue(seed * 11) * 1.4 + 0.4).toFixed(4)}px`,
+					top: `${(getStarValue(seed * 17) * 100).toFixed(4)}%`,
+					left: `${(getStarValue(seed * 23) * 100).toFixed(4)}%`,
+					opacity: (getStarValue(seed * 31) * 0.35 + 0.05).toFixed(4),
+				};
+			}),
 		[],
 	);
 
@@ -124,8 +133,8 @@ function StarField() {
 					style={{
 						width: star.size,
 						height: star.size,
-						top: `${star.top}%`,
-						left: `${star.left}%`,
+						top: star.top,
+						left: star.left,
 						opacity: star.opacity,
 					}}
 				/>
@@ -201,6 +210,7 @@ function AstroRing({ size = 320 }: { size?: number }) {
 }
 
 export function KelsierPage() {
+	const [isHydrated, setIsHydrated] = useState(false);
 	const [isAssessmentStarted, setIsAssessmentStarted] = useState(false);
 	const [isAssessmentComplete, setIsAssessmentComplete] = useState(false);
 	const [currentQuestionIndex, setCurrentQuestionIndex] = useState(0);
@@ -375,6 +385,10 @@ export function KelsierPage() {
 	useKelsierScrollAnimation(onScroll, prefersReducedMotion);
 
 	useEffect(() => {
+		setIsHydrated(true);
+	}, []);
+
+	useEffect(() => {
 		if (isAssessmentStarted && !isAssessmentComplete) {
 			questionHeadingRef.current?.focus();
 		}
@@ -408,7 +422,7 @@ export function KelsierPage() {
 	}, []);
 
 	return (
-		<div className="kelsier-page">
+		<div className="kelsier-page" data-hydrated={isHydrated || undefined}>
 			<nav
 				className="k-nav"
 				ref={navRef}
