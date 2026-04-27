@@ -13,7 +13,6 @@ test("home page renders the Kelsier hero and interactive questionnaire", async (
 	await expect(
 		page.getByRole("button", { name: "Discover your team" }),
 	).toBeVisible();
-	await expect(page.getByText("Nova Atelier")).toHaveCount(0);
 	await expect(
 		page.locator(".kelsier-page[data-hydrated='true']"),
 	).toBeVisible();

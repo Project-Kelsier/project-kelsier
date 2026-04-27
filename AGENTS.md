@@ -23,7 +23,7 @@ This repo should be easy for a new contributor to understand without private con
 
 - Framework: TanStack Start with React 19, Vite, and TanStack Router.
 - Deployment target: Cloudflare Workers via Wrangler and the Cloudflare Vite plugin.
-- Styling: Tailwind CSS v4 plus authored CSS in [`src/styles.css`](/C:/Users/magmi/Repos/organization/project-kelsier/src/styles.css).
+- Styling: Tailwind CSS v4, global baseline CSS in [`src/styles.css`](/C:/Users/magmi/Repos/organization/project-kelsier/src/styles.css), and Kelsier-specific authored CSS in [`src/styles/kelsier.css`](/C:/Users/magmi/Repos/organization/project-kelsier/src/styles/kelsier.css).
 - Testing: Vitest for unit tests and Playwright for end-to-end coverage.
 - Quality gate: Biome for formatting, linting, and import organization.
 - Package manager: `pnpm`
@@ -33,8 +33,9 @@ Current app shape is intentionally small:
 
 - One root shell in [`src/routes/__root.tsx`](/C:/Users/magmi/Repos/organization/project-kelsier/src/routes/__root.tsx)
 - One route file in [`src/routes/index.tsx`](/C:/Users/magmi/Repos/organization/project-kelsier/src/routes/index.tsx)
-- One shared component in [`src/components/Header.tsx`](/C:/Users/magmi/Repos/organization/project-kelsier/src/components/Header.tsx)
-- Global design tokens and layout styles in [`src/styles.css`](/C:/Users/magmi/Repos/organization/project-kelsier/src/styles.css)
+- Kelsier page composition in [`src/components/kelsier/KelsierPage.tsx`](/C:/Users/magmi/Repos/organization/project-kelsier/src/components/kelsier/KelsierPage.tsx)
+- Reusable Kelsier shell components in [`src/components/kelsier/KelsierHeader.tsx`](/C:/Users/magmi/Repos/organization/project-kelsier/src/components/kelsier/KelsierHeader.tsx) and [`src/components/kelsier/KelsierFooter.tsx`](/C:/Users/magmi/Repos/organization/project-kelsier/src/components/kelsier/KelsierFooter.tsx)
+- Global CSS baseline in [`src/styles.css`](/C:/Users/magmi/Repos/organization/project-kelsier/src/styles.css) and Kelsier visual styles in [`src/styles/kelsier.css`](/C:/Users/magmi/Repos/organization/project-kelsier/src/styles/kelsier.css)
 
 This guide assumes the repo will grow from that starting point, so several sections below define conventions for scale before they are strictly required.
 
@@ -66,7 +67,8 @@ Use the current layout as the baseline and expand it with these responsibilities
 
 - [`src/routes`](/C:/Users/magmi/Repos/organization/project-kelsier/src/routes): Route files and route-owned page composition.
 - [`src/components`](/C:/Users/magmi/Repos/organization/project-kelsier/src/components): Reusable presentational components shared by multiple routes or sections.
-- [`src/styles.css`](/C:/Users/magmi/Repos/organization/project-kelsier/src/styles.css): Global design tokens, global element styles, shared utility classes, and route-agnostic page patterns.
+- [`src/styles.css`](/C:/Users/magmi/Repos/organization/project-kelsier/src/styles.css): Tailwind imports, global font theme, and document-level baseline styles.
+- [`src/styles/kelsier.css`](/C:/Users/magmi/Repos/organization/project-kelsier/src/styles/kelsier.css): Kelsier design tokens, page layout, animations, and route-specific component styles.
 - [`src/router.tsx`](/C:/Users/magmi/Repos/organization/project-kelsier/src/router.tsx): Router creation only.
 - [`e2e`](/C:/Users/magmi/Repos/organization/project-kelsier/e2e): End-to-end tests that validate cross-page user-visible behavior.
 - [`public`](/C:/Users/magmi/Repos/organization/project-kelsier/public): Static assets that should be served directly.
@@ -108,14 +110,14 @@ TanStack Router file-based routing is the organizing backbone of the app.
 
 For this repo specifically:
 
-- [`src/components/Header.tsx`](/C:/Users/magmi/Repos/organization/project-kelsier/src/components/Header.tsx) is part of the persistent shell, so changes there affect the whole site.
-- The root document currently owns the header and devtools. Preserve that separation unless there is a strong product reason to move layout ownership.
+- [`src/components/kelsier/KelsierHeader.tsx`](/C:/Users/magmi/Repos/organization/project-kelsier/src/components/kelsier/KelsierHeader.tsx) and [`src/components/kelsier/KelsierFooter.tsx`](/C:/Users/magmi/Repos/organization/project-kelsier/src/components/kelsier/KelsierFooter.tsx) are reusable shell pieces for the Kelsier experience.
+- The root document owns document metadata, stylesheets, body class selection, scripts, and devtools. Route-owned layout should stay in route or feature components unless there is a strong product reason to move it into the root shell.
 
 ## Styling Rules
 
 The current styling approach is hybrid: Tailwind v4 is available, but much of the visual system is defined in authored CSS.
 
-- Reuse the tokens and patterns in [`src/styles.css`](/C:/Users/magmi/Repos/organization/project-kelsier/src/styles.css) before introducing new one-off values.
+- Reuse the tokens and patterns in [`src/styles/kelsier.css`](/C:/Users/magmi/Repos/organization/project-kelsier/src/styles/kelsier.css) before introducing new one-off values for the Kelsier page.
 - Prefer CSS custom properties for reusable colors, surfaces, shadows, and visual identity decisions.
 - Use utility classes for layout and simple spacing where they keep JSX readable.
 - Use authored CSS for multi-part components, layered backgrounds, animations, and repeated visual patterns.
@@ -303,7 +305,7 @@ These changes need extra caution:
 - Changing router creation in [`src/router.tsx`](/C:/Users/magmi/Repos/organization/project-kelsier/src/router.tsx)
 - Modifying generated-file behavior
 - Changing Vite, Vitest, Playwright, Biome, or CI configuration
-- Reworking the global visual system in [`src/styles.css`](/C:/Users/magmi/Repos/organization/project-kelsier/src/styles.css)
+- Reworking the Kelsier visual system in [`src/styles/kelsier.css`](/C:/Users/magmi/Repos/organization/project-kelsier/src/styles/kelsier.css)
 
 ## Scalable Feature Pattern
 
