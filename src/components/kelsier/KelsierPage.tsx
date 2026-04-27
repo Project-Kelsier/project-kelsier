@@ -1,4 +1,6 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
+import { KelsierFooter } from "./KelsierFooter";
+import { KelsierHeader } from "./KelsierHeader";
 import {
 	clamp,
 	ease,
@@ -424,29 +426,7 @@ export function KelsierPage() {
 
 	return (
 		<div className="kelsier-page" data-hydrated={isHydrated || undefined}>
-			<nav
-				className="k-nav"
-				ref={navRef}
-				aria-label="Kelsier section navigation"
-			>
-				<div className="k-nav-logo">
-					Kel<span>sier</span>
-				</div>
-				<ul className="k-nav-links">
-					<li>
-						<a href="#method">Method</a>
-					</li>
-					<li>
-						<a href="#teams">Teams</a>
-					</li>
-					<li>
-						<a href="#science">Science</a>
-					</li>
-				</ul>
-				<a href="#begin" className="k-nav-cta">
-					Begin
-				</a>
-			</nav>
+			<KelsierHeader navRef={navRef} />
 
 			<main>
 				<section className="k-hero" ref={heroSectionRef} id="hero">
@@ -737,6 +717,8 @@ export function KelsierPage() {
 					)}
 				</section>
 			</main>
+
+			<KelsierFooter />
 		</div>
 	);
 }

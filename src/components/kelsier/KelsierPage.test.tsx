@@ -30,6 +30,19 @@ describe("KelsierPage", () => {
 		).toBeTruthy();
 	});
 
+	it("renders standard footer navigation links", () => {
+		render(<KelsierPage />);
+
+		expect(
+			screen.getByRole("navigation", { name: "Footer navigation" }),
+		).toBeTruthy();
+		expect(screen.getByRole("link", { name: "Privacy" })).toBeTruthy();
+		expect(screen.getByRole("link", { name: "Terms" })).toBeTruthy();
+		expect(
+			screen.getByRole("link", { name: "Contact" }).getAttribute("href"),
+		).toBe("mailto:hello@kelsier.example");
+	});
+
 	it("starts and progresses through the questionnaire", () => {
 		render(<KelsierPage />);
 

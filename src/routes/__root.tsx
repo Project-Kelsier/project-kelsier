@@ -7,8 +7,7 @@ import {
 } from "@tanstack/react-router";
 import { TanStackRouterDevtoolsPanel } from "@tanstack/react-router-devtools";
 import type { ReactNode } from "react";
-import Header from "../components/Header";
-import { getBodyClassName, shouldRenderGlobalHeader } from "../lib/appShell";
+import { getBodyClassName } from "../lib/appShell";
 import kelsierCss from "../styles/kelsier.css?url";
 import appCss from "../styles.css?url";
 
@@ -56,7 +55,6 @@ function RootDocument({ children }: { children: ReactNode }) {
 				<HeadContent />
 			</head>
 			<body className={getBodyClassName(pathname)}>
-				{shouldRenderGlobalHeader(pathname) ? <Header /> : null}
 				{children}
 				<TanStackDevtools
 					config={{
