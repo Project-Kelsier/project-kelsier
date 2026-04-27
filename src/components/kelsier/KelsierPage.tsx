@@ -356,6 +356,7 @@ export function KelsierPage() {
 
 			if (ctaSectionRef.current) {
 				const top = ctaSectionRef.current.offsetTop;
+				const viewportBottom = scrollY + window.innerHeight;
 
 				const reveal = (
 					element: HTMLElement | null,
@@ -366,7 +367,7 @@ export function KelsierPage() {
 						return;
 					}
 
-					const progress = clamp((scrollY - top + offset) / range, 0, 1);
+					const progress = clamp((viewportBottom - top - offset) / range, 0, 1);
 					const eased = ease(progress);
 					element.style.opacity = String(eased);
 					element.style.transform = `translateY(${(1 - eased) * 14}px)`;
