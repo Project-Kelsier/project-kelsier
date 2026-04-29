@@ -1,4 +1,14 @@
-import { useCallback, useEffect, useMemo, useRef, useState } from "react";
+import {
+	type AnchorHTMLAttributes,
+	type ButtonHTMLAttributes,
+	forwardRef,
+	type HTMLAttributes,
+	useCallback,
+	useEffect,
+	useMemo,
+	useRef,
+	useState,
+} from "react";
 import { KelsierFooter } from "./KelsierFooter";
 import { KelsierHeader } from "./KelsierHeader";
 import {
@@ -208,6 +218,70 @@ function AstroRing({ size = 320 }: { size?: number }) {
 				opacity="0.1"
 			/>
 		</svg>
+	);
+}
+
+const BUTTON_BASE =
+	"inline-flex min-h-11 items-center justify-center rounded-[26px] px-7 py-3 font-medium text-[13px] tracking-[0.04em] transition-[background,transform,border-color,color] duration-200 ease-in-out disabled:cursor-not-allowed disabled:opacity-45 disabled:transform-none";
+const BUTTON_STYLES = {
+	primary: `k-btn-primary ${BUTTON_BASE} border-0 bg-[var(--k-ember)] text-[#07090e] hover:-translate-y-px hover:bg-[var(--k-ember-bright)] focus-visible:-translate-y-px focus-visible:bg-[var(--k-ember-bright)]`,
+	secondary: `k-btn-secondary ${BUTTON_BASE} border border-[var(--k-ember-dim)] bg-transparent text-[var(--k-text)] hover:border-[rgba(191,146,72,0.6)] hover:bg-[var(--k-ember-glow)] focus-visible:border-[rgba(191,146,72,0.6)] focus-visible:bg-[var(--k-ember-glow)]`,
+} as const;
+const GHOST_LINK =
+	"k-btn-ghost inline-flex items-center gap-1.5 border-0 bg-transparent text-[13px] text-[var(--k-text-muted)] no-underline tracking-[0.03em] hover:text-[rgba(220,200,160,0.85)] focus-visible:text-[rgba(220,200,160,0.85)]";
+const QUESTION_CARD =
+	"k-q-card w-[min(100%,540px)] rounded-[14px] border border-[var(--k-border)] bg-[var(--k-card)] px-6 py-[22px] shadow-[var(--k-shadow)]";
+const QUESTION_OPTION =
+	"k-q-opt w-full cursor-pointer rounded-2xl border border-[rgba(191,146,72,0.2)] bg-transparent px-3.5 py-[13px] text-left text-[13px] text-[rgba(191,146,72,0.65)] tracking-[0.02em] transition-[background,border-color,color,transform] duration-150 ease-in-out hover:-translate-y-px hover:border-[rgba(191,146,72,0.5)] hover:bg-[rgba(191,146,72,0.1)] hover:text-[var(--k-ember)] focus-visible:-translate-y-px focus-visible:border-[rgba(191,146,72,0.5)] focus-visible:bg-[rgba(191,146,72,0.1)] focus-visible:text-[var(--k-ember)]";
+
+function cx(...classes: Array<string | false | undefined>) {
+	return classes.filter(Boolean).join(" ");
+}
+
+function KelsierButton({
+	className,
+	variant = "primary",
+	...props
+}: ButtonHTMLAttributes<HTMLButtonElement> & {
+	variant?: keyof typeof BUTTON_STYLES;
+}) {
+	return (
+		<button
+			type="button"
+			className={cx(BUTTON_STYLES[variant], className)}
+			{...props}
+		/>
+	);
+}
+
+function KelsierGhostLink({
+	className,
+	...props
+}: AnchorHTMLAttributes<HTMLAnchorElement>) {
+	return <a className={cx(GHOST_LINK, className)} {...props} />;
+}
+
+const QuestionCard = forwardRef<HTMLDivElement, HTMLAttributes<HTMLDivElement>>(
+	function QuestionCard({ className, ...props }, ref) {
+		return (
+			<div className={cx(QUESTION_CARD, className)} ref={ref} {...props} />
+		);
+	},
+);
+
+function QuestionOptionButton({
+	isSelected,
+	...props
+}: ButtonHTMLAttributes<HTMLButtonElement> & {
+	isSelected: boolean;
+}) {
+	return (
+		<button
+			type="button"
+			className={cx(QUESTION_OPTION, isSelected && "selected")}
+			aria-pressed={isSelected}
+			{...props}
+		/>
 	);
 }
 
@@ -454,16 +528,12 @@ export function KelsierPage() {
 							and breakthrough.
 						</p>
 						<div className="k-hero-actions">
-							<button
-								type="button"
-								className="k-btn-primary"
-								onClick={startAssessment}
-							>
+							<KelsierButton onClick={startAssessment}>
 								Discover your team
-							</button>
-							<a href="#method" className="k-btn-ghost">
+							</KelsierButton>
+							<KelsierGhostLink href="#method">
 								How it works <span aria-hidden="true">↓</span>
-							</a>
+							</KelsierGhostLink>
 						</div>
 					</div>
 					<div className="k-scroll-hint" aria-hidden="true">
@@ -598,7 +668,10 @@ export function KelsierPage() {
 						team&apos;s hidden profile, surfaced.
 					</p>
 
-					<div className="k-q-progress" aria-live="polite">
+					<div
+						className="k-q-progress mb-4 flex w-[min(100%,540px)] justify-between text-[10px] text-[var(--k-text-soft)]"
+						aria-live="polite"
+					>
 						<span>
 							{isAssessmentComplete
 								? "Prototype complete"
@@ -608,35 +681,37 @@ export function KelsierPage() {
 					</div>
 
 					{!isAssessmentStarted ? (
-						<div className="k-q-card k-q-card--intro" ref={ctaCardRef}>
+						<QuestionCard
+							className="k-q-card--intro flex flex-col gap-[18px]"
+							ref={ctaCardRef}
+						>
 							<h3 className="k-q-title">Start the behavioural cold start</h3>
-							<p className="k-q-text">
+							<p className="m-0 text-[#d4c9b8] text-sm leading-[1.65]">
 								Answer three scenario-based questions to preview how the Kelsier
 								flow will feel. This prototype does not save data or generate
 								live results yet.
 							</p>
 							<div className="k-cta-action" ref={ctaActionRef}>
-								<button
-									type="button"
-									className="k-btn-primary"
-									onClick={startAssessment}
-								>
+								<KelsierButton onClick={startAssessment}>
 									Start assessment
-								</button>
+								</KelsierButton>
 							</div>
-						</div>
+						</QuestionCard>
 					) : isAssessmentComplete ? (
-						<div className="k-q-card k-q-card--complete" ref={ctaCardRef}>
+						<QuestionCard
+							className="k-q-card--complete flex flex-col gap-[18px]"
+							ref={ctaCardRef}
+						>
 							<h3 className="k-q-title" tabIndex={-1} ref={questionHeadingRef}>
 								Prototype complete
 							</h3>
-							<p className="k-q-text">
+							<p className="m-0 text-[#d4c9b8] text-sm leading-[1.65]">
 								You&apos;ve completed the front-end prototype flow. Next we can
 								turn this into a full assessment experience with saved answers,
 								team invites, and generated insight output.
 							</p>
 							<ul
-								className="k-q-summary"
+								className="flex list-none flex-col gap-3 p-0 m-0"
 								aria-label="Answered prototype questions"
 							>
 								{QUESTIONS.map((question) => {
@@ -644,26 +719,32 @@ export function KelsierPage() {
 										(option) => option.id === answers[question.id],
 									);
 									return (
-										<li key={question.id}>
-											<span>{question.prompt}</span>
-											<strong>{selectedOption?.label ?? "Not answered"}</strong>
+										<li
+											key={question.id}
+											className="grid gap-1 border-[rgba(191,146,72,0.15)] border-t pt-3"
+										>
+											<span className="text-[var(--k-text-soft)] text-xs">
+												{question.prompt}
+											</span>
+											<strong className="font-medium text-[var(--k-text)] text-sm">
+												{selectedOption?.label ?? "Not answered"}
+											</strong>
 										</li>
 									);
 								})}
 							</ul>
-							<div className="k-q-actions" ref={ctaActionRef}>
-								<button
-									type="button"
-									className="k-btn-primary"
-									onClick={resetAssessment}
-								>
+							<div
+								className="k-q-actions mt-[22px] flex justify-between gap-3 max-md:flex-col"
+								ref={ctaActionRef}
+							>
+								<KelsierButton onClick={resetAssessment}>
 									Restart prototype
-								</button>
+								</KelsierButton>
 							</div>
-						</div>
+						</QuestionCard>
 					) : (
-						<div className="k-q-card" ref={ctaCardRef}>
-							<div className="k-q-step">
+						<QuestionCard ref={ctaCardRef}>
+							<div className="k-q-step mb-3.5 flex justify-between text-[10px] text-[var(--k-text-soft)]">
 								<span>
 									Question {currentQuestionIndex + 1} of {QUESTIONS.length}
 								</span>
@@ -673,47 +754,45 @@ export function KelsierPage() {
 								{currentQuestion.prompt}
 							</h3>
 							<fieldset
-								className="k-q-opts"
+								className="mt-[18px] flex flex-col gap-2.5"
 								aria-label={currentQuestion.prompt}
 							>
 								{currentQuestion.options.map((option) => {
 									const isSelected = selectedOptionId === option.id;
 									return (
-										<button
+										<QuestionOptionButton
 											key={option.id}
-											type="button"
-											className={`k-q-opt${isSelected ? " selected" : ""}`}
-											aria-pressed={isSelected}
+											isSelected={isSelected}
 											onClick={() => {
 												handleAnswer(option.id);
 											}}
 										>
 											{option.label}
-										</button>
+										</QuestionOptionButton>
 									);
 								})}
 							</fieldset>
-							<div className="k-q-actions" ref={ctaActionRef}>
-								<button
-									type="button"
-									className="k-btn-secondary"
+							<div
+								className="k-q-actions mt-[22px] flex justify-between gap-3 max-md:flex-col"
+								ref={ctaActionRef}
+							>
+								<KelsierButton
+									variant="secondary"
 									onClick={handleBack}
 									disabled={currentQuestionIndex === 0}
 								>
 									Back
-								</button>
-								<button
-									type="button"
-									className="k-btn-primary"
+								</KelsierButton>
+								<KelsierButton
 									onClick={handleNext}
 									disabled={!selectedOptionId}
 								>
 									{currentQuestionIndex === QUESTIONS.length - 1
 										? "Complete prototype"
 										: "Next question"}
-								</button>
+								</KelsierButton>
 							</div>
-						</div>
+						</QuestionCard>
 					)}
 				</section>
 			</main>
