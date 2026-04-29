@@ -18,8 +18,8 @@ const FOOTER_LINK_GROUPS = [
 	{
 		title: "Legal",
 		links: [
-			{ label: "Privacy", href: "#privacy" },
-			{ label: "Terms", href: "#terms" },
+			{ label: "Privacy", href: "/privacy" },
+			{ label: "Terms", href: "/terms" },
 		],
 	},
 ] as const;

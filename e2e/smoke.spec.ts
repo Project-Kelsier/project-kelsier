@@ -27,3 +27,17 @@ test("home page renders the Kelsier hero and interactive questionnaire", async (
 		}),
 	).toBeVisible();
 });
+
+test("privacy route renders placeholder page", async ({ page }) => {
+	await page.goto("/privacy");
+	await expect(
+		page.getByRole("heading", { name: "Privacy Policy" }),
+	).toBeVisible();
+});
+
+test("terms route renders placeholder page", async ({ page }) => {
+	await page.goto("/terms");
+	await expect(
+		page.getByRole("heading", { name: "Terms of Use" }),
+	).toBeVisible();
+});

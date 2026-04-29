@@ -70,8 +70,12 @@ describe("KelsierPage", () => {
 		expect(
 			screen.getByRole("navigation", { name: "Footer navigation" }),
 		).toBeTruthy();
-		expect(screen.getByRole("link", { name: "Privacy" })).toBeTruthy();
-		expect(screen.getByRole("link", { name: "Terms" })).toBeTruthy();
+		expect(
+			screen.getByRole("link", { name: "Privacy" }).getAttribute("href"),
+		).toBe("/privacy");
+		expect(
+			screen.getByRole("link", { name: "Terms" }).getAttribute("href"),
+		).toBe("/terms");
 		expect(
 			screen.getByRole("link", { name: "Contact" }).getAttribute("href"),
 		).toBe("mailto:hello@kelsier.example");
