@@ -79,6 +79,14 @@ describe("KelsierPage", () => {
 		expect(
 			screen.getByRole("link", { name: "Contact" }).getAttribute("href"),
 		).toBe("mailto:hello@kelsier.example");
+		expect(
+			screen.getByText(
+				`${new Date().getFullYear()} Kelsier. All rights reserved.`,
+				{
+					exact: false,
+				},
+			),
+		).toBeTruthy();
 	});
 
 	it("starts and progresses through the questionnaire", () => {

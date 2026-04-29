@@ -24,6 +24,8 @@ const FOOTER_LINK_GROUPS = [
 	},
 ] as const;
 
+const COPYRIGHT_YEAR = new Date().getFullYear();
+
 export function KelsierFooter() {
 	return (
 		<footer className="k-footer mx-auto grid max-w-[1000px] grid-cols-[minmax(0,1fr)_minmax(360px,0.9fr)] gap-12 border-[var(--k-border)] border-t px-[60px] pt-14 pb-12 text-[var(--k-text-muted)] max-md:grid-cols-1 max-md:gap-8 max-md:px-6 max-md:pt-11 max-md:pb-10">
@@ -64,7 +66,7 @@ export function KelsierFooter() {
 				))}
 			</nav>
 			<p className="col-span-full m-0 pt-2 text-[13px] text-[var(--k-text-soft)] leading-[1.7]">
-				&copy; 2026 Kelsier. All rights reserved.
+				&copy; {COPYRIGHT_YEAR} Kelsier. All rights reserved.
 			</p>
 		</footer>
 	);
