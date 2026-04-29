@@ -317,6 +317,8 @@ export function KelsierPage() {
 	const selectedOptionId = answers[currentQuestion.id];
 	const answeredCount = Object.keys(answers).length;
 	const progressPercent = Math.round((answeredCount / QUESTIONS.length) * 100);
+	const assessmentFocusStep =
+		isAssessmentStarted && !isAssessmentComplete ? currentQuestionIndex : null;
 
 	const scrollToAssessment = useCallback(() => {
 		ctaSectionRef.current?.scrollIntoView({
@@ -466,10 +468,10 @@ export function KelsierPage() {
 	}, []);
 
 	useEffect(() => {
-		if (isAssessmentStarted && !isAssessmentComplete) {
+		if (assessmentFocusStep !== null) {
 			questionHeadingRef.current?.focus();
 		}
-	});
+	}, [assessmentFocusStep]);
 
 	const handleAnswer = useCallback(
 		(optionId: string) => {
