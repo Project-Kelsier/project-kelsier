@@ -385,7 +385,7 @@ export function KelsierPage() {
 		[prefersReducedMotion],
 	);
 
-	useKelsierScrollAnimation(onScroll, prefersReducedMotion);
+	useKelsierScrollAnimation(onScroll);
 
 	useEffect(() => {
 		setIsHydrated(true);

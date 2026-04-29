@@ -34,15 +34,12 @@ export function usePrefersReducedMotion() {
 
 type ScrollCallback = (scrollY: number) => void;
 
-export function useKelsierScrollAnimation(
-	callback: ScrollCallback,
-	disabled = false,
-) {
+export function useKelsierScrollAnimation(callback: ScrollCallback) {
 	const frameRef = useRef<number>(0);
 	const isTickingRef = useRef(false);
 
 	const onScroll = useCallback(() => {
-		if (disabled || isTickingRef.current) {
+		if (isTickingRef.current) {
 			return;
 		}
 
@@ -51,7 +48,7 @@ export function useKelsierScrollAnimation(
 			callback(window.scrollY);
 			isTickingRef.current = false;
 		});
-	}, [callback, disabled]);
+	}, [callback]);
 
 	useEffect(() => {
 		if (typeof window === "undefined") {
@@ -59,10 +56,6 @@ export function useKelsierScrollAnimation(
 		}
 
 		callback(window.scrollY);
-
-		if (disabled) {
-			return;
-		}
 
 		window.addEventListener("scroll", onScroll, { passive: true });
 		window.addEventListener("resize", onScroll);
@@ -72,5 +65,5 @@ export function useKelsierScrollAnimation(
 			window.removeEventListener("resize", onScroll);
 			window.cancelAnimationFrame(frameRef.current);
 		};
-	}, [callback, disabled, onScroll]);
+	}, [callback, onScroll]);
 }
