@@ -48,6 +48,16 @@ const WORDS = [
 	{ id: "there-2", text: "there.", ember: false },
 ] as const;
 
+const WORD_REVEAL_ITEMS = (() => {
+	let revealIndex = 0;
+
+	return WORDS.map((word) => ({
+		...word,
+		revealIndex: word.text === "\n" ? null : revealIndex++,
+	}));
+})();
+const WORD_REVEAL_COMPLETE_PROGRESS = 0.92;
+
 const FEATURES = [
 	{
 		eyebrow: "Layer one",
@@ -423,19 +433,22 @@ export function KelsierPage() {
 
 			if (wordSectionRef.current && wordRefs.current.length > 0) {
 				const top = wordSectionRef.current.offsetTop;
-				const height = wordSectionRef.current.offsetHeight;
+				const viewportHeight = window.innerHeight;
+				const viewportBottom = scrollY + viewportHeight;
 				const progress = clamp(
-					(scrollY - top + height * 0.55) / (height * 0.85),
+					(viewportBottom - top) / (viewportHeight * 0.7),
 					0,
 					1,
 				);
-				const total = wordRefs.current.filter(Boolean).length;
-				wordRefs.current.forEach((word, index) => {
-					if (!word) {
-						return;
-					}
-
-					word.classList.toggle("lit", progress > index / total);
+				const revealProgress = ease(
+					clamp(progress / WORD_REVEAL_COMPLETE_PROGRESS, 0, 1),
+				);
+				const words = wordRefs.current.filter((word): word is HTMLSpanElement =>
+					Boolean(word),
+				);
+				const lastWordIndex = Math.max(words.length - 1, 1);
+				words.forEach((word, index) => {
+					word.classList.toggle("lit", revealProgress >= index / lastWordIndex);
 				});
 			}
 
@@ -659,7 +672,7 @@ export function KelsierPage() {
 						Behavioural insight in motion
 					</h2>
 					<p className="k-wordreveal-text">
-						{WORDS.map((word, index) => {
+						{WORD_REVEAL_ITEMS.map((word) => {
 							if (word.text === "\n") {
 								return <br key={word.id} />;
 							}
@@ -669,7 +682,9 @@ export function KelsierPage() {
 									<span
 										className={`k-word${word.ember ? " ember" : ""}`}
 										ref={(element) => {
-											wordRefs.current[index] = element;
+											if (word.revealIndex !== null) {
+												wordRefs.current[word.revealIndex] = element;
+											}
 										}}
 									>
 										{word.text}

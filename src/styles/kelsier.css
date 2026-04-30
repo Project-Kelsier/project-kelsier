@@ -53,10 +53,13 @@ body.kelsier-body::after {
 .k-hero-h1 em,
 .k-portal-heading em,
 .k-feat-title em,
-.k-word.ember.lit,
 .k-cta-heading em {
 	color: var(--k-ember);
 	font-style: italic;
+}
+
+.k-word.ember.lit {
+	color: var(--k-ember);
 }
 
 .k-hero {
@@ -433,7 +436,7 @@ body.kelsier-body::after {
 
 .k-word {
 	color: var(--k-text-ghost);
-	transition: color 0.35s ease;
+	transition: color 0.55s cubic-bezier(0.22, 1, 0.36, 1);
 }
 
 .k-word.lit {
@@ -442,6 +445,7 @@ body.kelsier-body::after {
 
 .k-word.ember {
 	color: var(--k-text-ghost);
+	font-style: italic;
 }
 
 .k-cta {

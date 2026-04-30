@@ -64,6 +64,49 @@ describe("KelsierPage", () => {
 		});
 	});
 
+	it("starts the scroll reveal when the word section enters the viewport", async () => {
+		render(<KelsierPage />);
+
+		const wordHeading = screen.getByRole("heading", {
+			name: "Behavioural insight in motion",
+		});
+		const wordSection = wordHeading.closest("section");
+		expect(wordSection).toBeTruthy();
+
+		Object.defineProperty(wordSection, "offsetTop", {
+			configurable: true,
+			value: 200,
+		});
+		Object.defineProperty(window, "innerHeight", {
+			configurable: true,
+			value: 100,
+		});
+		Object.defineProperty(window, "scrollY", {
+			configurable: true,
+			value: 100,
+		});
+
+		fireEvent.scroll(window);
+
+		const firstWord = screen.getByText("The");
+		const finalWord = screen.getAllByText("there.").at(-1);
+
+		await waitFor(() => {
+			expect(firstWord.classList.contains("lit")).toBe(true);
+			expect(finalWord?.classList.contains("lit")).toBe(false);
+		});
+
+		Object.defineProperty(window, "scrollY", {
+			configurable: true,
+			value: 165,
+		});
+		fireEvent.scroll(window);
+
+		await waitFor(() => {
+			expect(finalWord?.classList.contains("lit")).toBe(true);
+		});
+	});
+
 	it("renders standard footer navigation links", () => {
 		render(<KelsierPage />);
 
