@@ -114,6 +114,11 @@ const QUESTIONS: Question[] = [
 	},
 ];
 
+type FeatureAnimationRefs = {
+	text: HTMLDivElement | null;
+	visual: HTMLDivElement | null;
+};
+
 function getStarValue(seed: number) {
 	const value = Math.sin(seed) * 10000;
 	return value - Math.floor(value);
@@ -301,7 +306,7 @@ export function KelsierPage() {
 	const portalContentRef = useRef<HTMLDivElement>(null);
 	const portalSvgRef = useRef<SVGSVGElement>(null);
 	const featureSectionRef = useRef<HTMLElement>(null);
-	const featureRowRefs = useRef<(HTMLDivElement | null)[]>([]);
+	const featureAnimationRefs = useRef<FeatureAnimationRefs[]>([]);
 	const wordSectionRef = useRef<HTMLElement>(null);
 	const wordRefs = useRef<(HTMLSpanElement | null)[]>([]);
 	const ctaSectionRef = useRef<HTMLElement>(null);
@@ -395,8 +400,8 @@ export function KelsierPage() {
 
 			if (featureSectionRef.current) {
 				const featureTop = featureSectionRef.current.offsetTop;
-				featureRowRefs.current.forEach((row, index) => {
-					if (!row) {
+				featureAnimationRefs.current.forEach((elements, index) => {
+					if (!elements.text || !elements.visual) {
 						return;
 					}
 
@@ -404,12 +409,14 @@ export function KelsierPage() {
 					const progress = clamp((scrollY - rowTop + 340) / 240, 0, 1);
 					const eased = ease(progress);
 					const direction = index % 2 === 0 ? -1 : 1;
-					const children = row.querySelectorAll<HTMLElement>(
-						".k-feat-text, .k-feat-visual",
-					);
-					children.forEach((child, childIndex) => {
-						child.style.opacity = String(eased);
-						child.style.transform = `translateX(${(1 - eased) * direction * (childIndex === 0 ? -30 : 30)}px)`;
+					[
+						{ element: elements.text, offset: -30 },
+						{ element: elements.visual, offset: 30 },
+					].forEach(({ element, offset }) => {
+						if (element) {
+							element.style.opacity = String(eased);
+							element.style.transform = `translateX(${(1 - eased) * direction * offset}px)`;
+						}
 					});
 				});
 			}
@@ -600,16 +607,31 @@ export function KelsierPage() {
 						<div
 							key={feature.eyebrow}
 							className={`k-feature-row${feature.reverse ? " reverse" : ""}`}
-							ref={(element) => {
-								featureRowRefs.current[index] = element;
-							}}
 						>
-							<div className="k-feat-text">
+							<div
+								className="k-feat-text"
+								ref={(element) => {
+									featureAnimationRefs.current[index] = {
+										...featureAnimationRefs.current[index],
+										text: element,
+									};
+								}}
+							>
 								<p className="k-feat-eyebrow">{feature.eyebrow}</p>
 								<h3 className="k-feat-title">{feature.title}</h3>
 								<p className="k-feat-body">{feature.body}</p>
 							</div>
-							<div className="k-feat-visual">{feature.visual}</div>
+							<div
+								className="k-feat-visual"
+								ref={(element) => {
+									featureAnimationRefs.current[index] = {
+										...featureAnimationRefs.current[index],
+										visual: element,
+									};
+								}}
+							>
+								{feature.visual}
+							</div>
 						</div>
 					))}
 				</section>
