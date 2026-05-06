@@ -1,7 +1,7 @@
-import type { RefObject } from "react";
+import type { Ref } from "react";
 
 type KelsierHeaderProps = {
-	navRef: RefObject<HTMLElement | null>;
+	navRef: Ref<HTMLElement>;
 };
 
 export function KelsierHeader({ navRef }: KelsierHeaderProps) {

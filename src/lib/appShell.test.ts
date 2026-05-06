@@ -8,7 +8,7 @@ describe("app shell routing", () => {
 	});
 
 	it("keeps Kelsier body styles scoped to the homepage", () => {
-		expect(isKelsierHomepage("/about")).toBe(false);
-		expect(getBodyClassName("/about")).not.toContain("kelsier-body");
+		expect(isKelsierHomepage("/privacy")).toBe(false);
+		expect(getBodyClassName("/privacy")).not.toContain("kelsier-body");
 	});
 });

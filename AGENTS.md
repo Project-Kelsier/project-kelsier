@@ -32,7 +32,7 @@ This repo should be easy for a new contributor to understand without private con
 Current app shape is intentionally small:
 
 - One root shell in [`src/routes/__root.tsx`](src/routes/__root.tsx)
-- One route file in [`src/routes/index.tsx`](src/routes/index.tsx)
+- Route files in [`src/routes/index.tsx`](src/routes/index.tsx), [`src/routes/privacy.tsx`](src/routes/privacy.tsx), and [`src/routes/terms.tsx`](src/routes/terms.tsx)
 - Kelsier page composition in [`src/components/kelsier/KelsierPage.tsx`](src/components/kelsier/KelsierPage.tsx)
 - Reusable Kelsier shell components in [`src/components/kelsier/KelsierHeader.tsx`](src/components/kelsier/KelsierHeader.tsx) and [`src/components/kelsier/KelsierFooter.tsx`](src/components/kelsier/KelsierFooter.tsx)
 - Global CSS baseline in [`src/styles.css`](src/styles.css) and Kelsier visual styles in [`src/styles/kelsier.css`](src/styles/kelsier.css)

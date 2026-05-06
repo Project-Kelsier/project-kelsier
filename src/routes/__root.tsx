@@ -8,7 +8,6 @@ import {
 import { TanStackRouterDevtoolsPanel } from "@tanstack/react-router-devtools";
 import type { ReactNode } from "react";
 import { getBodyClassName } from "../lib/appShell";
-import kelsierCss from "../styles/kelsier.css?url";
 import appCss from "../styles.css?url";
 
 export const Route = createRootRoute({
@@ -42,15 +41,11 @@ export const Route = createRootRoute({
 			},
 			{
 				rel: "stylesheet",
-				href: "https://fonts.googleapis.com/css2?family=Cormorant+Garamond:ital,wght@0,300;0,400;0,500;1,300;1,400&family=Geist+Mono:wght@400;500&family=Geist:wght@300;400;500&family=Plus+Jakarta+Sans:wght@400;500;600;700;800&display=swap",
+				href: "https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&display=swap",
 			},
 			{
 				rel: "stylesheet",
 				href: appCss,
-			},
-			{
-				rel: "stylesheet",
-				href: kelsierCss,
 			},
 		],
 	}),
