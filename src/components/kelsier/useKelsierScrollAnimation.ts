@@ -1,5 +1,10 @@
 import { useCallback, useEffect, useRef, useState } from "react";
 
+type LegacyMediaQueryList = {
+	addListener(callback: EventListener): void;
+	removeListener(callback: EventListener): void;
+};
+
 export function clamp(value: number, min: number, max: number) {
 	return Math.min(max, Math.max(min, value));
 }
@@ -22,10 +27,20 @@ export function usePrefersReducedMotion() {
 		};
 
 		sync();
-		mediaQuery.addEventListener("change", sync);
+		if (typeof mediaQuery.addEventListener === "function") {
+			mediaQuery.addEventListener("change", sync);
+		} else {
+			const legacyMediaQuery = mediaQuery as unknown as LegacyMediaQueryList;
+			legacyMediaQuery.addListener(sync);
+		}
 
 		return () => {
-			mediaQuery.removeEventListener("change", sync);
+			if (typeof mediaQuery.removeEventListener === "function") {
+				mediaQuery.removeEventListener("change", sync);
+			} else {
+				const legacyMediaQuery = mediaQuery as unknown as LegacyMediaQueryList;
+				legacyMediaQuery.removeListener(sync);
+			}
 		};
 	}, []);
 

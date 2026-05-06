@@ -337,10 +337,10 @@ export function KelsierPage() {
 
 	const scrollToAssessment = useCallback(() => {
 		ctaSectionRef.current?.scrollIntoView({
-			behavior: "smooth",
+			behavior: prefersReducedMotion ? "auto" : "smooth",
 			block: "start",
 		});
-	}, []);
+	}, [prefersReducedMotion]);
 
 	const startAssessment = useCallback(() => {
 		setIsAssessmentStarted(true);

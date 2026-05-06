@@ -37,6 +37,10 @@ body.kelsier-body::after {
 	overflow-x: clip;
 }
 
+.kelsier-page :is(#hero, #method, #teams, #science, #begin) {
+	scroll-margin-top: 96px;
+}
+
 .k-nav.scrolled {
 	background: rgba(7, 9, 14, 0.88);
 	backdrop-filter: blur(12px);
@@ -536,6 +540,10 @@ body.kelsier-body::after {
 }
 
 @media (max-width: 768px) {
+	.kelsier-page :is(#hero, #method, #teams, #science, #begin) {
+		scroll-margin-top: 80px;
+	}
+
 	.k-hero {
 		padding-top: 8rem;
 	}

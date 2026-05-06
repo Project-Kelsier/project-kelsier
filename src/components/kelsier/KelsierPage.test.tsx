@@ -64,6 +64,49 @@ describe("KelsierPage", () => {
 		});
 	});
 
+	it("supports legacy reduced-motion media query listeners", () => {
+		const addListener = vi.fn();
+		const removeListener = vi.fn();
+		window.matchMedia = vi.fn().mockImplementation((query: string) => ({
+			matches: query === "(prefers-reduced-motion: reduce)",
+			media: query,
+			onchange: null,
+			addListener,
+			removeListener,
+			dispatchEvent: vi.fn(),
+		}));
+
+		const { unmount } = render(<KelsierPage />);
+
+		expect(addListener).toHaveBeenCalledOnce();
+
+		unmount();
+
+		expect(removeListener).toHaveBeenCalledOnce();
+	});
+
+	it("does not smooth scroll assessment controls for reduced-motion users", () => {
+		window.matchMedia = vi.fn().mockImplementation((query: string) => ({
+			matches: query === "(prefers-reduced-motion: reduce)",
+			media: query,
+			onchange: null,
+			addEventListener: vi.fn(),
+			removeEventListener: vi.fn(),
+			addListener: vi.fn(),
+			removeListener: vi.fn(),
+			dispatchEvent: vi.fn(),
+		}));
+
+		render(<KelsierPage />);
+
+		fireEvent.click(screen.getByRole("button", { name: "Start assessment" }));
+
+		expect(HTMLElement.prototype.scrollIntoView).toHaveBeenCalledWith({
+			behavior: "auto",
+			block: "start",
+		});
+	});
+
 	it("starts the scroll reveal when the word section enters the viewport", async () => {
 		render(<KelsierPage />);
 
