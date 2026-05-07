@@ -1,15 +1,40 @@
 import { expect, test } from "@playwright/test";
 
-test("home page renders and links to the about page", async ({ page }) => {
+test("home page renders the Kelsier hero and interactive questionnaire", async ({
+	page,
+}) => {
 	await page.goto("/");
 
 	await expect(
-		page.getByRole("heading", { name: "Start simple, ship quickly." }),
+		page.getByRole("heading", {
+			name: "What drives your team lies beneath the surface",
+		}),
+	).toBeVisible();
+	await expect(
+		page.getByRole("button", { name: "Discover your team" }),
 	).toBeVisible();
 
-	await page.getByRole("link", { name: "About This Starter" }).click();
+	await page.getByRole("button", { name: "Discover your team" }).click();
+	await page.getByRole("button", { name: "Restructure immediately" }).click();
+	await page.getByRole("button", { name: "Next question" }).click();
 
 	await expect(
-		page.getByRole("heading", { name: "A small starter with room to grow." }),
+		page.getByRole("heading", {
+			name: "Your preferred way to resolve conflict is…",
+		}),
+	).toBeVisible();
+});
+
+test("privacy route renders placeholder page", async ({ page }) => {
+	await page.goto("/privacy");
+	await expect(
+		page.getByRole("heading", { name: "Privacy Policy" }),
+	).toBeVisible();
+});
+
+test("terms route renders placeholder page", async ({ page }) => {
+	await page.goto("/terms");
+	await expect(
+		page.getByRole("heading", { name: "Terms of Use" }),
 	).toBeVisible();
 });
