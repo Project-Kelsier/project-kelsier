@@ -3,6 +3,7 @@ import {
 	type ButtonHTMLAttributes,
 	forwardRef,
 	type HTMLAttributes,
+	type RefObject,
 	useCallback,
 	useEffect,
 	useMemo,
@@ -134,7 +135,11 @@ function getStarValue(seed: number) {
 	return value - Math.floor(value);
 }
 
-function StarField() {
+function StarField({
+	starFieldRef,
+}: {
+	starFieldRef: RefObject<HTMLDivElement | null>;
+}) {
 	const stars = useMemo(
 		() =>
 			Array.from({ length: 60 }, (_, index) => {
@@ -152,7 +157,7 @@ function StarField() {
 	);
 
 	return (
-		<div className="k-hero-stars" aria-hidden="true">
+		<div className="k-hero-stars" aria-hidden="true" ref={starFieldRef}>
 			{stars.map((star) => (
 				<div
 					key={star.id}
@@ -530,9 +535,7 @@ export function KelsierPage() {
 
 			<main>
 				<section className="k-hero" ref={heroSectionRef} id="hero">
-					<div ref={starsRef}>
-						<StarField />
-					</div>
+					<StarField starFieldRef={starsRef} />
 					<div className="k-hero-ring" ref={heroRingRef}>
 						<AstroRing size={340} />
 					</div>

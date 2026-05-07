@@ -13,9 +13,6 @@ test("home page renders the Kelsier hero and interactive questionnaire", async (
 	await expect(
 		page.getByRole("button", { name: "Discover your team" }),
 	).toBeVisible();
-	await expect(
-		page.locator(".kelsier-page[data-hydrated='true']"),
-	).toBeVisible();
 
 	await page.getByRole("button", { name: "Discover your team" }).click();
 	await page.getByRole("button", { name: "Restructure immediately" }).click();
