@@ -1,8 +1,18 @@
 import { fireEvent, render, screen, waitFor } from "@testing-library/react";
-import { beforeEach, describe, expect, it, vi } from "vitest";
+import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import { KelsierPage } from "./KelsierPage";
 
 describe("KelsierPage", () => {
+	const originalScrollIntoView = HTMLElement.prototype.scrollIntoView;
+	const originalRequestAnimationFrame = window.requestAnimationFrame;
+	const originalCancelAnimationFrame = window.cancelAnimationFrame;
+	const originalMatchMedia = window.matchMedia;
+	const originalScrollY = Object.getOwnPropertyDescriptor(window, "scrollY");
+	const originalInnerHeight = Object.getOwnPropertyDescriptor(
+		window,
+		"innerHeight",
+	);
+
 	beforeEach(() => {
 		HTMLElement.prototype.scrollIntoView = vi.fn();
 		window.requestAnimationFrame = vi.fn((callback: FrameRequestCallback) => {
@@ -20,6 +30,23 @@ describe("KelsierPage", () => {
 			removeListener: vi.fn(),
 			dispatchEvent: vi.fn(),
 		}));
+	});
+
+	afterEach(() => {
+		HTMLElement.prototype.scrollIntoView = originalScrollIntoView;
+		window.requestAnimationFrame = originalRequestAnimationFrame;
+		window.cancelAnimationFrame = originalCancelAnimationFrame;
+		window.matchMedia = originalMatchMedia;
+
+		if (originalScrollY) {
+			Object.defineProperty(window, "scrollY", originalScrollY);
+		}
+
+		if (originalInnerHeight) {
+			Object.defineProperty(window, "innerHeight", originalInnerHeight);
+		}
+
+		vi.restoreAllMocks();
 	});
 
 	it("renders the Kelsier hero content", () => {
@@ -184,6 +211,22 @@ describe("KelsierPage", () => {
 				name: "Your preferred way to resolve conflict is…",
 			}),
 		).toBeTruthy();
+	});
+
+	it("keeps questionnaire progression disabled until an option is selected", () => {
+		render(<KelsierPage />);
+
+		fireEvent.click(screen.getByRole("button", { name: "Start assessment" }));
+
+		const nextButton = screen.getByRole("button", { name: "Next question" });
+
+		expect(nextButton).toHaveProperty("disabled", true);
+
+		fireEvent.click(
+			screen.getByRole("button", { name: "Restructure immediately" }),
+		);
+
+		expect(nextButton).toHaveProperty("disabled", false);
 	});
 
 	it("shows a completion state after the last question", () => {
