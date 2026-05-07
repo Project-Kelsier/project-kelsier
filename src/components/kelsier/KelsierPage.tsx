@@ -343,10 +343,14 @@ export function KelsierPage() {
 	}, [prefersReducedMotion]);
 
 	const startAssessment = useCallback(() => {
+		if (isAssessmentComplete) {
+			setAnswers({});
+			setCurrentQuestionIndex(0);
+		}
 		setIsAssessmentStarted(true);
 		setIsAssessmentComplete(false);
 		scrollToAssessment();
-	}, [scrollToAssessment]);
+	}, [isAssessmentComplete, scrollToAssessment]);
 
 	const resetAssessment = useCallback(() => {
 		setAnswers({});

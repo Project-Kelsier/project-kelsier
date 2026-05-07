@@ -229,6 +229,24 @@ describe("KelsierPage", () => {
 		expect(nextButton).toHaveProperty("disabled", false);
 	});
 
+	it("keeps an in-progress questionnaire when the hero call to action is clicked", () => {
+		render(<KelsierPage />);
+
+		fireEvent.click(screen.getByRole("button", { name: "Start assessment" }));
+		fireEvent.click(
+			screen.getByRole("button", { name: "Restructure immediately" }),
+		);
+		fireEvent.click(screen.getByRole("button", { name: "Next question" }));
+		fireEvent.click(screen.getByRole("button", { name: "Discover your team" }));
+
+		expect(
+			screen.getByRole("heading", {
+				name: "Your preferred way to resolve conflict is…",
+			}),
+		).toBeTruthy();
+		expect(screen.getByText("33% answered")).toBeTruthy();
+	});
+
 	it("shows a completion state after the last question", () => {
 		render(<KelsierPage />);
 
@@ -254,5 +272,41 @@ describe("KelsierPage", () => {
 		expect(
 			screen.getByRole("button", { name: "Restart prototype" }),
 		).toBeTruthy();
+	});
+
+	it("starts a fresh questionnaire when the hero call to action is clicked after completion", () => {
+		render(<KelsierPage />);
+
+		fireEvent.click(screen.getByRole("button", { name: "Start assessment" }));
+		fireEvent.click(
+			screen.getByRole("button", { name: "Restructure immediately" }),
+		);
+		fireEvent.click(screen.getByRole("button", { name: "Next question" }));
+		fireEvent.click(
+			screen.getByRole("button", { name: "Find common ground first" }),
+		);
+		fireEvent.click(screen.getByRole("button", { name: "Next question" }));
+		fireEvent.click(
+			screen.getByRole("button", {
+				name: "Pair them with the strongest collaborator",
+			}),
+		);
+		fireEvent.click(screen.getByRole("button", { name: "Complete prototype" }));
+
+		expect(
+			screen.getByRole("heading", { name: "Prototype complete" }),
+		).toBeTruthy();
+
+		fireEvent.click(screen.getByRole("button", { name: "Discover your team" }));
+
+		expect(
+			screen.getByRole("heading", {
+				name: "When a deadline moves unexpectedly, you tend to…",
+			}),
+		).toBeTruthy();
+		expect(screen.getByText("0% answered")).toBeTruthy();
+		expect(
+			screen.getByRole("button", { name: "Next question" }),
+		).toHaveProperty("disabled", true);
 	});
 });
