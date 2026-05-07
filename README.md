@@ -40,7 +40,6 @@ Typical deploy flow:
 ```bash
 pnpm install
 pnpm cf-typegen
-pnpm build
 pnpm preview
 pnpm deploy
 ```
