@@ -1,6 +1,28 @@
 import { fireEvent, render, screen, waitFor } from "@testing-library/react";
+import type { AnchorHTMLAttributes, ReactNode } from "react";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import { KelsierPage } from "./KelsierPage";
+
+vi.mock("@tanstack/react-router", async (importOriginal) => {
+	const actual =
+		await importOriginal<typeof import("@tanstack/react-router")>();
+
+	return {
+		...actual,
+		Link: ({
+			children,
+			to,
+			...props
+		}: AnchorHTMLAttributes<HTMLAnchorElement> & {
+			children: ReactNode;
+			to: string;
+		}) => (
+			<a href={to} {...props}>
+				{children}
+			</a>
+		),
+	};
+});
 
 describe("KelsierPage", () => {
 	const originalScrollIntoView = HTMLElement.prototype.scrollIntoView;
@@ -202,7 +224,7 @@ describe("KelsierPage", () => {
 
 		fireEvent.click(screen.getByRole("button", { name: "Start assessment" }));
 		fireEvent.click(
-			screen.getByRole("button", { name: "Restructure immediately" }),
+			screen.getByRole("radio", { name: "Restructure immediately" }),
 		);
 		fireEvent.click(screen.getByRole("button", { name: "Next question" }));
 
@@ -218,14 +240,25 @@ describe("KelsierPage", () => {
 
 		fireEvent.click(screen.getByRole("button", { name: "Start assessment" }));
 
+		expect(
+			screen.getByRole("group", {
+				name: "When a deadline moves unexpectedly, you tend to…",
+			}),
+		).toBeTruthy();
+
 		const nextButton = screen.getByRole("button", { name: "Next question" });
 
 		expect(nextButton).toHaveProperty("disabled", true);
 
-		fireEvent.click(
-			screen.getByRole("button", { name: "Restructure immediately" }),
-		);
+		const restructureOption = screen.getByRole("radio", {
+			name: "Restructure immediately",
+		});
 
+		expect(restructureOption).toHaveProperty("checked", false);
+
+		fireEvent.click(restructureOption);
+
+		expect(restructureOption).toHaveProperty("checked", true);
 		expect(nextButton).toHaveProperty("disabled", false);
 	});
 
@@ -234,7 +267,7 @@ describe("KelsierPage", () => {
 
 		fireEvent.click(screen.getByRole("button", { name: "Start assessment" }));
 		fireEvent.click(
-			screen.getByRole("button", { name: "Restructure immediately" }),
+			screen.getByRole("radio", { name: "Restructure immediately" }),
 		);
 		fireEvent.click(screen.getByRole("button", { name: "Next question" }));
 		fireEvent.click(screen.getByRole("button", { name: "Discover your team" }));
@@ -252,15 +285,15 @@ describe("KelsierPage", () => {
 
 		fireEvent.click(screen.getByRole("button", { name: "Start assessment" }));
 		fireEvent.click(
-			screen.getByRole("button", { name: "Restructure immediately" }),
+			screen.getByRole("radio", { name: "Restructure immediately" }),
 		);
 		fireEvent.click(screen.getByRole("button", { name: "Next question" }));
 		fireEvent.click(
-			screen.getByRole("button", { name: "Find common ground first" }),
+			screen.getByRole("radio", { name: "Find common ground first" }),
 		);
 		fireEvent.click(screen.getByRole("button", { name: "Next question" }));
 		fireEvent.click(
-			screen.getByRole("button", {
+			screen.getByRole("radio", {
 				name: "Pair them with the strongest collaborator",
 			}),
 		);
@@ -279,15 +312,15 @@ describe("KelsierPage", () => {
 
 		fireEvent.click(screen.getByRole("button", { name: "Start assessment" }));
 		fireEvent.click(
-			screen.getByRole("button", { name: "Restructure immediately" }),
+			screen.getByRole("radio", { name: "Restructure immediately" }),
 		);
 		fireEvent.click(screen.getByRole("button", { name: "Next question" }));
 		fireEvent.click(
-			screen.getByRole("button", { name: "Find common ground first" }),
+			screen.getByRole("radio", { name: "Find common ground first" }),
 		);
 		fireEvent.click(screen.getByRole("button", { name: "Next question" }));
 		fireEvent.click(
-			screen.getByRole("button", {
+			screen.getByRole("radio", {
 				name: "Pair them with the strongest collaborator",
 			}),
 		);

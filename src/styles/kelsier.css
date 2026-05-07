@@ -501,6 +501,13 @@ body.kelsier-body::after {
 	transform: translateY(-1px);
 }
 
+.k-q-opt:has(input:focus-visible) {
+	border-color: rgba(191, 146, 72, 0.5);
+	background: rgba(191, 146, 72, 0.1);
+	color: var(--k-ember);
+	transform: translateY(-1px);
+}
+
 .k-footer-logo {
 	font-family: var(--font-display-k);
 }

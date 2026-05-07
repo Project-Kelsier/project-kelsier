@@ -3,6 +3,8 @@ import {
 	type ButtonHTMLAttributes,
 	forwardRef,
 	type HTMLAttributes,
+	type InputHTMLAttributes,
+	type ReactNode,
 	type RefObject,
 	useCallback,
 	useEffect,
@@ -289,19 +291,29 @@ const QuestionCard = forwardRef<HTMLDivElement, HTMLAttributes<HTMLDivElement>>(
 	},
 );
 
-function QuestionOptionButton({
+function QuestionOptionRadio({
 	isSelected,
+	id,
+	name,
+	children,
+	className,
 	...props
-}: ButtonHTMLAttributes<HTMLButtonElement> & {
+}: InputHTMLAttributes<HTMLInputElement> & {
 	isSelected: boolean;
+	children: ReactNode;
 }) {
 	return (
-		<button
-			type="button"
-			className={cx(QUESTION_OPTION, isSelected && "selected")}
-			aria-pressed={isSelected}
-			{...props}
-		/>
+		<label className={cx(QUESTION_OPTION, isSelected && "selected")}>
+			<input
+				className={cx("sr-only", className)}
+				type="radio"
+				id={id}
+				name={name}
+				checked={isSelected}
+				{...props}
+			/>
+			{children}
+		</label>
 	);
 }
 
@@ -806,15 +818,17 @@ export function KelsierPage() {
 								{currentQuestion.options.map((option) => {
 									const isSelected = selectedOptionId === option.id;
 									return (
-										<QuestionOptionButton
+										<QuestionOptionRadio
 											key={option.id}
+											id={`${currentQuestion.id}-${option.id}`}
+											name={currentQuestion.id}
 											isSelected={isSelected}
-											onClick={() => {
+											onChange={() => {
 												handleAnswer(option.id);
 											}}
 										>
 											{option.label}
-										</QuestionOptionButton>
+										</QuestionOptionRadio>
 									);
 								})}
 							</fieldset>

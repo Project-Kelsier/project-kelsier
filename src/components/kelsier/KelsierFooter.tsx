@@ -1,28 +1,50 @@
-const FOOTER_LINK_GROUPS = [
+import { Link } from "@tanstack/react-router";
+
+type FooterRouteHref = "/privacy" | "/terms";
+type FooterLink =
+	| {
+			label: string;
+			href: FooterRouteHref;
+			type: "route";
+	  }
+	| {
+			label: string;
+			href: string;
+			type: "anchor";
+	  };
+
+const FOOTER_LINK_GROUPS: Array<{
+	title: string;
+	links: FooterLink[];
+}> = [
 	{
 		title: "Product",
 		links: [
-			{ label: "Method", href: "#method" },
-			{ label: "Teams", href: "#teams" },
-			{ label: "Science", href: "#science" },
-			{ label: "Begin", href: "#begin" },
+			{ label: "Method", href: "#method", type: "anchor" },
+			{ label: "Teams", href: "#teams", type: "anchor" },
+			{ label: "Science", href: "#science", type: "anchor" },
+			{ label: "Begin", href: "#begin", type: "anchor" },
 		],
 	},
 	{
 		title: "Company",
 		links: [
-			{ label: "About", href: "#hero" },
-			{ label: "Contact", href: "mailto:hello@kelsier.example" },
+			{ label: "About", href: "#hero", type: "anchor" },
+			{
+				label: "Contact",
+				href: "mailto:hello@kelsier.example",
+				type: "anchor",
+			},
 		],
 	},
 	{
 		title: "Legal",
 		links: [
-			{ label: "Privacy", href: "/privacy" },
-			{ label: "Terms", href: "/terms" },
+			{ label: "Privacy", href: "/privacy", type: "route" },
+			{ label: "Terms", href: "/terms", type: "route" },
 		],
 	},
-] as const;
+];
 
 export function KelsierFooter() {
 	const copyrightYear = new Date().getFullYear();
@@ -53,12 +75,21 @@ export function KelsierFooter() {
 						<ul className="m-0 flex list-none flex-col gap-2.5 p-0">
 							{group.links.map((link) => (
 								<li key={link.label}>
-									<a
-										className="text-[13px] text-[var(--k-text-soft)] no-underline transition-colors duration-200 hover:text-[rgba(220,200,160,0.88)] focus-visible:text-[rgba(220,200,160,0.88)]"
-										href={link.href}
-									>
-										{link.label}
-									</a>
+									{link.type === "route" ? (
+										<Link
+											className="text-[13px] text-[var(--k-text-soft)] no-underline transition-colors duration-200 hover:text-[rgba(220,200,160,0.88)] focus-visible:text-[rgba(220,200,160,0.88)]"
+											to={link.href}
+										>
+											{link.label}
+										</Link>
+									) : (
+										<a
+											className="text-[13px] text-[var(--k-text-soft)] no-underline transition-colors duration-200 hover:text-[rgba(220,200,160,0.88)] focus-visible:text-[rgba(220,200,160,0.88)]"
+											href={link.href}
+										>
+											{link.label}
+										</a>
+									)}
 								</li>
 							))}
 						</ul>

@@ -15,12 +15,12 @@ test("home page renders the Kelsier hero and interactive questionnaire", async (
 	).toBeVisible();
 
 	await page.getByRole("button", { name: "Discover your team" }).click();
-	await page.getByRole("button", { name: "Restructure immediately" }).click();
+	await page.getByText("Restructure immediately", { exact: true }).click();
 	await page.getByRole("button", { name: "Next question" }).click();
 
 	await expect(
 		page.getByRole("heading", {
-			name: "Your preferred way to resolve conflict is…",
+			name: /Your preferred way to resolve conflict is/,
 		}),
 	).toBeVisible();
 });
