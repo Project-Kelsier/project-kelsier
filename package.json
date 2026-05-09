@@ -9,13 +9,6 @@
 	"imports": {
 		"#/*": "./src/*"
 	},
-	"pnpm": {
-		"onlyBuiltDependencies": [
-			"esbuild",
-			"sharp",
-			"workerd"
-		]
-	},
 	"scripts": {
 		"dev": "vite dev --port 3000",
 		"build": "vite build",
