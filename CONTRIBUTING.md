@@ -14,6 +14,7 @@ This repo expects:
 - pnpm `11.0.9`
 
 Those versions are declared in [`package.json`](./package.json).
+Node `24.x` is also mirrored in [`.nvmrc`](./.nvmrc) for contributors using a Node version manager.
 
 ## Before Opening A PR
 
@@ -43,6 +44,7 @@ pnpm build
 - E2E tests use Playwright with [`playwright.config.ts`](./playwright.config.ts).
 - Playwright starts Vite directly instead of `pnpm dev` so the dev server shuts down cleanly on Windows.
 - If you add or change Cloudflare bindings, rerun `pnpm cf-typegen` before opening a PR.
+- pnpm dependency build-script approvals live in [`pnpm-workspace.yaml`](./pnpm-workspace.yaml) under `allowBuilds`. If pnpm reports blocked dependency build scripts, review the package first, then update that allow-list deliberately.
 
 ## Formatting And Linting
 

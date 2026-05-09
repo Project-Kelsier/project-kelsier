@@ -28,6 +28,7 @@ This repo should be easy for a new contributor to understand without private con
 - Quality gate: Biome for formatting, linting, and import organization.
 - Package manager: `pnpm`
 - Runtime target: Node `24.x`
+- Node version hint: [`.nvmrc`](.nvmrc)
 
 Current app shape is intentionally small:
 
@@ -202,6 +203,13 @@ If you cannot run a check locally, say so explicitly in your handoff and explain
 - Biome is the formatter and linter.
 - Prefer `pnpm check` for validation and `pnpm format` for formatting fixes.
 - Keep import organization compatible with Biome’s automatic behavior.
+
+### pnpm
+
+- `package.json` pins the project package manager version.
+- [`.nvmrc`](.nvmrc) mirrors the Node `24.x` runtime target for local version managers.
+- [`pnpm-workspace.yaml`](pnpm-workspace.yaml) owns pnpm 11 dependency build-script approvals through `allowBuilds`.
+- Do not add `pnpm approve-builds` to CI. Use it locally only as a review helper, then commit the explicit `allowBuilds` decision.
 
 ### Vite And Vitest
 
