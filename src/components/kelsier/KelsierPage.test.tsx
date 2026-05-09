@@ -280,7 +280,7 @@ describe("KelsierPage", () => {
 		expect(screen.getByText("33% answered")).toBeTruthy();
 	});
 
-	it("shows a completion state after the last question", () => {
+	it("shows and focuses the completion state after the last question", async () => {
 		render(<KelsierPage />);
 
 		fireEvent.click(screen.getByRole("button", { name: "Start assessment" }));
@@ -305,6 +305,11 @@ describe("KelsierPage", () => {
 		expect(
 			screen.getByRole("button", { name: "Restart prototype" }),
 		).toBeTruthy();
+		await waitFor(() => {
+			expect(screen.getByRole("heading", { name: "Prototype complete" })).toBe(
+				document.activeElement,
+			);
+		});
 	});
 
 	it("starts a fresh questionnaire when the hero call to action is clicked after completion", () => {

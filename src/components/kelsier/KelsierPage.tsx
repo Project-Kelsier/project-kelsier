@@ -128,8 +128,9 @@ const QUESTIONS: Question[] = [
 ];
 
 type FeatureAnimationRefs = {
-	text: HTMLDivElement | null;
-	visual: HTMLDivElement | null;
+	row?: HTMLDivElement | null;
+	text?: HTMLDivElement | null;
+	visual?: HTMLDivElement | null;
 };
 
 function getStarValue(seed: number) {
@@ -430,14 +431,19 @@ export function KelsierPage() {
 			}
 
 			if (featureSectionRef.current) {
-				const featureTop = featureSectionRef.current.offsetTop;
 				featureAnimationRefs.current.forEach((elements, index) => {
-					if (!elements.text || !elements.visual) {
+					if (!elements.row || !elements.text || !elements.visual) {
 						return;
 					}
 
-					const rowTop = featureTop + index * 200;
-					const progress = clamp((scrollY - rowTop + 340) / 240, 0, 1);
+					const rowRect = elements.row.getBoundingClientRect();
+					const revealStart = window.innerHeight * 0.78;
+					const revealRange = Math.max(rowRect.height * 0.7, 180);
+					const progress = clamp(
+						(revealStart - rowRect.top) / revealRange,
+						0,
+						1,
+					);
 					const eased = ease(progress);
 					const direction = index % 2 === 0 ? -1 : 1;
 					[
@@ -513,6 +519,12 @@ export function KelsierPage() {
 			questionHeadingRef.current?.focus();
 		}
 	}, [assessmentFocusStep]);
+
+	useEffect(() => {
+		if (isAssessmentComplete) {
+			questionHeadingRef.current?.focus();
+		}
+	}, [isAssessmentComplete]);
 
 	const handleAnswer = useCallback(
 		(optionId: string) => {
@@ -639,6 +651,12 @@ export function KelsierPage() {
 						<div
 							key={feature.eyebrow}
 							className={`k-feature-row${feature.reverse ? " reverse" : ""}`}
+							ref={(element) => {
+								featureAnimationRefs.current[index] = {
+									...featureAnimationRefs.current[index],
+									row: element,
+								};
+							}}
 						>
 							<div
 								className="k-feat-text"

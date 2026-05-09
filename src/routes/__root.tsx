@@ -20,14 +20,6 @@ export const Route = createRootRoute({
 				name: "viewport",
 				content: "width=device-width, initial-scale=1",
 			},
-			{
-				title: "Kelsier | Behavioural team intelligence",
-			},
-			{
-				name: "description",
-				content:
-					"Kelsier reveals the hidden behavioural dynamics shaping every team decision, conflict, and breakthrough.",
-			},
 		],
 		links: [
 			{

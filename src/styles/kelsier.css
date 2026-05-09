@@ -34,7 +34,13 @@ body.kelsier-body::after {
 .kelsier-page {
 	color: var(--k-text);
 	font-family: var(--font-ui-k);
-	overflow-x: clip;
+	overflow-x: hidden;
+}
+
+@supports (overflow-x: clip) {
+	.kelsier-page {
+		overflow-x: clip;
+	}
 }
 
 .kelsier-page :is(#hero, #method, #teams, #science, #begin) {
