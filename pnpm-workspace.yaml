@@ -1,0 +1,11 @@
+packages:
+  - .
+
+allowBuilds:
+  esbuild: true
+  sharp: true
+  workerd: true
+
+engineStrict: true
+
+strictDepBuilds: false

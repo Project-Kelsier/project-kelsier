@@ -1,0 +1,13 @@
+{
+	"$schema": "./node_modules/wrangler/config-schema.json",
+	"name": "project-kelsier",
+	"compatibility_date": "2026-04-10",
+	"compatibility_flags": ["nodejs_compat"],
+	"main": "@tanstack/react-start/server-entry",
+	"assets": {
+		"directory": "./dist/client"
+	},
+	"observability": {
+		"enabled": true
+	}
+}
