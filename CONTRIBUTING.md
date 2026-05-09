@@ -44,7 +44,7 @@ pnpm build
 - E2E tests use Playwright with [`playwright.config.ts`](./playwright.config.ts).
 - Playwright starts Vite directly instead of `pnpm dev` so the dev server shuts down cleanly on Windows.
 - If you add or change Cloudflare bindings, rerun `pnpm cf-typegen` before opening a PR.
-- pnpm dependency build-script approvals live in [`pnpm-workspace.yaml`](./pnpm-workspace.yaml) under `allowBuilds`. If pnpm reports blocked dependency build scripts, review the package first, then update that allow-list deliberately.
+- pnpm dependency build-script approvals live in [`pnpm-workspace.yaml`](./pnpm-workspace.yaml) under `allowBuilds`. [`.npmrc`](./.npmrc) sets `strict-dep-builds=false` so pnpm 11 does not fail installs while still using the reviewed allow-list.
 
 ## Formatting And Linting
 

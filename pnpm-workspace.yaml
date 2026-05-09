@@ -6,4 +6,6 @@ allowBuilds:
   sharp: true
   workerd: true
 
+engineStrict: true
+
 strictDepBuilds: false
