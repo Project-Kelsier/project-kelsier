@@ -29,6 +29,8 @@ pnpm build
 pnpm test:e2e
 ```
 
+If the change is release-facing, update [`CHANGELOG.md`](./CHANGELOG.md) and follow [`VERSIONING.md`](./VERSIONING.md).
+
 If you want the shorter local baseline first, start with:
 
 ```bash
