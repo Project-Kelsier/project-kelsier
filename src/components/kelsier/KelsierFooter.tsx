@@ -1,4 +1,5 @@
 import { Link } from "@tanstack/react-router";
+import { APP_VERSION } from "#/lib/version";
 
 type FooterRouteHref = "/privacy" | "/terms";
 type FooterLink =
@@ -98,7 +99,7 @@ export function KelsierFooter() {
 			</nav>
 			<p className="col-span-full m-0 pt-2 text-[13px] text-[var(--k-text-soft)] leading-[1.7]">
 				&copy; <span suppressHydrationWarning>{copyrightYear}</span> Kelsier.
-				All rights reserved.
+				All rights reserved. v{APP_VERSION}
 			</p>
 		</footer>
 	);

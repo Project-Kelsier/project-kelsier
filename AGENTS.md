@@ -29,6 +29,7 @@ This repo should be easy for a new contributor to understand without private con
 - Package manager: `pnpm`
 - Runtime target: Node `24.x`
 - Node version hint: [`.nvmrc`](.nvmrc)
+- Version source of truth: [`package.json`](package.json)
 
 Current app shape is intentionally small:
 
@@ -211,6 +212,13 @@ If you cannot run a check locally, say so explicitly in your handoff and explain
 - [`pnpm-workspace.yaml`](pnpm-workspace.yaml) owns pnpm 11 dependency build-script approvals through `allowBuilds`.
 - [`.npmrc`](.npmrc) sets `strict-dep-builds=false` so pnpm 11 does not fail installs when reviewed dependency build scripts are reported.
 - Do not add `pnpm approve-builds` to CI. Use it locally only as a review helper, then commit the explicit `allowBuilds` decision.
+
+### Versioning
+
+- `package.json` owns the current app version.
+- [`VERSIONING.md`](VERSIONING.md) defines the release policy and checklist.
+- [`CHANGELOG.md`](CHANGELOG.md) should be updated with every version bump.
+- The app reads the version through [`src/lib/version.ts`](src/lib/version.ts), which is populated by Vite from `package.json`.
 
 ### Vite And Vitest
 

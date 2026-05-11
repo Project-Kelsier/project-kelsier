@@ -4,8 +4,10 @@ import { devtools } from "@tanstack/devtools-vite";
 import { tanstackStart } from "@tanstack/react-start/plugin/vite";
 import viteReact from "@vitejs/plugin-react";
 import { defineConfig } from "vite";
+import { appVersionDefine } from "./config/app-version";
 
 const config = defineConfig({
+	define: appVersionDefine,
 	plugins: [
 		cloudflare({ viteEnvironment: { name: "ssr" } }),
 		devtools(),
