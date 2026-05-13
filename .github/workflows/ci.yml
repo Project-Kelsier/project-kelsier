@@ -40,7 +40,7 @@ jobs:
         run: pnpm install --frozen-lockfile --ignore-scripts
 
       - name: Rebuild approved native tooling
-        run: pnpm rebuild esbuild sharp workerd
+        run: pnpm rebuild
 
       - name: Save pnpm store
         if: github.event_name == 'push' && github.ref == 'refs/heads/main'
