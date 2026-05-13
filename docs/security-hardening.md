@@ -12,6 +12,7 @@ Current repository policy:
 - Keep temporary pnpm overrides for transitive `@tanstack/*` packages that appear in `pnpm-lock.yaml`.
 - Regenerate `pnpm-lock.yaml` from a clean install context after dependency changes.
 - Search the lockfile for the known IOCs before release: `@tanstack/setup`, `github:tanstack/router#79ac49eedf774dd4b0cfa308722bc463cfe5885c`, and `router_init.js`.
+- Scope any project-local pnpm store path to CI only. Do not commit a global `.npmrc` `store-dir` setting that changes developer installs away from pnpm's shared store.
 - Prefer `pnpm install --frozen-lockfile --ignore-scripts` in CI, followed by a targeted `pnpm rebuild` for packages already reviewed in `pnpm-workspace.yaml` `allowBuilds`.
 
 Safe local cleanup after a suspected malicious install on Windows PowerShell:

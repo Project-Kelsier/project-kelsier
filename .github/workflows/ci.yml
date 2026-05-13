@@ -9,6 +9,9 @@ on:
 permissions:
   contents: read
 
+env:
+  NPM_CONFIG_STORE_DIR: .pnpm-store
+
 jobs:
   validate:
     runs-on: ubuntu-latest
