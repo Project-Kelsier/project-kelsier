@@ -3,7 +3,7 @@
 	"version": "0.1.0",
 	"private": true,
 	"type": "module",
-	"packageManager": "pnpm@11.0.9+sha512.34ce82e6780233cf9cad8685029a8f81d2e06196c5a9bad98879f7424940c6817c4e4524fb7d38b8553ceed48b9758b8ebaf1abd3600c232c4c8cf7366086f38",
+	"packageManager": "pnpm@11.1.2+sha512.415a1cc25974731e75455c1468371be74c5aa5fb7621b50d4056d222451609f11412f23fd602e6169f1e060466641f798597e1be961a10688836a67b16569499",
 	"engines": {
 		"node": "24.x"
 	},
@@ -57,33 +57,5 @@
 		"vite": "^8.0.11",
 		"vitest": "^4.1.5",
 		"wrangler": "^4.88.0"
-	},
-	"pnpm": {
-		"overrides": {
-			"@tanstack/devtools-client": "0.0.6",
-			"@tanstack/devtools-event-bus": "0.4.1",
-			"@tanstack/devtools-event-client": "0.4.3",
-			"@tanstack/devtools-ui": "0.5.1",
-			"@tanstack/devtools": "0.11.2",
-			"@tanstack/history": "1.161.6",
-			"@tanstack/query-core": "5.91.2",
-			"@tanstack/react-query": "5.91.2",
-			"@tanstack/react-start-client": "1.166.48",
-			"@tanstack/react-start-rsc": "0.0.44",
-			"@tanstack/react-start-server": "1.166.52",
-			"@tanstack/react-store": "0.9.3",
-			"@tanstack/router-core": "1.169.2",
-			"@tanstack/router-devtools-core": "1.167.3",
-			"@tanstack/router-generator": "1.166.42",
-			"@tanstack/router-ssr-query-core": "1.168.0",
-			"@tanstack/router-utils": "1.161.8",
-			"@tanstack/start-client-core": "1.168.2",
-			"@tanstack/start-fn-stubs": "1.161.6",
-			"@tanstack/start-plugin-core": "1.169.20",
-			"@tanstack/start-server-core": "1.167.30",
-			"@tanstack/start-storage-context": "1.166.35",
-			"@tanstack/store": "0.9.3",
-			"@tanstack/virtual-file-routes": "1.161.7"
-		}
 	}
 }

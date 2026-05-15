@@ -11,7 +11,7 @@ pnpm cf-typegen
 This repo expects:
 
 - Node `24.x`
-- pnpm `11.0.9`
+- pnpm `11.1.2`
 
 Those versions are declared in [`package.json`](./package.json).
 Node `24.x` is also mirrored in [`.nvmrc`](./.nvmrc) for contributors using a Node version manager.
@@ -46,7 +46,7 @@ pnpm build
 - E2E tests use Playwright with [`playwright.config.ts`](./playwright.config.ts).
 - Playwright starts Vite directly instead of `pnpm dev` so the dev server shuts down cleanly on Windows.
 - If you add or change Cloudflare bindings, rerun `pnpm cf-typegen` before opening a PR.
-- pnpm dependency build-script approvals live in [`pnpm-workspace.yaml`](./pnpm-workspace.yaml) under `allowBuilds`. [`.npmrc`](./.npmrc) sets `strict-dep-builds=false` so pnpm 11 does not fail installs while still using the reviewed allow-list.
+- pnpm dependency overrides and build-script approvals live in [`pnpm-workspace.yaml`](./pnpm-workspace.yaml) under `overrides`, `allowBuilds`, and `strictDepBuilds`.
 
 ## Formatting And Linting
 

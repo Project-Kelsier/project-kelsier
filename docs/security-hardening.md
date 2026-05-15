@@ -15,6 +15,18 @@ Current repository policy:
 - Scope any project-local pnpm store path to CI only. Do not commit a global `.npmrc` `store-dir` setting that changes developer installs away from pnpm's shared store.
 - Prefer `pnpm install --frozen-lockfile --ignore-scripts` in CI, followed by `pnpm rebuild` so pnpm runs only the package build scripts already reviewed in `pnpm-workspace.yaml` `allowBuilds`.
 
+## pnpm 11.1 Integrity Checks
+
+Project Kelsier pins pnpm through `package.json` `packageManager`. Keep that pin on a reviewed stable patch release and include Corepack's integrity suffix when updating it.
+
+pnpm v11 reads pnpm settings from `pnpm-workspace.yaml`, not from `package.json#pnpm` or non-registry `.npmrc` settings. Keep `overrides`, `allowBuilds`, `engineStrict`, and `strictDepBuilds` in `pnpm-workspace.yaml` so installs use the reviewed dependency and lifecycle-script policy.
+
+CI runs `pnpm audit signatures` after `pnpm install --frozen-lockfile --ignore-scripts`. This verifies registry ECDSA signatures for installed packages when the package registry publishes signing keys. It helps detect tampered package metadata or tarballs that do not match registry provenance.
+
+Signature auditing does not replace vulnerability scanning, lockfile review, exact version pins, lifecycle-script restrictions, or maintainer review. Registries that do not publish signing keys are skipped by pnpm, so a skipped registry should be documented and reviewed before treating the result as equivalent to a fully signed dependency graph.
+
+When updating pnpm later, review the pnpm migration guide and release notes, choose the latest compatible stable patch, update the `packageManager` pin, regenerate the lockfile only if pnpm requires it, and rerun the full CI validation path. When updating GitHub Actions, resolve the desired version tag to a full commit SHA, keep the readable version comment, and update actions in a focused maintenance PR.
+
 Safe local cleanup after a suspected malicious install on Windows PowerShell:
 
 ```powershell
