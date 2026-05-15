@@ -40,6 +40,9 @@ jobs:
       - name: Install dependencies
         run: pnpm install --frozen-lockfile --ignore-scripts
 
+      - name: Audit package signatures
+        run: pnpm audit signatures
+
       - name: Rebuild approved native tooling
         run: pnpm rebuild
 
