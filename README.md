@@ -2,7 +2,7 @@
 
 Open-source exploration of cognition, communication patterns, and human-centered collaboration.
 
-[[Live Demo](https://project-kelsier.mindphreak.workers.dev/)] | [Docs] | [Roadmap]
+[Live Demo](https://project-kelsier.mindphreak.workers.dev/) | [Docs] | [Roadmap]
 
 Built with TanStack Start, React, Vite, Biome, Vitest, Playwright, GitHub Actions CI, and Cloudflare Workers-ready deployment.
 
