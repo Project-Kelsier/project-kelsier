@@ -46,7 +46,7 @@ pnpm build
 - E2E tests use Playwright with [`playwright.config.ts`](./playwright.config.ts).
 - Playwright starts Vite directly instead of `pnpm dev` so the dev server shuts down cleanly on Windows.
 - If you add or change Cloudflare bindings, rerun `pnpm cf-typegen` before opening a PR.
-- pnpm dependency overrides and build-script approvals live in [`pnpm-workspace.yaml`](./pnpm-workspace.yaml) under `overrides`, `allowBuilds`, and `strictDepBuilds`.
+- pnpm dependency build-script approvals and install policy live in [`pnpm-workspace.yaml`](./pnpm-workspace.yaml) under `allowBuilds`, `engineStrict`, and `strictDepBuilds`.
 
 ## Formatting And Linting
 

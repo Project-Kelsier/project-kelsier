@@ -209,8 +209,8 @@ If you cannot run a check locally, say so explicitly in your handoff and explain
 
 - `package.json` pins the project package manager version.
 - [`.nvmrc`](.nvmrc) mirrors the Node `24.x` runtime target for local version managers.
-- [`pnpm-workspace.yaml`](pnpm-workspace.yaml) owns pnpm 11 dependency build-script approvals through `allowBuilds`.
-- [`.npmrc`](.npmrc) sets `strict-dep-builds=false` so pnpm 11 does not fail installs when reviewed dependency build scripts are reported.
+- [`pnpm-workspace.yaml`](pnpm-workspace.yaml) owns pnpm 11 dependency build-script approvals and install policy through `allowBuilds`, `engineStrict`, and `strictDepBuilds`.
+- If a future supply-chain incident needs temporary pnpm overrides, put them in [`pnpm-workspace.yaml`](pnpm-workspace.yaml), document the reason, and remove them once clean upstream versions are available.
 - Do not add `pnpm approve-builds` to CI. Use it locally only as a review helper, then commit the explicit `allowBuilds` decision.
 
 ### Versioning

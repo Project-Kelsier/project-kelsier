@@ -1,61 +1,99 @@
-# Security Hardening Notes
+# Security Hardening
 
-This document records baseline security expectations for Project Kelsier as an early-stage OSS SaaS platform. Keep the controls understandable and proportional; avoid adding process that maintainers cannot actually operate.
+This document records Project Kelsier's baseline security posture for dependency management, GitHub Actions, releases, and incident response. Keep controls practical, reviewable, and proportional to an early-stage OSS SaaS project.
 
-## TanStack Supply-Chain Response
+## Baseline
 
-The TanStack incident tracked as GHSA-g7cv-rxg3-hmpx / CVE-2026-45321 was a malicious npm package publication incident. Affected package versions executed install-time malware through an injected optional dependency on `@tanstack/setup` from a GitHub commit, plus a `prepare` lifecycle script.
+The repository should preserve these defaults unless a reviewed change explicitly explains why they need to move:
 
-Current repository policy:
+- Pin the project package manager in `package.json` `packageManager`.
+- Use `pnpm install --frozen-lockfile --ignore-scripts` in CI.
+- Run `pnpm audit signatures` after dependency installation.
+- Keep dependency build-script approvals in `pnpm-workspace.yaml` `allowBuilds`.
+- Keep `engineStrict` and `strictDepBuilds` in `pnpm-workspace.yaml`.
+- Pin direct `@tanstack/*` dependencies to exact versions until maintainers intentionally relax that policy.
+- Pin third-party GitHub Actions to full commit SHAs.
+- Keep top-level GitHub Actions permissions minimal, usually `contents: read`.
+- Do not let untrusted pull requests save dependency caches used by trusted jobs.
+- Do not grant `id-token: write` to CI jobs that install or execute pull-request-controlled code.
 
-- Pin direct `@tanstack/*` dependencies to exact versions while the ecosystem is recovering.
-- Keep temporary pnpm overrides for transitive `@tanstack/*` packages that appear in `pnpm-lock.yaml`.
-- Regenerate `pnpm-lock.yaml` from a clean install context after dependency changes.
-- Search the lockfile for the known IOCs before release: `@tanstack/setup`, `github:tanstack/router#79ac49eedf774dd4b0cfa308722bc463cfe5885c`, and `router_init.js`.
-- Scope any project-local pnpm store path to CI only. Do not commit a global `.npmrc` `store-dir` setting that changes developer installs away from pnpm's shared store.
-- Prefer `pnpm install --frozen-lockfile --ignore-scripts` in CI, followed by `pnpm rebuild` so pnpm runs only the package build scripts already reviewed in `pnpm-workspace.yaml` `allowBuilds`.
+## Supply-Chain Controls
 
-## pnpm 11.1 Integrity Checks
+### pnpm
 
-Project Kelsier pins pnpm through `package.json` `packageManager`. Keep that pin on a reviewed stable patch release and include Corepack's integrity suffix when updating it.
+Project Kelsier uses pnpm through the `packageManager` field in `package.json`. When updating pnpm:
 
-pnpm v11 reads pnpm settings from `pnpm-workspace.yaml`, not from `package.json#pnpm` or non-registry `.npmrc` settings. Keep `overrides`, `allowBuilds`, `engineStrict`, and `strictDepBuilds` in `pnpm-workspace.yaml` so installs use the reviewed dependency and lifecycle-script policy.
+- Review the pnpm release notes and migration guide.
+- Choose a reviewed stable patch release.
+- Include Corepack's integrity suffix in `packageManager`.
+- Regenerate `pnpm-lock.yaml` only when required.
+- Run the validation checklist in this document.
 
-CI runs `pnpm audit signatures` after `pnpm install --frozen-lockfile --ignore-scripts`. This verifies registry ECDSA signatures for installed packages when the package registry publishes signing keys. It helps detect tampered package metadata or tarballs that do not match registry provenance.
+pnpm v11 reads workspace install policy from `pnpm-workspace.yaml`, not from `package.json#pnpm` or non-registry `.npmrc` settings. Keep `allowBuilds`, `engineStrict`, and `strictDepBuilds` there.
 
-Signature auditing does not replace vulnerability scanning, lockfile review, exact version pins, lifecycle-script restrictions, or maintainer review. Registries that do not publish signing keys are skipped by pnpm, so a skipped registry should be documented and reviewed before treating the result as equivalent to a fully signed dependency graph.
+### Install Scripts
 
-When updating pnpm later, review the pnpm migration guide and release notes, choose the latest compatible stable patch, update the `packageManager` pin, regenerate the lockfile only if pnpm requires it, and rerun the full CI validation path. When updating GitHub Actions, resolve the desired version tag to a full commit SHA, keep the readable version comment, and update actions in a focused maintenance PR.
+CI installs dependencies with `--ignore-scripts`. This prevents dependency lifecycle scripts from running during install.
 
-Safe local cleanup after a suspected malicious install on Windows PowerShell:
+Packages that legitimately require build scripts must be explicitly reviewed and listed in `pnpm-workspace.yaml` `allowBuilds`. Do not add `pnpm approve-builds` to CI; use it locally only as a review helper, then commit the explicit allow-list decision.
 
-```powershell
-Remove-Item -Recurse -Force node_modules
-Remove-Item -Force pnpm-lock.yaml
-```
+### Signature Audit
 
-Then regenerate from a clean pnpm install path:
+CI runs `pnpm audit signatures` after install. This verifies registry ECDSA signatures for packages when the registry publishes signing keys.
+
+Signature auditing helps detect tampered package metadata or tarballs that do not match registry provenance. It does not replace vulnerability scanning, exact version pins, lockfile review, install-script restrictions, or maintainer judgment.
+
+If a package registry does not publish signing keys, pnpm may skip signature verification for packages from that registry. Document skipped registries before treating the audit result as equivalent to a fully signed dependency graph.
+
+### Temporary Overrides
+
+pnpm overrides are an incident response tool, not a permanent aesthetic layer. Use them only when a reviewed advisory or compatibility issue requires transitive dependency control.
+
+Temporary overrides must:
+
+- Live in `pnpm-workspace.yaml`.
+- Include a clear reason in the PR description or nearby documentation.
+- Have an explicit removal condition.
+- Be removed once clean upstream versions are available and validation passes.
+
+Prefer clean direct upgrades and a regenerated lockfile over long-lived transitive pins.
+
+## Dependency Updates
+
+Normal dependency updates should keep PRs small and grouped by ecosystem. Separate npm package updates from GitHub Actions updates.
+
+Security updates may bypass normal dependency timing controls only when the PR explains why the newer version materially reduces risk. If pnpm's release-age cooldown is bypassed for a security update, do it only as a local command option. Do not commit a cooldown bypass as repository configuration.
+
+For dependency maintenance PRs, run:
 
 ```bash
-pnpm store path
-pnpm store prune
-pnpm install --ignore-scripts
-pnpm install --lockfile-only --ignore-scripts
+pnpm install --frozen-lockfile --ignore-scripts
+pnpm audit signatures
+pnpm audit --audit-level high
+pnpm check
+pnpm typecheck
+pnpm test
+pnpm build
 ```
 
-If the host installed an affected TanStack version on 2026-05-11 during the published attack window, treat the host as compromised. Rotate npm, GitHub, Cloudflare, database, SSH, and cloud credentials that were reachable from that machine or CI runner.
+For meaningful UI, routing, or runtime changes, also run:
 
-## GitHub Actions Design
+```bash
+pnpm coverage
+pnpm test:e2e
+```
+
+## GitHub Actions
 
 - Default workflow permissions should be `contents: read`.
-- Add job-level permissions only for a step that demonstrably needs them.
+- Add job-level permissions only for steps that demonstrably need them.
 - Do not use `pull_request_target` for workflows that check out, install, build, test, or execute PR-controlled code.
 - Forked PR workflows must not receive deployment secrets, publish tokens, Cloudflare credentials, npm credentials, or `id-token: write`.
 - Privileged deployment and publishing workflows should run only on protected branches, protected environments, or explicit maintainer approval.
 - Add `github.repository_owner` and branch guards to privileged jobs when a workflow could run in forks or mirrors.
-- Pin third-party actions to full commit SHAs. Keep a comment with the human-readable version tag for maintenance.
+- Pin third-party actions to full commit SHAs. Keep a comment with the readable version tag for maintenance.
 
-SHA pinning prevents a moved tag from changing executed workflow code. Version tags are easier to update but trust the action maintainer and GitHub tag state at every run. For this project, use SHA pinning for CI and deployment workflows, then update pins through reviewed dependency-maintenance PRs.
+SHA pinning prevents a moved tag from changing executed workflow code. Version tags are easier to update but trust the action maintainer and GitHub tag state at every run. For this project, use SHA pinning for CI and deployment workflows, then update pins through reviewed maintenance PRs.
 
 ## Cache Security
 
@@ -72,7 +110,7 @@ SHA pinning prevents a moved tag from changing executed workflow code. Version t
 - Deployment workflows should request `id-token: write` only in the deploy job and only after branch, owner, and environment checks.
 - Cloudflare deployment should use the minimum viable credential shape. Prefer OIDC or scoped Cloudflare API tokens over broad account tokens where supported.
 - Store Cloudflare credentials only as GitHub environment secrets with required reviewer approval for production.
-- Never expose Cloudflare, Neon, npm, or GitHub publishing credentials to pull request workflows.
+- Never expose Cloudflare, Neon, npm, GitHub publishing, or database credentials to pull request workflows.
 
 ## Branch Protection
 
@@ -93,7 +131,6 @@ Add CODEOWNERS before the repo becomes broadly active. Recommended initial owner
 - `.github/workflows/*`
 - `package.json`
 - `pnpm-lock.yaml`
-- `.npmrc`
 - `pnpm-workspace.yaml`
 - `wrangler.jsonc`
 - `src/router.tsx`
@@ -110,9 +147,9 @@ Changes to these files should require platform maintainer review.
 - Rotate release credentials after any suspected install-time compromise.
 - Keep `CHANGELOG.md` and `VERSIONING.md` aligned with releases.
 
-## Dependabot Or Renovate
+## Dependency Automation
 
-Use one dependency automation tool, not both.
+Use one dependency automation tool, not both Dependabot and Renovate.
 
 Recommended starting point:
 
@@ -120,7 +157,7 @@ Recommended starting point:
 - Separate GitHub Actions updates from npm updates.
 - Require CI before automerge.
 - Do not automerge major framework, runtime, deployment, auth, database, or ORM updates.
-- For `@tanstack/*`, keep exact pins until maintainers intentionally relax this incident response control.
+- Keep direct `@tanstack/*` dependencies exact until maintainers intentionally relax that policy.
 
 ## Future npm Publishing
 
@@ -142,3 +179,49 @@ Rotate secrets immediately after:
 - A Cloudflare, npm, GitHub, Neon, or database token appears in logs.
 
 Maintain an inventory of GitHub repository secrets, environment secrets, Cloudflare tokens, npm publishing settings, and future Neon credentials.
+
+## Incident Response
+
+If a developer machine or CI runner installed a known malicious dependency version, treat that host as compromised until proven otherwise.
+
+Recommended local cleanup on Windows PowerShell:
+
+```powershell
+Remove-Item -Recurse -Force node_modules
+Remove-Item -Force pnpm-lock.yaml
+```
+
+Then regenerate from a clean pnpm install path:
+
+```bash
+pnpm store path
+pnpm store prune
+pnpm install --ignore-scripts
+pnpm install --lockfile-only --ignore-scripts
+```
+
+Rotate npm, GitHub, Cloudflare, database, SSH, and cloud credentials that were reachable from the affected machine or runner.
+
+## Historical Incidents
+
+### TanStack May 2026
+
+GHSA-g7cv-rxg3-hmpx / CVE-2026-45321 was a malicious npm package publication incident affecting parts of the TanStack ecosystem. Affected package versions executed install-time malware through an injected optional dependency on `@tanstack/setup` from a GitHub commit, plus a `prepare` lifecycle script.
+
+The active remediation for this repo is complete: use clean current TanStack versions, keep exact direct pins, avoid long-lived transitive overrides, preserve `--ignore-scripts` in CI, and keep `pnpm audit signatures` in the install path.
+
+Historical indicators worth checking during forensic review:
+
+- `@tanstack/setup`
+- `github:tanstack/router#79ac49eedf774dd4b0cfa308722bc463cfe5885c`
+- `router_init.js`
+- `tanstack_runner.js`
+- `litter.catbox.moe`
+- `git-tanstack.com`
+- `filev2.getsession.org`
+- `seed1.getsession.org`
+
+Sources:
+
+- TanStack incident follow-up: <https://tanstack.com/blog/incident-followup>
+- GitHub advisory: <https://github.com/TanStack/router/security/advisories/GHSA-g7cv-rxg3-hmpx>
