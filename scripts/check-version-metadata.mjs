@@ -5,6 +5,7 @@ const releaseRelevantPatterns = [
 	/^src\//,
 	/^public\//,
 	/^e2e\//,
+	/^scripts\//,
 	/^\.github\/workflows\//,
 	/^docs\/security-hardening\.md$/,
 	/^AGENTS\.md$/,

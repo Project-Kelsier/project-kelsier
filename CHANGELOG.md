@@ -13,6 +13,7 @@ This project follows semantic versioning while it moves toward MVP. Versions bel
 - Reworked security hardening documentation into a standing baseline with historical incident context.
 - Synchronized contributor, versioning, and README checklists with the current pnpm install and signature-audit workflow.
 - Added CI enforcement for release-relevant PRs to update both `package.json` version and `CHANGELOG.md`.
+- Included repository tooling scripts in the release-relevant version metadata check.
 
 ## [0.1.0] - 2026-05-10
 

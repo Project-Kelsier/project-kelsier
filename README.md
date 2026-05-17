@@ -59,7 +59,7 @@ GitHub Actions runs the baseline checks on pushes to `main` and on pull requests
 - `pnpm install --frozen-lockfile --ignore-scripts`
 - `pnpm audit signatures`
 - `pnpm rebuild`
-- `pnpm version:check`
+- `pnpm version:check` on pull requests
 - `pnpm check`
 - `pnpm typecheck`
 - `pnpm test`
