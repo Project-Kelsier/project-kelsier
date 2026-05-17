@@ -1,6 +1,6 @@
 {
 	"name": "project-kelsier",
-	"version": "0.1.0",
+	"version": "0.1.1",
 	"private": true,
 	"type": "module",
 	"packageManager": "pnpm@11.1.2+sha512.415a1cc25974731e75455c1468371be74c5aa5fb7621b50d4056d222451609f11412f23fd602e6169f1e060466641f798597e1be961a10688836a67b16569499",
@@ -24,6 +24,7 @@
 		"coverage": "vitest run --config vitest.config.ts --coverage",
 		"test:e2e": "playwright test",
 		"version:show": "node -p \"require('./package.json').version\"",
+		"version:check": "node scripts/check-version-metadata.mjs",
 		"ci": "pnpm check && pnpm typecheck && pnpm test && pnpm build"
 	},
 	"dependencies": {

@@ -2,7 +2,7 @@
 
 Open-source exploration of cognition, communication patterns, and human-centered collaboration.
 
-[Live Demo](https://project-kelsier.mindphreak.workers.dev/) | [Docs] | [Roadmap]
+[Live Demo](https://project-kelsier.mindphreak.workers.dev/) | [Security Notes](./docs/security-hardening.md) | [Versioning](./VERSIONING.md)
 
 Built with TanStack Start, React, Vite, Biome, Vitest, Playwright, GitHub Actions CI, and Cloudflare Workers-ready deployment.
 
@@ -56,6 +56,10 @@ If you add Cloudflare bindings later, update [`wrangler.jsonc`](./wrangler.jsonc
 
 GitHub Actions runs the baseline checks on pushes to `main` and on pull requests:
 
+- `pnpm install --frozen-lockfile --ignore-scripts`
+- `pnpm audit signatures`
+- `pnpm rebuild`
+- `pnpm version:check`
 - `pnpm check`
 - `pnpm typecheck`
 - `pnpm test`

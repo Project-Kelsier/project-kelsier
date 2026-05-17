@@ -70,6 +70,7 @@ For dependency maintenance PRs, run:
 pnpm install --frozen-lockfile --ignore-scripts
 pnpm audit signatures
 pnpm audit --audit-level high
+pnpm version:check
 pnpm check
 pnpm typecheck
 pnpm test

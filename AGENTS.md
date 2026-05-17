@@ -195,6 +195,19 @@ pnpm build
 pnpm test:e2e
 ```
 
+### Required For Dependency Or Install-Path Changes
+
+```bash
+pnpm install --frozen-lockfile --ignore-scripts
+pnpm audit signatures
+pnpm audit --audit-level high
+pnpm version:check
+pnpm check
+pnpm typecheck
+pnpm test
+pnpm build
+```
+
 If you cannot run a check locally, say so explicitly in your handoff and explain why.
 
 ## Tooling Guardrails
@@ -217,7 +230,7 @@ If you cannot run a check locally, say so explicitly in your handoff and explain
 
 - `package.json` owns the current app version.
 - [`VERSIONING.md`](VERSIONING.md) defines the release policy and checklist.
-- [`CHANGELOG.md`](CHANGELOG.md) should be updated with every version bump.
+- Release-relevant changes must update both `package.json` `version` and [`CHANGELOG.md`](CHANGELOG.md); CI enforces this with `pnpm version:check`.
 - The app reads the version through [`src/lib/version.ts`](src/lib/version.ts), which is populated by Vite from `package.json`.
 
 ### Vite And Vitest
