@@ -4,6 +4,12 @@ All notable changes to Project Kelsier will be documented in this file.
 
 This project follows semantic versioning while it moves toward MVP. Versions below `1.0.0` may still include breaking product or API changes when they are called out here.
 
+## [0.1.2] - 2026-05-18
+
+### Added
+
+- Added visible GitHub repository links to the Kelsier navigation and footer.
+
 ## [0.1.1] - 2026-05-17
 
 ### Changed
