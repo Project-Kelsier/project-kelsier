@@ -1,4 +1,5 @@
 import { Link } from "@tanstack/react-router";
+import { GITHUB_REPOSITORY_URL } from "#/lib/projectLinks";
 import { APP_VERSION } from "#/lib/version";
 
 type FooterRouteHref = "/privacy" | "/terms";
@@ -12,6 +13,7 @@ type FooterLink =
 			label: string;
 			href: string;
 			type: "anchor";
+			isExternal?: boolean;
 	  };
 
 const FOOTER_LINK_GROUPS: Array<{
@@ -31,6 +33,12 @@ const FOOTER_LINK_GROUPS: Array<{
 		title: "Company",
 		links: [
 			{ label: "About", href: "#hero", type: "anchor" },
+			{
+				label: "GitHub",
+				href: GITHUB_REPOSITORY_URL,
+				type: "anchor",
+				isExternal: true,
+			},
 			{
 				label: "Contact",
 				href: "mailto:hello@kelsier.example",
@@ -87,6 +95,8 @@ export function KelsierFooter() {
 										<a
 											className="text-[13px] text-[var(--k-text-soft)] no-underline transition-colors duration-200 hover:text-[rgba(220,200,160,0.88)] focus-visible:text-[rgba(220,200,160,0.88)]"
 											href={link.href}
+											rel={link.isExternal ? "noreferrer" : undefined}
+											target={link.isExternal ? "_blank" : undefined}
 										>
 											{link.label}
 										</a>
@@ -99,7 +109,16 @@ export function KelsierFooter() {
 			</nav>
 			<p className="col-span-full m-0 pt-2 text-[13px] text-[var(--k-text-soft)] leading-[1.7]">
 				&copy; <span suppressHydrationWarning>{copyrightYear}</span> Kelsier.
-				All rights reserved. v{APP_VERSION}
+				All rights reserved. v{APP_VERSION}. Open source on{" "}
+				<a
+					className="text-[var(--k-text-soft)] underline decoration-[rgba(191,146,72,0.45)] underline-offset-4 transition-colors duration-200 hover:text-[rgba(220,200,160,0.88)] focus-visible:text-[rgba(220,200,160,0.88)]"
+					href={GITHUB_REPOSITORY_URL}
+					rel="noreferrer"
+					target="_blank"
+				>
+					GitHub
+				</a>
+				.
 			</p>
 		</footer>
 	);

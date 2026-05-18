@@ -8,4 +8,4 @@ allowBuilds:
 
 engineStrict: true
 
-strictDepBuilds: false
+strictDepBuilds: true

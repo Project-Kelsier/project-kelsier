@@ -195,6 +195,19 @@ pnpm build
 pnpm test:e2e
 ```
 
+### Required For Dependency Or Install-Path Changes
+
+```bash
+pnpm install --frozen-lockfile --ignore-scripts
+pnpm audit signatures
+pnpm audit --audit-level high
+pnpm version:check
+pnpm check
+pnpm typecheck
+pnpm test
+pnpm build
+```
+
 If you cannot run a check locally, say so explicitly in your handoff and explain why.
 
 ## Tooling Guardrails
@@ -209,15 +222,15 @@ If you cannot run a check locally, say so explicitly in your handoff and explain
 
 - `package.json` pins the project package manager version.
 - [`.nvmrc`](.nvmrc) mirrors the Node `24.x` runtime target for local version managers.
-- [`pnpm-workspace.yaml`](pnpm-workspace.yaml) owns pnpm 11 dependency build-script approvals through `allowBuilds`.
-- [`.npmrc`](.npmrc) sets `strict-dep-builds=false` so pnpm 11 does not fail installs when reviewed dependency build scripts are reported.
+- [`pnpm-workspace.yaml`](pnpm-workspace.yaml) owns pnpm 11 dependency build-script approvals and install policy through `allowBuilds`, `engineStrict`, and `strictDepBuilds`.
+- If a future supply-chain incident needs temporary pnpm overrides, put them in [`pnpm-workspace.yaml`](pnpm-workspace.yaml), document the reason, and remove them once clean upstream versions are available.
 - Do not add `pnpm approve-builds` to CI. Use it locally only as a review helper, then commit the explicit `allowBuilds` decision.
 
 ### Versioning
 
 - `package.json` owns the current app version.
 - [`VERSIONING.md`](VERSIONING.md) defines the release policy and checklist.
-- [`CHANGELOG.md`](CHANGELOG.md) should be updated with every version bump.
+- Release-relevant changes must update both `package.json` `version` and [`CHANGELOG.md`](CHANGELOG.md); CI enforces this with `pnpm version:check`.
 - The app reads the version through [`src/lib/version.ts`](src/lib/version.ts), which is populated by Vite from `package.json`.
 
 ### Vite And Vitest
