@@ -62,8 +62,9 @@ function changedFiles(baseSha) {
 	const committed = git(["diff", "--name-only", `${baseSha}...HEAD`]);
 	const workingTree = git(["diff", "--name-only"]);
 	const staged = git(["diff", "--name-only", "--cached"]);
+	const untracked = git(["ls-files", "--others", "--exclude-standard"]);
 	const files = new Set(
-		[committed, workingTree, staged]
+		[committed, workingTree, staged, untracked]
 			.filter(Boolean)
 			.flatMap((output) => output.split(/\r?\n/).map(normalizePath)),
 	);
@@ -88,13 +89,10 @@ function readJsonFile(file) {
 }
 
 function parseSemver(version) {
-	const match =
-		/^(\d+)\.(\d+)\.(\d+)(?:-[0-9A-Za-z.-]+)?(?:\+[0-9A-Za-z.-]+)?$/.exec(
-			version,
-		);
+	const match = /^(\d+)\.(\d+)\.(\d+)$/.exec(version);
 
 	if (!match) {
-		throw new Error(`Invalid semver version: ${version}`);
+		throw new Error(`Invalid release version: ${version}. Use x.y.z format.`);
 	}
 
 	return match.slice(1, 4).map(Number);
