@@ -21,6 +21,10 @@ Node `24.x` is also mirrored in [`.nvmrc`](./.nvmrc) for contributors using a No
 Run the same checks CI runs:
 
 ```bash
+pnpm install --frozen-lockfile --ignore-scripts
+pnpm audit signatures
+pnpm rebuild
+pnpm version:check
 pnpm check
 pnpm typecheck
 pnpm test
@@ -29,7 +33,7 @@ pnpm build
 pnpm test:e2e
 ```
 
-If the change is release-facing, update [`CHANGELOG.md`](./CHANGELOG.md) and follow [`VERSIONING.md`](./VERSIONING.md).
+Release-relevant changes must update both [`package.json`](./package.json) `version` and [`CHANGELOG.md`](./CHANGELOG.md). See [`VERSIONING.md`](./VERSIONING.md) for the policy CI enforces.
 
 If you want the shorter local baseline first, start with:
 
@@ -46,7 +50,7 @@ pnpm build
 - E2E tests use Playwright with [`playwright.config.ts`](./playwright.config.ts).
 - Playwright starts Vite directly instead of `pnpm dev` so the dev server shuts down cleanly on Windows.
 - If you add or change Cloudflare bindings, rerun `pnpm cf-typegen` before opening a PR.
-- pnpm dependency overrides and build-script approvals live in [`pnpm-workspace.yaml`](./pnpm-workspace.yaml) under `overrides`, `allowBuilds`, and `strictDepBuilds`.
+- pnpm dependency build-script approvals and install policy live in [`pnpm-workspace.yaml`](./pnpm-workspace.yaml) under `allowBuilds`, `engineStrict`, and `strictDepBuilds`.
 
 ## Formatting And Linting
 
@@ -70,5 +74,7 @@ pnpm build
 ## PR Guidance
 
 - Prefer small PRs with a single focused change.
+- Release-relevant PRs must update both [`package.json`](./package.json) version and [`CHANGELOG.md`](./CHANGELOG.md). CI enforces this with `pnpm version:check`.
 - If you touch routing, add or update at least one relevant test.
 - If you change shared tooling or config, update [`README.md`](./README.md) and this file when the workflow changes.
+- If you change dependencies, package-manager config, or CI install behavior, also review [`docs/security-hardening.md`](./docs/security-hardening.md).
