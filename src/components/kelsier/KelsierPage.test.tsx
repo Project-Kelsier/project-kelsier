@@ -1,6 +1,7 @@
 import { fireEvent, render, screen, waitFor } from "@testing-library/react";
 import type { AnchorHTMLAttributes, ReactNode } from "react";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
+import { GITHUB_REPOSITORY_URL } from "#/lib/projectLinks";
 import { KelsierPage } from "./KelsierPage";
 
 vi.mock("@tanstack/react-router", async (importOriginal) => {
@@ -82,6 +83,9 @@ describe("KelsierPage", () => {
 		expect(
 			screen.getByRole("button", { name: "Discover your team" }),
 		).toBeTruthy();
+		const githubLinks = screen.getAllByRole("link", { name: "GitHub" });
+		expect(githubLinks[0]?.getAttribute("href")).toBe(GITHUB_REPOSITORY_URL);
+		expect(githubLinks[0]?.getAttribute("target")).toBe("_blank");
 	});
 
 	it("keeps lightweight scroll state active for reduced-motion users", async () => {
@@ -214,8 +218,20 @@ describe("KelsierPage", () => {
 		expect(
 			screen.getByRole("link", { name: "Contact" }).getAttribute("href"),
 		).toBe("mailto:hello@kelsier.example");
+		const githubLinks = screen.getAllByRole("link", { name: "GitHub" });
+		expect(githubLinks).toHaveLength(3);
+		expect(
+			githubLinks.every(
+				(link) =>
+					link.getAttribute("href") === GITHUB_REPOSITORY_URL &&
+					link.getAttribute("target") === "_blank",
+			),
+		).toBe(true);
 		expect(screen.getByRole("contentinfo").textContent).toContain(
 			`${new Date().getFullYear()} Kelsier. All rights reserved.`,
+		);
+		expect(screen.getByRole("contentinfo").textContent).toContain(
+			"Open source on GitHub.",
 		);
 	});
 
