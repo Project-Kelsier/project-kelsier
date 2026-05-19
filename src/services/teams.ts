@@ -41,13 +41,16 @@ export async function listTeamMembers(
 	teamId: string,
 ) {
 	return db
-		.select()
+		.select({ teamMember: teamMembers })
 		.from(teamMembers)
+		.innerJoin(teams, eq(teams.id, teamMembers.teamId))
 		.where(
 			and(
 				eq(teamMembers.organisationId, context.organisationId),
 				eq(teamMembers.teamId, teamId),
 				isNull(teamMembers.deletedAt),
+				eq(teams.organisationId, context.organisationId),
+				isNull(teams.deletedAt),
 			),
 		);
 }

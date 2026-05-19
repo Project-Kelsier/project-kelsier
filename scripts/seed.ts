@@ -93,7 +93,7 @@ const optionLabels = [
 async function seed() {
 	const updatedAt = new Date();
 
-	await db
+	const [demoUser] = await db
 		.insert(users)
 		.values({
 			id: DEMO_USER_ID,
@@ -104,9 +104,14 @@ async function seed() {
 			set: {
 				updatedAt,
 			},
-		});
+		})
+		.returning({ id: users.id });
 
-	await db
+	if (!demoUser) {
+		throw new Error("Failed to seed demo user.");
+	}
+
+	const [demoOrganisation] = await db
 		.insert(organisations)
 		.values({
 			id: DEMO_ORGANISATION_ID,
@@ -121,13 +126,18 @@ async function seed() {
 				deletedAt: null,
 				updatedAt,
 			},
-		});
+		})
+		.returning({ id: organisations.id });
+
+	if (!demoOrganisation) {
+		throw new Error("Failed to seed demo organisation.");
+	}
 
 	await db
 		.insert(organisationMembers)
 		.values({
-			organisationId: DEMO_ORGANISATION_ID,
-			userId: DEMO_USER_ID,
+			organisationId: demoOrganisation.id,
+			userId: demoUser.id,
 			role: "owner",
 		})
 		.onConflictDoUpdate({
@@ -139,11 +149,11 @@ async function seed() {
 			},
 		});
 
-	await db
+	const [demoTeam] = await db
 		.insert(teams)
 		.values({
 			id: DEMO_TEAM_ID,
-			organisationId: DEMO_ORGANISATION_ID,
+			organisationId: demoOrganisation.id,
 			slug: "leadership-circle",
 			name: "Leadership Circle",
 		})
@@ -155,20 +165,25 @@ async function seed() {
 				deletedAt: null,
 				updatedAt,
 			},
-		});
+		})
+		.returning({ id: teams.id });
+
+	if (!demoTeam) {
+		throw new Error("Failed to seed demo team.");
+	}
 
 	await db
 		.insert(teamMembers)
 		.values({
-			organisationId: DEMO_ORGANISATION_ID,
-			teamId: DEMO_TEAM_ID,
-			userId: DEMO_USER_ID,
+			organisationId: demoOrganisation.id,
+			teamId: demoTeam.id,
+			userId: demoUser.id,
 			role: "lead",
 		})
 		.onConflictDoUpdate({
 			target: [teamMembers.teamId, teamMembers.userId],
 			set: {
-				organisationId: DEMO_ORGANISATION_ID,
+				organisationId: demoOrganisation.id,
 				role: "lead",
 				deletedAt: null,
 				updatedAt,
