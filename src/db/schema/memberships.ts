@@ -1,5 +1,6 @@
 import { sql } from "drizzle-orm";
 import {
+	foreignKey,
 	index,
 	pgEnum,
 	pgTable,
@@ -86,6 +87,11 @@ export const teamMembers = pgTable(
 		),
 		index("team_members_team_id_idx").on(table.teamId),
 		index("team_members_user_id_idx").on(table.userId),
+		foreignKey({
+			columns: [table.teamId, table.organisationId],
+			foreignColumns: [teams.id, teams.organisationId],
+			name: "team_members_team_organisation_fk",
+		}).onDelete("cascade"),
 	],
 );
 

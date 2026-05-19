@@ -8,6 +8,13 @@
       "when": 1779185353056,
       "tag": "0000_many_norman_osborn",
       "breakpoints": true
+    },
+    {
+      "idx": 1,
+      "version": "7",
+      "when": 1779192358372,
+      "tag": "0001_smart_ezekiel",
+      "breakpoints": true
     }
   ]
 }

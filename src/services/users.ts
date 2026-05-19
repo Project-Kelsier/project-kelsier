@@ -1,12 +1,12 @@
 import { eq } from "drizzle-orm";
 import { db } from "#/db/client";
-import { users } from "#/db/schema";
+import { type User, users } from "#/db/schema";
 import type { AuthenticatedUserContext } from "./context";
 
 export async function ensureDomainUser(
 	context: AuthenticatedUserContext,
 	authUserId: string,
-) {
+): Promise<User> {
 	const [user] = await db
 		.insert(users)
 		.values({ authUserId })
@@ -16,7 +16,17 @@ export async function ensureDomainUser(
 		})
 		.returning();
 
-	return user ?? getUserByAuthUserId(context, authUserId);
+	if (user) {
+		return user;
+	}
+
+	const existingUser = await getUserByAuthUserId(context, authUserId);
+
+	if (!existingUser) {
+		throw new Error("Failed to ensure domain user.");
+	}
+
+	return existingUser;
 }
 
 export async function getUserByAuthUserId(
