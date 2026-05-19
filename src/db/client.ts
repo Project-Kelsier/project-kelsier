@@ -19,11 +19,11 @@ function createDrizzleClient(queryClient: Sql) {
 	return drizzle(queryClient, { schema });
 }
 
-function shouldUseHyperdrive(value: DatabaseEnv["USE_HYPERDRIVE"]) {
+export function shouldUseHyperdrive(value: DatabaseEnv["USE_HYPERDRIVE"]) {
 	return value === true || value === "true";
 }
 
-function getConnectionString(env: DatabaseEnv) {
+export function getConnectionString(env: DatabaseEnv) {
 	const useHyperdrive = shouldUseHyperdrive(env.USE_HYPERDRIVE);
 	const connectionString = useHyperdrive
 		? env.DATABASE_URL_POOLED

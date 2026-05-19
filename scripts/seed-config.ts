@@ -1,29 +1,10 @@
-import type { DatabaseEnv } from "#/db/client";
-
-function shouldUseHyperdrive(value: DatabaseEnv["USE_HYPERDRIVE"]) {
-	return value === true || value === "true";
-}
+import { type DatabaseEnv, getConnectionString } from "#/db/client";
 
 export type SeedEnv = DatabaseEnv & {
 	ALLOW_SEED?: string;
 };
 
-export function getSeedDatabaseUrl(env: DatabaseEnv) {
-	const useHyperdrive = shouldUseHyperdrive(env.USE_HYPERDRIVE);
-	const databaseUrl = useHyperdrive
-		? env.DATABASE_URL_POOLED
-		: env.DATABASE_URL;
-
-	if (!databaseUrl) {
-		throw new Error(
-			useHyperdrive
-				? "DATABASE_URL_POOLED is required when USE_HYPERDRIVE=true."
-				: "DATABASE_URL is required.",
-		);
-	}
-
-	return databaseUrl;
-}
+export const getSeedDatabaseUrl = getConnectionString;
 
 export function isLocalSeedDatabase(databaseUrl: string) {
 	const url = new URL(databaseUrl);
