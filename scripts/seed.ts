@@ -100,9 +100,8 @@ async function seed() {
 			authUserId: DEMO_AUTH_USER_ID,
 		})
 		.onConflictDoUpdate({
-			target: users.id,
+			target: users.authUserId,
 			set: {
-				authUserId: DEMO_AUTH_USER_ID,
 				updatedAt,
 			},
 		});
