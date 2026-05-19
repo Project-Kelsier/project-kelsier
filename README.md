@@ -25,6 +25,36 @@ pnpm test:e2e
 pnpm version:show
 ```
 
+## Local Database Setup
+
+Local PostgreSQL runs through Docker Compose for daily development, migration checks, seed testing, and destructive resets. Neon remains the hosted database target for staging and production.
+
+Prerequisite: Docker Desktop.
+
+The local container exposes PostgreSQL on `localhost:55432` to avoid common Windows port reservations around `5432`.
+
+```bash
+# Start local PostgreSQL
+docker compose up -d
+
+# Stop local PostgreSQL
+docker compose down
+
+# Fully reset local PostgreSQL data
+docker compose down -v
+
+# Check running containers
+docker ps
+
+# Connect with psql inside the container
+docker exec -it kelsier-postgres psql -U kelsier -d kelsier_dev
+
+# Generate, apply, and seed the local database
+pnpm db:generate
+pnpm db:migrate
+pnpm db:seed
+```
+
 ## Tooling Notes
 
 - Cloudflare Workers deployment is configured through [`wrangler.jsonc`](./wrangler.jsonc) and the Cloudflare Vite plugin in [`vite.config.ts`](./vite.config.ts).

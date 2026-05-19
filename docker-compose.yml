@@ -1,0 +1,16 @@
+services:
+  postgres:
+    image: postgres:17
+    container_name: kelsier-postgres
+    restart: unless-stopped
+    environment:
+      POSTGRES_DB: kelsier_dev
+      POSTGRES_USER: kelsier
+      POSTGRES_PASSWORD: kelsier
+    ports:
+      - "55432:5432"
+    volumes:
+      - kelsier-postgres-data:/var/lib/postgresql/data
+
+volumes:
+  kelsier-postgres-data:
