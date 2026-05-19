@@ -1,11 +1,13 @@
-import { describe, expect, it } from "vitest";
+import { describe, expect, it, vi } from "vitest";
 import { getDb, getDbConnection } from "./client";
 
 describe("database client factory", () => {
 	it("defers missing credential validation until a db is requested", async () => {
-		await expect(import("./client")).resolves.toBeDefined();
+		vi.resetModules();
 
-		expect(() => getDb({})).toThrow("DATABASE_URL is required.");
+		const client = await import("./client");
+
+		expect(() => client.getDb({})).toThrow("DATABASE_URL is required.");
 	});
 
 	it("uses the pooled connection string when Hyperdrive is enabled", () => {
