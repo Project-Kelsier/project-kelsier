@@ -1,5 +1,5 @@
 import "dotenv/config";
-import { createDbConnection, type DatabaseEnv } from "#/db/client";
+import { createDbConnection } from "#/db/client";
 import {
 	assessmentOptions,
 	assessmentQuestions,
@@ -10,46 +10,10 @@ import {
 	teams,
 	users,
 } from "#/db/schema";
-
-function getSeedDatabaseUrl(env: DatabaseEnv) {
-	const useHyperdrive = env.USE_HYPERDRIVE === "true";
-	const databaseUrl = useHyperdrive
-		? env.DATABASE_URL_POOLED
-		: env.DATABASE_URL;
-
-	if (!databaseUrl) {
-		throw new Error(
-			useHyperdrive
-				? "DATABASE_URL_POOLED is required when USE_HYPERDRIVE=true."
-				: "DATABASE_URL is required.",
-		);
-	}
-
-	return databaseUrl;
-}
-
-function isLocalSeedDatabase(databaseUrl: string) {
-	const url = new URL(databaseUrl);
-
-	return (
-		(url.hostname === "localhost" || url.hostname === "127.0.0.1") &&
-		url.port === "55432" &&
-		url.pathname === "/kelsier_dev"
-	);
-}
-
-function assertSeedTargetIsAllowed(databaseUrl: string) {
-	if (process.env.ALLOW_SEED === "true" || isLocalSeedDatabase(databaseUrl)) {
-		return;
-	}
-
-	throw new Error(
-		"Refusing to seed a non-local database. Set DATABASE_URL to postgres://kelsier:kelsier@localhost:55432/kelsier_dev or set ALLOW_SEED=true to opt in explicitly.",
-	);
-}
+import { assertSeedTargetIsAllowed, getSeedDatabaseUrl } from "./seed-config";
 
 const databaseUrl = getSeedDatabaseUrl(process.env);
-assertSeedTargetIsAllowed(databaseUrl);
+assertSeedTargetIsAllowed(databaseUrl, process.env);
 
 const { db, queryClient } = createDbConnection(databaseUrl);
 

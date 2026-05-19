@@ -1,4 +1,4 @@
-import { and, eq } from "drizzle-orm";
+import { and, eq, isNull } from "drizzle-orm";
 import type { DbClient } from "#/db/client";
 import {
 	assessmentAttempts,
@@ -56,6 +56,7 @@ export async function assertAssessmentAttemptTeamScope(
 			and(
 				eq(teams.id, teamId),
 				eq(teams.organisationId, context.organisationId),
+				isNull(teams.deletedAt),
 			),
 		)
 		.limit(1);
