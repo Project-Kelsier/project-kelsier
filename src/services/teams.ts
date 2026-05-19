@@ -1,12 +1,11 @@
 import { and, eq, isNull } from "drizzle-orm";
-import { db } from "#/db/client";
 import { teamMembers, teams } from "#/db/schema";
 import type { OrganisationUserContext } from "./context";
 
 export async function listTeamsForOrganisation(
 	context: OrganisationUserContext,
 ) {
-	return db
+	return context.db
 		.select()
 		.from(teams)
 		.where(
@@ -21,7 +20,7 @@ export async function getTeamBySlug(
 	context: OrganisationUserContext,
 	slug: string,
 ) {
-	const [team] = await db
+	const [team] = await context.db
 		.select()
 		.from(teams)
 		.where(
@@ -40,7 +39,7 @@ export async function listTeamMembers(
 	context: OrganisationUserContext,
 	teamId: string,
 ) {
-	return db
+	return context.db
 		.select({ teamMember: teamMembers })
 		.from(teamMembers)
 		.innerJoin(teams, eq(teams.id, teamMembers.teamId))

@@ -1,5 +1,5 @@
 import { and, eq } from "drizzle-orm";
-import { db } from "#/db/client";
+import type { DbClient } from "#/db/client";
 import {
 	assessmentAttempts,
 	assessmentQuestions,
@@ -8,7 +8,7 @@ import {
 } from "#/db/schema";
 import type { OrganisationUserContext } from "./context";
 
-export async function getAssessmentVersionBySlug(slug: string) {
+export async function getAssessmentVersionBySlug(db: DbClient, slug: string) {
 	const [version] = await db
 		.select()
 		.from(assessmentVersions)
@@ -19,6 +19,7 @@ export async function getAssessmentVersionBySlug(slug: string) {
 }
 
 export async function listAssessmentQuestionsForVersion(
+	db: DbClient,
 	assessmentVersionId: string,
 ) {
 	return db
@@ -32,7 +33,7 @@ export async function listAssessmentAttemptsForUser(
 	context: OrganisationUserContext,
 	userId: string,
 ) {
-	return db
+	return context.db
 		.select()
 		.from(assessmentAttempts)
 		.where(
@@ -47,7 +48,7 @@ export async function getAssessmentResultForAttempt(
 	context: OrganisationUserContext,
 	attemptId: string,
 ) {
-	const [result] = await db
+	const [result] = await context.db
 		.select()
 		.from(assessmentResults)
 		.where(

@@ -1,27 +1,73 @@
 import { drizzle } from "drizzle-orm/postgres-js";
-import postgres from "postgres";
+import postgres, { type Sql } from "postgres";
 import * as schema from "./schema";
 
-const useHyperdrive = process.env.USE_HYPERDRIVE === "true";
+export type DatabaseEnv = {
+	DATABASE_URL?: string;
+	DATABASE_URL_POOLED?: string;
+	USE_HYPERDRIVE?: boolean | string;
+};
 
-const connectionString = useHyperdrive
-	? process.env.DATABASE_URL_POOLED
-	: process.env.DATABASE_URL;
+export type DbConnection = {
+	db: ReturnType<typeof createDrizzleClient>;
+	queryClient: Sql;
+};
 
-if (!connectionString) {
-	throw new Error(
-		useHyperdrive
-			? "DATABASE_URL_POOLED is required when USE_HYPERDRIVE=true."
-			: "DATABASE_URL is required.",
-	);
+const connections = new WeakMap<DatabaseEnv, DbConnection>();
+
+function createDrizzleClient(queryClient: Sql) {
+	return drizzle(queryClient, { schema });
 }
 
-// Hyperdrive is represented as a pooled PostgreSQL connection string so local
-// development can use direct Neon without Cloudflare-specific runtime setup.
-export const queryClient = postgres(connectionString, {
-	prepare: false,
-});
+function shouldUseHyperdrive(value: DatabaseEnv["USE_HYPERDRIVE"]) {
+	return value === true || value === "true";
+}
 
-export const db = drizzle(queryClient, { schema });
+function getConnectionString(env: DatabaseEnv) {
+	const useHyperdrive = shouldUseHyperdrive(env.USE_HYPERDRIVE);
+	const connectionString = useHyperdrive
+		? env.DATABASE_URL_POOLED
+		: env.DATABASE_URL;
 
-export type DbClient = typeof db;
+	if (!connectionString) {
+		throw new Error(
+			useHyperdrive
+				? "DATABASE_URL_POOLED is required when USE_HYPERDRIVE=true."
+				: "DATABASE_URL is required.",
+		);
+	}
+
+	return connectionString;
+}
+
+export function createDbConnection(connectionString: string): DbConnection {
+	// Prepared statements are disabled for compatibility with pooled PostgreSQL
+	// connections, including Cloudflare Hyperdrive-backed deployments.
+	const queryClient = postgres(connectionString, {
+		prepare: false,
+	});
+
+	return {
+		db: createDrizzleClient(queryClient),
+		queryClient,
+	};
+}
+
+export function getDbConnection(env: DatabaseEnv): DbConnection {
+	const existingConnection = connections.get(env);
+
+	if (existingConnection) {
+		return existingConnection;
+	}
+
+	const connection = createDbConnection(getConnectionString(env));
+	connections.set(env, connection);
+
+	return connection;
+}
+
+export function getDb(env: DatabaseEnv) {
+	return getDbConnection(env).db;
+}
+
+export type DbClient = ReturnType<typeof getDb>;

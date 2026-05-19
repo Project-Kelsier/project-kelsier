@@ -1,5 +1,4 @@
 import { and, eq, isNull } from "drizzle-orm";
-import { db } from "#/db/client";
 import {
 	organisationMembers,
 	organisations,
@@ -14,7 +13,7 @@ import type {
 export async function listOrganisationsForUser(
 	context: AuthenticatedUserContext,
 ) {
-	return db
+	return context.db
 		.select({ organisation: organisations })
 		.from(organisationMembers)
 		.innerJoin(
@@ -34,7 +33,7 @@ export async function getOrganisationBySlug(
 	context: OrganisationUserContext,
 	slug: string,
 ) {
-	const [organisation] = await db
+	const [organisation] = await context.db
 		.select()
 		.from(organisations)
 		.where(
@@ -50,7 +49,7 @@ export async function getOrganisationBySlug(
 }
 
 export async function createPilotRequest(
-	_context: AuthenticatedUserContext,
+	context: AuthenticatedUserContext,
 	input: {
 		contactName: string;
 		contactEmail: string;
@@ -58,7 +57,7 @@ export async function createPilotRequest(
 		notes?: string;
 	},
 ): Promise<PilotRequest | null> {
-	const [pilotRequest] = await db
+	const [pilotRequest] = await context.db
 		.insert(pilotRequests)
 		.values(input)
 		.returning();

@@ -1,5 +1,5 @@
 import "dotenv/config";
-import { db, queryClient } from "#/db/client";
+import { createDbConnection, type DatabaseEnv } from "#/db/client";
 import {
 	assessmentOptions,
 	assessmentQuestions,
@@ -10,6 +10,25 @@ import {
 	teams,
 	users,
 } from "#/db/schema";
+
+function getSeedDatabaseUrl(env: DatabaseEnv) {
+	const useHyperdrive = env.USE_HYPERDRIVE === "true";
+	const databaseUrl = useHyperdrive
+		? env.DATABASE_URL_POOLED
+		: env.DATABASE_URL;
+
+	if (!databaseUrl) {
+		throw new Error(
+			useHyperdrive
+				? "DATABASE_URL_POOLED is required when USE_HYPERDRIVE=true."
+				: "DATABASE_URL is required.",
+		);
+	}
+
+	return databaseUrl;
+}
+
+const { db, queryClient } = createDbConnection(getSeedDatabaseUrl(process.env));
 
 // Dev-only fake Neon Auth user ID. Neon Auth owns real identity records.
 const DEMO_AUTH_USER_ID = "00000000-0000-4000-8000-000000000001";

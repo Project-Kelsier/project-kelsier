@@ -1,5 +1,4 @@
 import { and, eq } from "drizzle-orm";
-import { db } from "#/db/client";
 import { personalityProfiles } from "#/db/schema";
 import type { OrganisationUserContext } from "./context";
 
@@ -7,7 +6,7 @@ export async function getPersonalityProfileForUser(
 	context: OrganisationUserContext,
 	userId: string,
 ) {
-	const [profile] = await db
+	const [profile] = await context.db
 		.select()
 		.from(personalityProfiles)
 		.where(
