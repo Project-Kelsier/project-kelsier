@@ -1,6 +1,11 @@
 import { and, eq, isNull } from "drizzle-orm";
 import { db } from "#/db/client";
-import { organisationMembers, organisations, pilotRequests } from "#/db/schema";
+import {
+	organisationMembers,
+	organisations,
+	type PilotRequest,
+	pilotRequests,
+} from "#/db/schema";
 import type {
 	AuthenticatedUserContext,
 	OrganisationUserContext,
@@ -52,11 +57,11 @@ export async function createPilotRequest(
 		companyName: string;
 		notes?: string;
 	},
-) {
+): Promise<PilotRequest | null> {
 	const [pilotRequest] = await db
 		.insert(pilotRequests)
 		.values(input)
 		.returning();
 
-	return pilotRequest;
+	return pilotRequest ?? null;
 }

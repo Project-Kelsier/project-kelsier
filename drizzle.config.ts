@@ -10,7 +10,7 @@ export default defineConfig({
 	dbCredentials: {
 		url:
 			process.env.DATABASE_URL ??
-			"postgres://kelsier:kelsier@localhost:5432/kelsier",
+			"postgres://kelsier:kelsier@localhost:55432/kelsier_dev",
 	},
 	verbose: true,
 	strict: true,
