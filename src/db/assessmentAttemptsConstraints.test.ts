@@ -2,7 +2,7 @@ import { readFileSync } from "node:fs";
 import { describe, expect, it } from "vitest";
 
 const migrationSnapshot = JSON.parse(
-	readFileSync("drizzle/migrations/meta/0001_snapshot.json", "utf8"),
+	readFileSync("drizzle/migrations/meta/0000_snapshot.json", "utf8"),
 );
 
 describe("assessment attempts team constraints", () => {
@@ -28,17 +28,15 @@ describe("assessment attempts team constraints", () => {
 		});
 	});
 
-	it("drops the unsafe composite team/organisation foreign key in the migration", () => {
+	it("never adds the unsafe composite team/organisation foreign key", () => {
 		const migration = readFileSync(
-			"drizzle/migrations/0001_natural_dormammu.sql",
+			"drizzle/migrations/0000_military_blazing_skull.sql",
 			"utf8",
 		);
 
-		expect(migration).toContain(
-			'ALTER TABLE "assessment_attempts" DROP CONSTRAINT "assessment_attempts_team_organisation_fk";',
-		);
+		expect(migration).not.toContain("assessment_attempts_team_organisation_fk");
 		expect(migration).not.toContain(
-			'ADD CONSTRAINT "assessment_attempts_team_organisation_fk"',
+			'ALTER TABLE "assessment_attempts" DROP CONSTRAINT',
 		);
 	});
 });

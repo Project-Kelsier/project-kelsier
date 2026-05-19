@@ -1,5 +1,5 @@
 {
-  "id": "1a41ed9a-4cd5-48c2-b1c6-2dc73074a0b3",
+  "id": "31e1282e-6cc8-45e3-b6a4-f8196fa84ce7",
   "prevId": "00000000-0000-0000-0000-000000000000",
   "version": "7",
   "dialect": "postgresql",
@@ -665,21 +665,6 @@
             "id"
           ],
           "onDelete": "restrict",
-          "onUpdate": "no action"
-        },
-        "assessment_attempts_team_organisation_fk": {
-          "name": "assessment_attempts_team_organisation_fk",
-          "tableFrom": "assessment_attempts",
-          "tableTo": "teams",
-          "columnsFrom": [
-            "team_id",
-            "organisation_id"
-          ],
-          "columnsTo": [
-            "id",
-            "organisation_id"
-          ],
-          "onDelete": "no action",
           "onUpdate": "no action"
         }
       },
