@@ -1,6 +1,7 @@
 import { sql } from "drizzle-orm";
 import {
 	doublePrecision,
+	foreignKey,
 	index,
 	integer,
 	jsonb,
@@ -140,6 +141,11 @@ export const assessmentAttempts = pgTable(
 		index("assessment_attempts_assessment_version_id_idx").on(
 			table.assessmentVersionId,
 		),
+		foreignKey({
+			columns: [table.teamId, table.organisationId],
+			foreignColumns: [teams.id, teams.organisationId],
+			name: "assessment_attempts_team_organisation_fk",
+		}),
 	],
 );
 

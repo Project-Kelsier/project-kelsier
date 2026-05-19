@@ -15,6 +15,13 @@
       "when": 1779192358372,
       "tag": "0001_smart_ezekiel",
       "breakpoints": true
+    },
+    {
+      "idx": 2,
+      "version": "7",
+      "when": 1779192721366,
+      "tag": "0002_puzzling_tinkerer",
+      "breakpoints": true
     }
   ]
 }
