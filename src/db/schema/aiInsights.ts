@@ -46,11 +46,15 @@ export const aiInsights = pgTable(
 	},
 	(table) => [
 		index("ai_insights_organisation_id_idx").on(table.organisationId),
+		index("ai_insights_organisation_id_source_entity_idx").on(
+			table.organisationId,
+			table.sourceEntityType,
+			table.sourceEntityId,
+		),
 		index("ai_insights_team_id_idx").on(table.teamId),
 		index("ai_insights_user_id_idx").on(table.userId),
 		index("ai_insights_source_entity_id_idx").on(table.sourceEntityId),
 		index("ai_insights_generated_at_idx").on(table.generatedAt),
-		index("ai_insights_created_at_idx").on(table.createdAt),
 	],
 );
 

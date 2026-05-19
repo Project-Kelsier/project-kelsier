@@ -1,4 +1,4 @@
-import { and, eq } from "drizzle-orm";
+import { and, eq, isNull } from "drizzle-orm";
 import { db } from "#/db/client";
 import { organisationMembers, organisations, pilotRequests } from "#/db/schema";
 import type {
@@ -16,7 +16,13 @@ export async function listOrganisationsForUser(
 			organisations,
 			eq(organisations.id, organisationMembers.organisationId),
 		)
-		.where(eq(organisationMembers.userId, context.userId));
+		.where(
+			and(
+				eq(organisationMembers.userId, context.userId),
+				isNull(organisationMembers.deletedAt),
+				isNull(organisations.deletedAt),
+			),
+		);
 }
 
 export async function getOrganisationBySlug(
@@ -30,6 +36,7 @@ export async function getOrganisationBySlug(
 			and(
 				eq(organisations.id, context.organisationId),
 				eq(organisations.slug, slug),
+				isNull(organisations.deletedAt),
 			),
 		)
 		.limit(1);

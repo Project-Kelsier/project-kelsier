@@ -1,6 +1,5 @@
 import { sql } from "drizzle-orm";
 import {
-	index,
 	pgTable,
 	text,
 	timestamp,
@@ -22,10 +21,7 @@ export const users = pgTable(
 			.notNull()
 			.defaultNow(),
 	},
-	(table) => [
-		uniqueIndex("users_auth_user_id_unique").on(table.authUserId),
-		index("users_auth_user_id_idx").on(table.authUserId),
-	],
+	(table) => [uniqueIndex("users_auth_user_id_unique").on(table.authUserId)],
 );
 
 export type User = typeof users.$inferSelect;

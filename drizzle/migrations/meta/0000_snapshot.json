@@ -1,5 +1,5 @@
 {
-  "id": "f6556f32-345f-458f-80f6-9a80adba6ab4",
+  "id": "a5c70997-70c4-4e96-a1bd-c4a30c2b0f20",
   "prevId": "00000000-0000-0000-0000-000000000000",
   "version": "7",
   "dialect": "postgresql",
@@ -126,6 +126,33 @@
           "method": "btree",
           "with": {}
         },
+        "ai_insights_organisation_id_source_entity_idx": {
+          "name": "ai_insights_organisation_id_source_entity_idx",
+          "columns": [
+            {
+              "expression": "organisation_id",
+              "isExpression": false,
+              "asc": true,
+              "nulls": "last"
+            },
+            {
+              "expression": "source_entity_type",
+              "isExpression": false,
+              "asc": true,
+              "nulls": "last"
+            },
+            {
+              "expression": "source_entity_id",
+              "isExpression": false,
+              "asc": true,
+              "nulls": "last"
+            }
+          ],
+          "isUnique": false,
+          "concurrently": false,
+          "method": "btree",
+          "with": {}
+        },
         "ai_insights_team_id_idx": {
           "name": "ai_insights_team_id_idx",
           "columns": [
@@ -176,21 +203,6 @@
           "columns": [
             {
               "expression": "generated_at",
-              "isExpression": false,
-              "asc": true,
-              "nulls": "last"
-            }
-          ],
-          "isUnique": false,
-          "concurrently": false,
-          "method": "btree",
-          "with": {}
-        },
-        "ai_insights_created_at_idx": {
-          "name": "ai_insights_created_at_idx",
-          "columns": [
-            {
-              "expression": "created_at",
               "isExpression": false,
               "asc": true,
               "nulls": "last"
@@ -373,21 +385,6 @@
           "concurrently": false,
           "method": "btree",
           "with": {}
-        },
-        "assessment_answers_created_at_idx": {
-          "name": "assessment_answers_created_at_idx",
-          "columns": [
-            {
-              "expression": "created_at",
-              "isExpression": false,
-              "asc": true,
-              "nulls": "last"
-            }
-          ],
-          "isUnique": false,
-          "concurrently": false,
-          "method": "btree",
-          "with": {}
         }
       },
       "foreignKeys": {
@@ -529,6 +526,48 @@
           "method": "btree",
           "with": {}
         },
+        "assessment_attempts_organisation_id_user_id_idx": {
+          "name": "assessment_attempts_organisation_id_user_id_idx",
+          "columns": [
+            {
+              "expression": "organisation_id",
+              "isExpression": false,
+              "asc": true,
+              "nulls": "last"
+            },
+            {
+              "expression": "user_id",
+              "isExpression": false,
+              "asc": true,
+              "nulls": "last"
+            }
+          ],
+          "isUnique": false,
+          "concurrently": false,
+          "method": "btree",
+          "with": {}
+        },
+        "assessment_attempts_organisation_id_team_id_idx": {
+          "name": "assessment_attempts_organisation_id_team_id_idx",
+          "columns": [
+            {
+              "expression": "organisation_id",
+              "isExpression": false,
+              "asc": true,
+              "nulls": "last"
+            },
+            {
+              "expression": "team_id",
+              "isExpression": false,
+              "asc": true,
+              "nulls": "last"
+            }
+          ],
+          "isUnique": false,
+          "concurrently": false,
+          "method": "btree",
+          "with": {}
+        },
         "assessment_attempts_team_id_idx": {
           "name": "assessment_attempts_team_id_idx",
           "columns": [
@@ -564,21 +603,6 @@
           "columns": [
             {
               "expression": "assessment_version_id",
-              "isExpression": false,
-              "asc": true,
-              "nulls": "last"
-            }
-          ],
-          "isUnique": false,
-          "concurrently": false,
-          "method": "btree",
-          "with": {}
-        },
-        "assessment_attempts_created_at_idx": {
-          "name": "assessment_attempts_created_at_idx",
-          "columns": [
-            {
-              "expression": "created_at",
               "isExpression": false,
               "asc": true,
               "nulls": "last"
@@ -743,21 +767,6 @@
           "concurrently": false,
           "method": "btree",
           "with": {}
-        },
-        "assessment_options_created_at_idx": {
-          "name": "assessment_options_created_at_idx",
-          "columns": [
-            {
-              "expression": "created_at",
-              "isExpression": false,
-              "asc": true,
-              "nulls": "last"
-            }
-          ],
-          "isUnique": false,
-          "concurrently": false,
-          "method": "btree",
-          "with": {}
         }
       },
       "foreignKeys": {
@@ -858,21 +867,6 @@
           "columns": [
             {
               "expression": "version_id",
-              "isExpression": false,
-              "asc": true,
-              "nulls": "last"
-            }
-          ],
-          "isUnique": false,
-          "concurrently": false,
-          "method": "btree",
-          "with": {}
-        },
-        "assessment_questions_created_at_idx": {
-          "name": "assessment_questions_created_at_idx",
-          "columns": [
-            {
-              "expression": "created_at",
               "isExpression": false,
               "asc": true,
               "nulls": "last"
@@ -999,6 +993,27 @@
           "method": "btree",
           "with": {}
         },
+        "assessment_results_organisation_id_attempt_id_idx": {
+          "name": "assessment_results_organisation_id_attempt_id_idx",
+          "columns": [
+            {
+              "expression": "organisation_id",
+              "isExpression": false,
+              "asc": true,
+              "nulls": "last"
+            },
+            {
+              "expression": "attempt_id",
+              "isExpression": false,
+              "asc": true,
+              "nulls": "last"
+            }
+          ],
+          "isUnique": false,
+          "concurrently": false,
+          "method": "btree",
+          "with": {}
+        },
         "assessment_results_user_id_idx": {
           "name": "assessment_results_user_id_idx",
           "columns": [
@@ -1019,21 +1034,6 @@
           "columns": [
             {
               "expression": "assessment_version_id",
-              "isExpression": false,
-              "asc": true,
-              "nulls": "last"
-            }
-          ],
-          "isUnique": false,
-          "concurrently": false,
-          "method": "btree",
-          "with": {}
-        },
-        "assessment_results_created_at_idx": {
-          "name": "assessment_results_created_at_idx",
-          "columns": [
-            {
-              "expression": "created_at",
               "isExpression": false,
               "asc": true,
               "nulls": "last"
@@ -1173,41 +1173,11 @@
           "method": "btree",
           "with": {}
         },
-        "assessment_versions_slug_idx": {
-          "name": "assessment_versions_slug_idx",
-          "columns": [
-            {
-              "expression": "slug",
-              "isExpression": false,
-              "asc": true,
-              "nulls": "last"
-            }
-          ],
-          "isUnique": false,
-          "concurrently": false,
-          "method": "btree",
-          "with": {}
-        },
         "assessment_versions_status_idx": {
           "name": "assessment_versions_status_idx",
           "columns": [
             {
               "expression": "status",
-              "isExpression": false,
-              "asc": true,
-              "nulls": "last"
-            }
-          ],
-          "isUnique": false,
-          "concurrently": false,
-          "method": "btree",
-          "with": {}
-        },
-        "assessment_versions_created_at_idx": {
-          "name": "assessment_versions_created_at_idx",
-          "columns": [
-            {
-              "expression": "created_at",
               "isExpression": false,
               "asc": true,
               "nulls": "last"
@@ -1270,6 +1240,12 @@
           "primaryKey": false,
           "notNull": true,
           "default": "now()"
+        },
+        "deleted_at": {
+          "name": "deleted_at",
+          "type": "timestamp with time zone",
+          "primaryKey": false,
+          "notNull": false
         }
       },
       "indexes": {
@@ -1314,21 +1290,6 @@
           "columns": [
             {
               "expression": "user_id",
-              "isExpression": false,
-              "asc": true,
-              "nulls": "last"
-            }
-          ],
-          "isUnique": false,
-          "concurrently": false,
-          "method": "btree",
-          "with": {}
-        },
-        "organisation_members_created_at_idx": {
-          "name": "organisation_members_created_at_idx",
-          "columns": [
-            {
-              "expression": "created_at",
               "isExpression": false,
               "asc": true,
               "nulls": "last"
@@ -1424,6 +1385,12 @@
           "primaryKey": false,
           "notNull": true,
           "default": "now()"
+        },
+        "deleted_at": {
+          "name": "deleted_at",
+          "type": "timestamp with time zone",
+          "primaryKey": false,
+          "notNull": false
         }
       },
       "indexes": {
@@ -1463,6 +1430,48 @@
           "method": "btree",
           "with": {}
         },
+        "team_members_organisation_id_team_id_idx": {
+          "name": "team_members_organisation_id_team_id_idx",
+          "columns": [
+            {
+              "expression": "organisation_id",
+              "isExpression": false,
+              "asc": true,
+              "nulls": "last"
+            },
+            {
+              "expression": "team_id",
+              "isExpression": false,
+              "asc": true,
+              "nulls": "last"
+            }
+          ],
+          "isUnique": false,
+          "concurrently": false,
+          "method": "btree",
+          "with": {}
+        },
+        "team_members_organisation_id_user_id_idx": {
+          "name": "team_members_organisation_id_user_id_idx",
+          "columns": [
+            {
+              "expression": "organisation_id",
+              "isExpression": false,
+              "asc": true,
+              "nulls": "last"
+            },
+            {
+              "expression": "user_id",
+              "isExpression": false,
+              "asc": true,
+              "nulls": "last"
+            }
+          ],
+          "isUnique": false,
+          "concurrently": false,
+          "method": "btree",
+          "with": {}
+        },
         "team_members_team_id_idx": {
           "name": "team_members_team_id_idx",
           "columns": [
@@ -1483,21 +1492,6 @@
           "columns": [
             {
               "expression": "user_id",
-              "isExpression": false,
-              "asc": true,
-              "nulls": "last"
-            }
-          ],
-          "isUnique": false,
-          "concurrently": false,
-          "method": "btree",
-          "with": {}
-        },
-        "team_members_created_at_idx": {
-          "name": "team_members_created_at_idx",
-          "columns": [
-            {
-              "expression": "created_at",
               "isExpression": false,
               "asc": true,
               "nulls": "last"
@@ -1600,6 +1594,12 @@
           "primaryKey": false,
           "notNull": true,
           "default": "now()"
+        },
+        "deleted_at": {
+          "name": "deleted_at",
+          "type": "timestamp with time zone",
+          "primaryKey": false,
+          "notNull": false
         }
       },
       "indexes": {
@@ -1618,41 +1618,11 @@
           "method": "btree",
           "with": {}
         },
-        "organisations_slug_idx": {
-          "name": "organisations_slug_idx",
-          "columns": [
-            {
-              "expression": "slug",
-              "isExpression": false,
-              "asc": true,
-              "nulls": "last"
-            }
-          ],
-          "isUnique": false,
-          "concurrently": false,
-          "method": "btree",
-          "with": {}
-        },
         "organisations_status_idx": {
           "name": "organisations_status_idx",
           "columns": [
             {
               "expression": "status",
-              "isExpression": false,
-              "asc": true,
-              "nulls": "last"
-            }
-          ],
-          "isUnique": false,
-          "concurrently": false,
-          "method": "btree",
-          "with": {}
-        },
-        "organisations_created_at_idx": {
-          "name": "organisations_created_at_idx",
-          "columns": [
-            {
-              "expression": "created_at",
               "isExpression": false,
               "asc": true,
               "nulls": "last"
@@ -1756,21 +1726,6 @@
           "columns": [
             {
               "expression": "status",
-              "isExpression": false,
-              "asc": true,
-              "nulls": "last"
-            }
-          ],
-          "isUnique": false,
-          "concurrently": false,
-          "method": "btree",
-          "with": {}
-        },
-        "pilot_requests_created_at_idx": {
-          "name": "pilot_requests_created_at_idx",
-          "columns": [
-            {
-              "expression": "created_at",
               "isExpression": false,
               "asc": true,
               "nulls": "last"
@@ -1906,21 +1861,6 @@
           "concurrently": false,
           "method": "btree",
           "with": {}
-        },
-        "personality_profiles_created_at_idx": {
-          "name": "personality_profiles_created_at_idx",
-          "columns": [
-            {
-              "expression": "created_at",
-              "isExpression": false,
-              "asc": true,
-              "nulls": "last"
-            }
-          ],
-          "isUnique": false,
-          "concurrently": false,
-          "method": "btree",
-          "with": {}
         }
       },
       "foreignKeys": {
@@ -2007,6 +1947,12 @@
           "primaryKey": false,
           "notNull": true,
           "default": "now()"
+        },
+        "deleted_at": {
+          "name": "deleted_at",
+          "type": "timestamp with time zone",
+          "primaryKey": false,
+          "notNull": false
         }
       },
       "indexes": {
@@ -2046,41 +1992,11 @@
           "method": "btree",
           "with": {}
         },
-        "teams_slug_idx": {
-          "name": "teams_slug_idx",
-          "columns": [
-            {
-              "expression": "slug",
-              "isExpression": false,
-              "asc": true,
-              "nulls": "last"
-            }
-          ],
-          "isUnique": false,
-          "concurrently": false,
-          "method": "btree",
-          "with": {}
-        },
         "teams_status_idx": {
           "name": "teams_status_idx",
           "columns": [
             {
               "expression": "status",
-              "isExpression": false,
-              "asc": true,
-              "nulls": "last"
-            }
-          ],
-          "isUnique": false,
-          "concurrently": false,
-          "method": "btree",
-          "with": {}
-        },
-        "teams_created_at_idx": {
-          "name": "teams_created_at_idx",
-          "columns": [
-            {
-              "expression": "created_at",
               "isExpression": false,
               "asc": true,
               "nulls": "last"
@@ -2157,21 +2073,6 @@
             }
           ],
           "isUnique": true,
-          "concurrently": false,
-          "method": "btree",
-          "with": {}
-        },
-        "users_auth_user_id_idx": {
-          "name": "users_auth_user_id_idx",
-          "columns": [
-            {
-              "expression": "auth_user_id",
-              "isExpression": false,
-              "asc": true,
-              "nulls": "last"
-            }
-          ],
-          "isUnique": false,
           "concurrently": false,
           "method": "btree",
           "with": {}

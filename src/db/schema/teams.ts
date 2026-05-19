@@ -32,6 +32,7 @@ export const teams = pgTable(
 		updatedAt: timestamp("updated_at", { mode: "date", withTimezone: true })
 			.notNull()
 			.defaultNow(),
+		deletedAt: timestamp("deleted_at", { mode: "date", withTimezone: true }),
 	},
 	(table) => [
 		uniqueIndex("teams_organisation_id_slug_unique").on(
@@ -39,9 +40,7 @@ export const teams = pgTable(
 			table.slug,
 		),
 		index("teams_organisation_id_idx").on(table.organisationId),
-		index("teams_slug_idx").on(table.slug),
 		index("teams_status_idx").on(table.status),
-		index("teams_created_at_idx").on(table.createdAt),
 	],
 );
 

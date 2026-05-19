@@ -1,4 +1,4 @@
-import { and, eq } from "drizzle-orm";
+import { and, eq, isNull } from "drizzle-orm";
 import { db } from "#/db/client";
 import { teamMembers, teams } from "#/db/schema";
 import type { OrganisationUserContext } from "./context";
@@ -9,7 +9,12 @@ export async function listTeamsForOrganisation(
 	return db
 		.select()
 		.from(teams)
-		.where(eq(teams.organisationId, context.organisationId));
+		.where(
+			and(
+				eq(teams.organisationId, context.organisationId),
+				isNull(teams.deletedAt),
+			),
+		);
 }
 
 export async function getTeamBySlug(
@@ -23,6 +28,7 @@ export async function getTeamBySlug(
 			and(
 				eq(teams.organisationId, context.organisationId),
 				eq(teams.slug, slug),
+				isNull(teams.deletedAt),
 			),
 		)
 		.limit(1);
@@ -41,6 +47,7 @@ export async function listTeamMembers(
 			and(
 				eq(teamMembers.organisationId, context.organisationId),
 				eq(teamMembers.teamId, teamId),
+				isNull(teamMembers.deletedAt),
 			),
 		);
 }

@@ -36,7 +36,6 @@ export const personalityProfiles = pgTable(
 		),
 		index("personality_profiles_organisation_id_idx").on(table.organisationId),
 		index("personality_profiles_user_id_idx").on(table.userId),
-		index("personality_profiles_created_at_idx").on(table.createdAt),
 	],
 );
 

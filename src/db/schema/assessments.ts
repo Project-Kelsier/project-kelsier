@@ -38,9 +38,7 @@ export const assessmentVersions = pgTable(
 	},
 	(table) => [
 		uniqueIndex("assessment_versions_slug_unique").on(table.slug),
-		index("assessment_versions_slug_idx").on(table.slug),
 		index("assessment_versions_status_idx").on(table.status),
-		index("assessment_versions_created_at_idx").on(table.createdAt),
 	],
 );
 
@@ -67,7 +65,6 @@ export const assessmentQuestions = pgTable(
 			table.sortOrder,
 		),
 		index("assessment_questions_version_id_idx").on(table.versionId),
-		index("assessment_questions_created_at_idx").on(table.createdAt),
 	],
 );
 
@@ -95,7 +92,6 @@ export const assessmentOptions = pgTable(
 			table.sortOrder,
 		),
 		index("assessment_options_question_id_idx").on(table.questionId),
-		index("assessment_options_created_at_idx").on(table.createdAt),
 	],
 );
 
@@ -131,12 +127,19 @@ export const assessmentAttempts = pgTable(
 	},
 	(table) => [
 		index("assessment_attempts_organisation_id_idx").on(table.organisationId),
+		index("assessment_attempts_organisation_id_user_id_idx").on(
+			table.organisationId,
+			table.userId,
+		),
+		index("assessment_attempts_organisation_id_team_id_idx").on(
+			table.organisationId,
+			table.teamId,
+		),
 		index("assessment_attempts_team_id_idx").on(table.teamId),
 		index("assessment_attempts_user_id_idx").on(table.userId),
 		index("assessment_attempts_assessment_version_id_idx").on(
 			table.assessmentVersionId,
 		),
-		index("assessment_attempts_created_at_idx").on(table.createdAt),
 	],
 );
 
@@ -169,7 +172,6 @@ export const assessmentAnswers = pgTable(
 		index("assessment_answers_attempt_id_idx").on(table.attemptId),
 		index("assessment_answers_question_id_idx").on(table.questionId),
 		index("assessment_answers_option_id_idx").on(table.optionId),
-		index("assessment_answers_created_at_idx").on(table.createdAt),
 	],
 );
 
@@ -201,11 +203,14 @@ export const assessmentResults = pgTable(
 	(table) => [
 		uniqueIndex("assessment_results_attempt_id_unique").on(table.attemptId),
 		index("assessment_results_organisation_id_idx").on(table.organisationId),
+		index("assessment_results_organisation_id_attempt_id_idx").on(
+			table.organisationId,
+			table.attemptId,
+		),
 		index("assessment_results_user_id_idx").on(table.userId),
 		index("assessment_results_assessment_version_id_idx").on(
 			table.assessmentVersionId,
 		),
-		index("assessment_results_created_at_idx").on(table.createdAt),
 	],
 );
 

@@ -36,6 +36,7 @@ export const organisationMembers = pgTable(
 		updatedAt: timestamp("updated_at", { mode: "date", withTimezone: true })
 			.notNull()
 			.defaultNow(),
+		deletedAt: timestamp("deleted_at", { mode: "date", withTimezone: true }),
 	},
 	(table) => [
 		uniqueIndex("organisation_members_organisation_id_user_id_unique").on(
@@ -44,7 +45,6 @@ export const organisationMembers = pgTable(
 		),
 		index("organisation_members_organisation_id_idx").on(table.organisationId),
 		index("organisation_members_user_id_idx").on(table.userId),
-		index("organisation_members_created_at_idx").on(table.createdAt),
 	],
 );
 
@@ -68,6 +68,7 @@ export const teamMembers = pgTable(
 		updatedAt: timestamp("updated_at", { mode: "date", withTimezone: true })
 			.notNull()
 			.defaultNow(),
+		deletedAt: timestamp("deleted_at", { mode: "date", withTimezone: true }),
 	},
 	(table) => [
 		uniqueIndex("team_members_team_id_user_id_unique").on(
@@ -75,9 +76,16 @@ export const teamMembers = pgTable(
 			table.userId,
 		),
 		index("team_members_organisation_id_idx").on(table.organisationId),
+		index("team_members_organisation_id_team_id_idx").on(
+			table.organisationId,
+			table.teamId,
+		),
+		index("team_members_organisation_id_user_id_idx").on(
+			table.organisationId,
+			table.userId,
+		),
 		index("team_members_team_id_idx").on(table.teamId),
 		index("team_members_user_id_idx").on(table.userId),
-		index("team_members_created_at_idx").on(table.createdAt),
 	],
 );
 

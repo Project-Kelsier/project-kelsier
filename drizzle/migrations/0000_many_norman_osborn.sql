@@ -93,7 +93,8 @@ CREATE TABLE "organisation_members" (
 	"user_id" uuid NOT NULL,
 	"role" "organisation_role" DEFAULT 'member' NOT NULL,
 	"created_at" timestamp with time zone DEFAULT now() NOT NULL,
-	"updated_at" timestamp with time zone DEFAULT now() NOT NULL
+	"updated_at" timestamp with time zone DEFAULT now() NOT NULL,
+	"deleted_at" timestamp with time zone
 );
 --> statement-breakpoint
 CREATE TABLE "team_members" (
@@ -103,7 +104,8 @@ CREATE TABLE "team_members" (
 	"user_id" uuid NOT NULL,
 	"role" "team_role" DEFAULT 'member' NOT NULL,
 	"created_at" timestamp with time zone DEFAULT now() NOT NULL,
-	"updated_at" timestamp with time zone DEFAULT now() NOT NULL
+	"updated_at" timestamp with time zone DEFAULT now() NOT NULL,
+	"deleted_at" timestamp with time zone
 );
 --> statement-breakpoint
 CREATE TABLE "organisations" (
@@ -112,7 +114,8 @@ CREATE TABLE "organisations" (
 	"name" text NOT NULL,
 	"status" "organisation_status" DEFAULT 'active' NOT NULL,
 	"created_at" timestamp with time zone DEFAULT now() NOT NULL,
-	"updated_at" timestamp with time zone DEFAULT now() NOT NULL
+	"updated_at" timestamp with time zone DEFAULT now() NOT NULL,
+	"deleted_at" timestamp with time zone
 );
 --> statement-breakpoint
 CREATE TABLE "pilot_requests" (
@@ -144,7 +147,8 @@ CREATE TABLE "teams" (
 	"name" text NOT NULL,
 	"status" "team_status" DEFAULT 'active' NOT NULL,
 	"created_at" timestamp with time zone DEFAULT now() NOT NULL,
-	"updated_at" timestamp with time zone DEFAULT now() NOT NULL
+	"updated_at" timestamp with time zone DEFAULT now() NOT NULL,
+	"deleted_at" timestamp with time zone
 );
 --> statement-breakpoint
 CREATE TABLE "users" (
@@ -181,61 +185,50 @@ ALTER TABLE "personality_profiles" ADD CONSTRAINT "personality_profiles_organisa
 ALTER TABLE "personality_profiles" ADD CONSTRAINT "personality_profiles_user_id_users_id_fk" FOREIGN KEY ("user_id") REFERENCES "public"."users"("id") ON DELETE cascade ON UPDATE no action;--> statement-breakpoint
 ALTER TABLE "teams" ADD CONSTRAINT "teams_organisation_id_organisations_id_fk" FOREIGN KEY ("organisation_id") REFERENCES "public"."organisations"("id") ON DELETE cascade ON UPDATE no action;--> statement-breakpoint
 CREATE INDEX "ai_insights_organisation_id_idx" ON "ai_insights" USING btree ("organisation_id");--> statement-breakpoint
+CREATE INDEX "ai_insights_organisation_id_source_entity_idx" ON "ai_insights" USING btree ("organisation_id","source_entity_type","source_entity_id");--> statement-breakpoint
 CREATE INDEX "ai_insights_team_id_idx" ON "ai_insights" USING btree ("team_id");--> statement-breakpoint
 CREATE INDEX "ai_insights_user_id_idx" ON "ai_insights" USING btree ("user_id");--> statement-breakpoint
 CREATE INDEX "ai_insights_source_entity_id_idx" ON "ai_insights" USING btree ("source_entity_id");--> statement-breakpoint
 CREATE INDEX "ai_insights_generated_at_idx" ON "ai_insights" USING btree ("generated_at");--> statement-breakpoint
-CREATE INDEX "ai_insights_created_at_idx" ON "ai_insights" USING btree ("created_at");--> statement-breakpoint
 CREATE UNIQUE INDEX "assessment_answers_attempt_id_question_id_unique" ON "assessment_answers" USING btree ("attempt_id","question_id");--> statement-breakpoint
 CREATE INDEX "assessment_answers_organisation_id_idx" ON "assessment_answers" USING btree ("organisation_id");--> statement-breakpoint
 CREATE INDEX "assessment_answers_attempt_id_idx" ON "assessment_answers" USING btree ("attempt_id");--> statement-breakpoint
 CREATE INDEX "assessment_answers_question_id_idx" ON "assessment_answers" USING btree ("question_id");--> statement-breakpoint
 CREATE INDEX "assessment_answers_option_id_idx" ON "assessment_answers" USING btree ("option_id");--> statement-breakpoint
-CREATE INDEX "assessment_answers_created_at_idx" ON "assessment_answers" USING btree ("created_at");--> statement-breakpoint
 CREATE INDEX "assessment_attempts_organisation_id_idx" ON "assessment_attempts" USING btree ("organisation_id");--> statement-breakpoint
+CREATE INDEX "assessment_attempts_organisation_id_user_id_idx" ON "assessment_attempts" USING btree ("organisation_id","user_id");--> statement-breakpoint
+CREATE INDEX "assessment_attempts_organisation_id_team_id_idx" ON "assessment_attempts" USING btree ("organisation_id","team_id");--> statement-breakpoint
 CREATE INDEX "assessment_attempts_team_id_idx" ON "assessment_attempts" USING btree ("team_id");--> statement-breakpoint
 CREATE INDEX "assessment_attempts_user_id_idx" ON "assessment_attempts" USING btree ("user_id");--> statement-breakpoint
 CREATE INDEX "assessment_attempts_assessment_version_id_idx" ON "assessment_attempts" USING btree ("assessment_version_id");--> statement-breakpoint
-CREATE INDEX "assessment_attempts_created_at_idx" ON "assessment_attempts" USING btree ("created_at");--> statement-breakpoint
 CREATE UNIQUE INDEX "assessment_options_question_id_sort_order_unique" ON "assessment_options" USING btree ("question_id","sort_order");--> statement-breakpoint
 CREATE INDEX "assessment_options_question_id_idx" ON "assessment_options" USING btree ("question_id");--> statement-breakpoint
-CREATE INDEX "assessment_options_created_at_idx" ON "assessment_options" USING btree ("created_at");--> statement-breakpoint
 CREATE UNIQUE INDEX "assessment_questions_version_id_sort_order_unique" ON "assessment_questions" USING btree ("version_id","sort_order");--> statement-breakpoint
 CREATE INDEX "assessment_questions_version_id_idx" ON "assessment_questions" USING btree ("version_id");--> statement-breakpoint
-CREATE INDEX "assessment_questions_created_at_idx" ON "assessment_questions" USING btree ("created_at");--> statement-breakpoint
 CREATE UNIQUE INDEX "assessment_results_attempt_id_unique" ON "assessment_results" USING btree ("attempt_id");--> statement-breakpoint
 CREATE INDEX "assessment_results_organisation_id_idx" ON "assessment_results" USING btree ("organisation_id");--> statement-breakpoint
+CREATE INDEX "assessment_results_organisation_id_attempt_id_idx" ON "assessment_results" USING btree ("organisation_id","attempt_id");--> statement-breakpoint
 CREATE INDEX "assessment_results_user_id_idx" ON "assessment_results" USING btree ("user_id");--> statement-breakpoint
 CREATE INDEX "assessment_results_assessment_version_id_idx" ON "assessment_results" USING btree ("assessment_version_id");--> statement-breakpoint
-CREATE INDEX "assessment_results_created_at_idx" ON "assessment_results" USING btree ("created_at");--> statement-breakpoint
 CREATE UNIQUE INDEX "assessment_versions_slug_unique" ON "assessment_versions" USING btree ("slug");--> statement-breakpoint
-CREATE INDEX "assessment_versions_slug_idx" ON "assessment_versions" USING btree ("slug");--> statement-breakpoint
 CREATE INDEX "assessment_versions_status_idx" ON "assessment_versions" USING btree ("status");--> statement-breakpoint
-CREATE INDEX "assessment_versions_created_at_idx" ON "assessment_versions" USING btree ("created_at");--> statement-breakpoint
 CREATE UNIQUE INDEX "organisation_members_organisation_id_user_id_unique" ON "organisation_members" USING btree ("organisation_id","user_id");--> statement-breakpoint
 CREATE INDEX "organisation_members_organisation_id_idx" ON "organisation_members" USING btree ("organisation_id");--> statement-breakpoint
 CREATE INDEX "organisation_members_user_id_idx" ON "organisation_members" USING btree ("user_id");--> statement-breakpoint
-CREATE INDEX "organisation_members_created_at_idx" ON "organisation_members" USING btree ("created_at");--> statement-breakpoint
 CREATE UNIQUE INDEX "team_members_team_id_user_id_unique" ON "team_members" USING btree ("team_id","user_id");--> statement-breakpoint
 CREATE INDEX "team_members_organisation_id_idx" ON "team_members" USING btree ("organisation_id");--> statement-breakpoint
+CREATE INDEX "team_members_organisation_id_team_id_idx" ON "team_members" USING btree ("organisation_id","team_id");--> statement-breakpoint
+CREATE INDEX "team_members_organisation_id_user_id_idx" ON "team_members" USING btree ("organisation_id","user_id");--> statement-breakpoint
 CREATE INDEX "team_members_team_id_idx" ON "team_members" USING btree ("team_id");--> statement-breakpoint
 CREATE INDEX "team_members_user_id_idx" ON "team_members" USING btree ("user_id");--> statement-breakpoint
-CREATE INDEX "team_members_created_at_idx" ON "team_members" USING btree ("created_at");--> statement-breakpoint
 CREATE UNIQUE INDEX "organisations_slug_unique" ON "organisations" USING btree ("slug");--> statement-breakpoint
-CREATE INDEX "organisations_slug_idx" ON "organisations" USING btree ("slug");--> statement-breakpoint
 CREATE INDEX "organisations_status_idx" ON "organisations" USING btree ("status");--> statement-breakpoint
-CREATE INDEX "organisations_created_at_idx" ON "organisations" USING btree ("created_at");--> statement-breakpoint
 CREATE INDEX "pilot_requests_organisation_id_idx" ON "pilot_requests" USING btree ("organisation_id");--> statement-breakpoint
 CREATE INDEX "pilot_requests_status_idx" ON "pilot_requests" USING btree ("status");--> statement-breakpoint
-CREATE INDEX "pilot_requests_created_at_idx" ON "pilot_requests" USING btree ("created_at");--> statement-breakpoint
 CREATE UNIQUE INDEX "personality_profiles_organisation_id_user_id_unique" ON "personality_profiles" USING btree ("organisation_id","user_id");--> statement-breakpoint
 CREATE INDEX "personality_profiles_organisation_id_idx" ON "personality_profiles" USING btree ("organisation_id");--> statement-breakpoint
 CREATE INDEX "personality_profiles_user_id_idx" ON "personality_profiles" USING btree ("user_id");--> statement-breakpoint
-CREATE INDEX "personality_profiles_created_at_idx" ON "personality_profiles" USING btree ("created_at");--> statement-breakpoint
 CREATE UNIQUE INDEX "teams_organisation_id_slug_unique" ON "teams" USING btree ("organisation_id","slug");--> statement-breakpoint
 CREATE INDEX "teams_organisation_id_idx" ON "teams" USING btree ("organisation_id");--> statement-breakpoint
-CREATE INDEX "teams_slug_idx" ON "teams" USING btree ("slug");--> statement-breakpoint
 CREATE INDEX "teams_status_idx" ON "teams" USING btree ("status");--> statement-breakpoint
-CREATE INDEX "teams_created_at_idx" ON "teams" USING btree ("created_at");--> statement-breakpoint
-CREATE UNIQUE INDEX "users_auth_user_id_unique" ON "users" USING btree ("auth_user_id");--> statement-breakpoint
-CREATE INDEX "users_auth_user_id_idx" ON "users" USING btree ("auth_user_id");
+CREATE UNIQUE INDEX "users_auth_user_id_unique" ON "users" USING btree ("auth_user_id");

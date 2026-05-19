@@ -34,12 +34,11 @@ export const organisations = pgTable(
 		updatedAt: timestamp("updated_at", { mode: "date", withTimezone: true })
 			.notNull()
 			.defaultNow(),
+		deletedAt: timestamp("deleted_at", { mode: "date", withTimezone: true }),
 	},
 	(table) => [
 		uniqueIndex("organisations_slug_unique").on(table.slug),
-		index("organisations_slug_idx").on(table.slug),
 		index("organisations_status_idx").on(table.status),
-		index("organisations_created_at_idx").on(table.createdAt),
 	],
 );
 
@@ -65,7 +64,6 @@ export const pilotRequests = pgTable(
 	(table) => [
 		index("pilot_requests_organisation_id_idx").on(table.organisationId),
 		index("pilot_requests_status_idx").on(table.status),
-		index("pilot_requests_created_at_idx").on(table.createdAt),
 	],
 );
 

@@ -6,6 +6,8 @@ import {
 	assessmentVersions,
 	organisationMembers,
 	organisations,
+	teamMembers,
+	teams,
 	users,
 } from "#/db/schema";
 
@@ -13,6 +15,7 @@ const DEMO_AUTH_USER_ID = "00000000-0000-4000-8000-000000000001";
 // Dev-only fake Neon Auth user ID. Neon Auth owns real identity records.
 const DEMO_USER_ID = "00000000-0000-4000-8000-000000000101";
 const DEMO_ORGANISATION_ID = "00000000-0000-4000-8000-000000000201";
+const DEMO_TEAM_ID = "00000000-0000-4000-8000-000000000202";
 const KELSIER_CORE_VERSION_ID = "00000000-0000-4000-8000-000000000301";
 
 const questions = [
@@ -88,13 +91,21 @@ const optionLabels = [
 ] as const;
 
 async function seed() {
+	const updatedAt = new Date();
+
 	await db
 		.insert(users)
 		.values({
 			id: DEMO_USER_ID,
 			authUserId: DEMO_AUTH_USER_ID,
 		})
-		.onConflictDoNothing();
+		.onConflictDoUpdate({
+			target: users.id,
+			set: {
+				authUserId: DEMO_AUTH_USER_ID,
+				updatedAt,
+			},
+		});
 
 	await db
 		.insert(organisations)
@@ -103,7 +114,15 @@ async function seed() {
 			slug: "demo-organisation",
 			name: "Demo Organisation",
 		})
-		.onConflictDoNothing();
+		.onConflictDoUpdate({
+			target: organisations.slug,
+			set: {
+				name: "Demo Organisation",
+				status: "active",
+				deletedAt: null,
+				updatedAt,
+			},
+		});
 
 	await db
 		.insert(organisationMembers)
@@ -112,7 +131,50 @@ async function seed() {
 			userId: DEMO_USER_ID,
 			role: "owner",
 		})
-		.onConflictDoNothing();
+		.onConflictDoUpdate({
+			target: [organisationMembers.organisationId, organisationMembers.userId],
+			set: {
+				role: "owner",
+				deletedAt: null,
+				updatedAt,
+			},
+		});
+
+	await db
+		.insert(teams)
+		.values({
+			id: DEMO_TEAM_ID,
+			organisationId: DEMO_ORGANISATION_ID,
+			slug: "leadership-circle",
+			name: "Leadership Circle",
+		})
+		.onConflictDoUpdate({
+			target: [teams.organisationId, teams.slug],
+			set: {
+				name: "Leadership Circle",
+				status: "active",
+				deletedAt: null,
+				updatedAt,
+			},
+		});
+
+	await db
+		.insert(teamMembers)
+		.values({
+			organisationId: DEMO_ORGANISATION_ID,
+			teamId: DEMO_TEAM_ID,
+			userId: DEMO_USER_ID,
+			role: "lead",
+		})
+		.onConflictDoUpdate({
+			target: [teamMembers.teamId, teamMembers.userId],
+			set: {
+				organisationId: DEMO_ORGANISATION_ID,
+				role: "lead",
+				deletedAt: null,
+				updatedAt,
+			},
+		});
 
 	await db
 		.insert(assessmentVersions)
@@ -124,7 +186,16 @@ async function seed() {
 				"Starter assessment for early team communication patterns across ten dimensions.",
 			status: "active",
 		})
-		.onConflictDoNothing();
+		.onConflictDoUpdate({
+			target: assessmentVersions.slug,
+			set: {
+				title: "Kelsier Core V1",
+				description:
+					"Starter assessment for early team communication patterns across ten dimensions.",
+				status: "active",
+				updatedAt,
+			},
+		});
 
 	for (const question of questions) {
 		await db
@@ -136,7 +207,14 @@ async function seed() {
 				sortOrder: question.sortOrder,
 				prompt: question.prompt,
 			})
-			.onConflictDoNothing();
+			.onConflictDoUpdate({
+				target: [assessmentQuestions.versionId, assessmentQuestions.sortOrder],
+				set: {
+					dimension: question.dimension,
+					prompt: question.prompt,
+					updatedAt,
+				},
+			});
 
 		for (const [optionIndex, option] of optionLabels.entries()) {
 			await db
@@ -150,7 +228,17 @@ async function seed() {
 						[question.dimension]: option.score,
 					},
 				})
-				.onConflictDoNothing();
+				.onConflictDoUpdate({
+					target: [assessmentOptions.questionId, assessmentOptions.sortOrder],
+					set: {
+						label: option.label,
+						value: option.value,
+						scoreWeights: {
+							[question.dimension]: option.score,
+						},
+						updatedAt,
+					},
+				});
 		}
 	}
 }
