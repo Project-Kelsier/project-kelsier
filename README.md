@@ -12,6 +12,8 @@ Current app version: see [`package.json`](./package.json) or run `pnpm version:s
 
 Copy [`.env.example`](./.env.example) to `.env` for local development. The default database URL points at the Docker Compose PostgreSQL service on `localhost:55432`; use Neon connection strings only when intentionally working against hosted staging or production databases.
 
+See [`CONTRIBUTING.md`](./CONTRIBUTING.md) for generated-file and secret-handling rules before opening a PR.
+
 ## Commands
 
 ```bash
