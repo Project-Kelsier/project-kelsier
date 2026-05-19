@@ -28,7 +28,30 @@ function getSeedDatabaseUrl(env: DatabaseEnv) {
 	return databaseUrl;
 }
 
-const { db, queryClient } = createDbConnection(getSeedDatabaseUrl(process.env));
+function isLocalSeedDatabase(databaseUrl: string) {
+	const url = new URL(databaseUrl);
+
+	return (
+		(url.hostname === "localhost" || url.hostname === "127.0.0.1") &&
+		url.port === "55432" &&
+		url.pathname === "/kelsier_dev"
+	);
+}
+
+function assertSeedTargetIsAllowed(databaseUrl: string) {
+	if (process.env.ALLOW_SEED === "true" || isLocalSeedDatabase(databaseUrl)) {
+		return;
+	}
+
+	throw new Error(
+		"Refusing to seed a non-local database. Set DATABASE_URL to postgres://kelsier:kelsier@localhost:55432/kelsier_dev or set ALLOW_SEED=true to opt in explicitly.",
+	);
+}
+
+const databaseUrl = getSeedDatabaseUrl(process.env);
+assertSeedTargetIsAllowed(databaseUrl);
+
+const { db, queryClient } = createDbConnection(databaseUrl);
 
 // Dev-only fake Neon Auth user ID. Neon Auth owns real identity records.
 const DEMO_AUTH_USER_ID = "00000000-0000-4000-8000-000000000001";
