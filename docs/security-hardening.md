@@ -113,6 +113,13 @@ SHA pinning prevents a moved tag from changing executed workflow code. Version t
 - Store Cloudflare credentials only as GitHub environment secrets with required reviewer approval for production.
 - Never expose Cloudflare, Neon, npm, GitHub publishing, or database credentials to pull request workflows.
 
+## Database Secrets
+
+- Local development should use Docker PostgreSQL with the non-secret development credentials documented in [`.env.example`](../.env.example).
+- Keep Neon connection strings out of committed files. Use local untracked env files, password managers, or protected hosting secrets for hosted database credentials.
+- Before running `pnpm db:migrate`, `pnpm db:seed`, destructive resets, or ad hoc database scripts, confirm `DATABASE_URL` points at the intended target.
+- Do not run seed data or destructive local reset workflows against Neon unless the operation is explicitly planned and reviewed.
+
 ## Branch Protection
 
 Require branch protection on `main`:

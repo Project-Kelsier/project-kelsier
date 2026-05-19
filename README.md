@@ -8,6 +8,10 @@ Built with TanStack Start, React, Vite, Biome, Vitest, Playwright, GitHub Action
 
 Current app version: see [`package.json`](./package.json) or run `pnpm version:show`.
 
+## Environment
+
+Copy [`.env.example`](./.env.example) to `.env` for local development. The default database URL points at the Docker Compose PostgreSQL service on `localhost:55432`; use Neon connection strings only when intentionally working against hosted staging or production databases.
+
 ## Commands
 
 ```bash
@@ -22,6 +26,9 @@ pnpm preview
 pnpm cf-typegen
 pnpm deploy
 pnpm test:e2e
+pnpm db:generate
+pnpm db:migrate
+pnpm db:seed
 pnpm version:show
 ```
 
