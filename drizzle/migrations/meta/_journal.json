@@ -5,22 +5,8 @@
     {
       "idx": 0,
       "version": "7",
-      "when": 1779185353056,
-      "tag": "0000_many_norman_osborn",
-      "breakpoints": true
-    },
-    {
-      "idx": 1,
-      "version": "7",
-      "when": 1779192358372,
-      "tag": "0001_smart_ezekiel",
-      "breakpoints": true
-    },
-    {
-      "idx": 2,
-      "version": "7",
-      "when": 1779192721366,
-      "tag": "0002_puzzling_tinkerer",
+      "when": 1779193035735,
+      "tag": "0000_acoustic_hitman",
       "breakpoints": true
     }
   ]

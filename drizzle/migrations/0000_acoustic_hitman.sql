@@ -2,9 +2,9 @@ CREATE EXTENSION IF NOT EXISTS "pgcrypto";--> statement-breakpoint
 CREATE TYPE "public"."assessment_version_status" AS ENUM('draft', 'active', 'retired');--> statement-breakpoint
 CREATE TYPE "public"."organisation_role" AS ENUM('owner', 'admin', 'member');--> statement-breakpoint
 CREATE TYPE "public"."team_role" AS ENUM('lead', 'member');--> statement-breakpoint
-CREATE TYPE "public"."organisation_status" AS ENUM('active', 'suspended', 'deleted');--> statement-breakpoint
+CREATE TYPE "public"."organisation_status" AS ENUM('active', 'suspended');--> statement-breakpoint
 CREATE TYPE "public"."pilot_request_status" AS ENUM('pending', 'contacted', 'closed');--> statement-breakpoint
-CREATE TYPE "public"."team_status" AS ENUM('active', 'archived', 'deleted');--> statement-breakpoint
+CREATE TYPE "public"."team_status" AS ENUM('active', 'archived');--> statement-breakpoint
 CREATE TABLE "ai_insights" (
 	"id" uuid PRIMARY KEY DEFAULT gen_random_uuid() NOT NULL,
 	"organisation_id" uuid NOT NULL,
@@ -149,7 +149,8 @@ CREATE TABLE "teams" (
 	"status" "team_status" DEFAULT 'active' NOT NULL,
 	"created_at" timestamp with time zone DEFAULT now() NOT NULL,
 	"updated_at" timestamp with time zone DEFAULT now() NOT NULL,
-	"deleted_at" timestamp with time zone
+	"deleted_at" timestamp with time zone,
+	CONSTRAINT "teams_id_organisation_id_unique" UNIQUE("id","organisation_id")
 );
 --> statement-breakpoint
 CREATE TABLE "users" (
@@ -170,6 +171,7 @@ ALTER TABLE "assessment_attempts" ADD CONSTRAINT "assessment_attempts_organisati
 ALTER TABLE "assessment_attempts" ADD CONSTRAINT "assessment_attempts_team_id_teams_id_fk" FOREIGN KEY ("team_id") REFERENCES "public"."teams"("id") ON DELETE set null ON UPDATE no action;--> statement-breakpoint
 ALTER TABLE "assessment_attempts" ADD CONSTRAINT "assessment_attempts_user_id_users_id_fk" FOREIGN KEY ("user_id") REFERENCES "public"."users"("id") ON DELETE cascade ON UPDATE no action;--> statement-breakpoint
 ALTER TABLE "assessment_attempts" ADD CONSTRAINT "assessment_attempts_assessment_version_id_assessment_versions_id_fk" FOREIGN KEY ("assessment_version_id") REFERENCES "public"."assessment_versions"("id") ON DELETE restrict ON UPDATE no action;--> statement-breakpoint
+ALTER TABLE "assessment_attempts" ADD CONSTRAINT "assessment_attempts_team_organisation_fk" FOREIGN KEY ("team_id","organisation_id") REFERENCES "public"."teams"("id","organisation_id") ON DELETE no action ON UPDATE no action;--> statement-breakpoint
 ALTER TABLE "assessment_options" ADD CONSTRAINT "assessment_options_question_id_assessment_questions_id_fk" FOREIGN KEY ("question_id") REFERENCES "public"."assessment_questions"("id") ON DELETE cascade ON UPDATE no action;--> statement-breakpoint
 ALTER TABLE "assessment_questions" ADD CONSTRAINT "assessment_questions_version_id_assessment_versions_id_fk" FOREIGN KEY ("version_id") REFERENCES "public"."assessment_versions"("id") ON DELETE cascade ON UPDATE no action;--> statement-breakpoint
 ALTER TABLE "assessment_results" ADD CONSTRAINT "assessment_results_organisation_id_organisations_id_fk" FOREIGN KEY ("organisation_id") REFERENCES "public"."organisations"("id") ON DELETE cascade ON UPDATE no action;--> statement-breakpoint
@@ -181,6 +183,7 @@ ALTER TABLE "organisation_members" ADD CONSTRAINT "organisation_members_user_id_
 ALTER TABLE "team_members" ADD CONSTRAINT "team_members_organisation_id_organisations_id_fk" FOREIGN KEY ("organisation_id") REFERENCES "public"."organisations"("id") ON DELETE cascade ON UPDATE no action;--> statement-breakpoint
 ALTER TABLE "team_members" ADD CONSTRAINT "team_members_team_id_teams_id_fk" FOREIGN KEY ("team_id") REFERENCES "public"."teams"("id") ON DELETE cascade ON UPDATE no action;--> statement-breakpoint
 ALTER TABLE "team_members" ADD CONSTRAINT "team_members_user_id_users_id_fk" FOREIGN KEY ("user_id") REFERENCES "public"."users"("id") ON DELETE cascade ON UPDATE no action;--> statement-breakpoint
+ALTER TABLE "team_members" ADD CONSTRAINT "team_members_team_organisation_fk" FOREIGN KEY ("team_id","organisation_id") REFERENCES "public"."teams"("id","organisation_id") ON DELETE cascade ON UPDATE no action;--> statement-breakpoint
 ALTER TABLE "pilot_requests" ADD CONSTRAINT "pilot_requests_organisation_id_organisations_id_fk" FOREIGN KEY ("organisation_id") REFERENCES "public"."organisations"("id") ON DELETE set null ON UPDATE no action;--> statement-breakpoint
 ALTER TABLE "personality_profiles" ADD CONSTRAINT "personality_profiles_organisation_id_organisations_id_fk" FOREIGN KEY ("organisation_id") REFERENCES "public"."organisations"("id") ON DELETE cascade ON UPDATE no action;--> statement-breakpoint
 ALTER TABLE "personality_profiles" ADD CONSTRAINT "personality_profiles_user_id_users_id_fk" FOREIGN KEY ("user_id") REFERENCES "public"."users"("id") ON DELETE cascade ON UPDATE no action;--> statement-breakpoint

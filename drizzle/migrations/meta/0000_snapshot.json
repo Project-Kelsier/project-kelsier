@@ -1,5 +1,5 @@
 {
-  "id": "a5c70997-70c4-4e96-a1bd-c4a30c2b0f20",
+  "id": "1a41ed9a-4cd5-48c2-b1c6-2dc73074a0b3",
   "prevId": "00000000-0000-0000-0000-000000000000",
   "version": "7",
   "dialect": "postgresql",
@@ -665,6 +665,21 @@
             "id"
           ],
           "onDelete": "restrict",
+          "onUpdate": "no action"
+        },
+        "assessment_attempts_team_organisation_fk": {
+          "name": "assessment_attempts_team_organisation_fk",
+          "tableFrom": "assessment_attempts",
+          "tableTo": "teams",
+          "columnsFrom": [
+            "team_id",
+            "organisation_id"
+          ],
+          "columnsTo": [
+            "id",
+            "organisation_id"
+          ],
+          "onDelete": "no action",
           "onUpdate": "no action"
         }
       },
@@ -1542,6 +1557,21 @@
           ],
           "onDelete": "cascade",
           "onUpdate": "no action"
+        },
+        "team_members_team_organisation_fk": {
+          "name": "team_members_team_organisation_fk",
+          "tableFrom": "team_members",
+          "tableTo": "teams",
+          "columnsFrom": [
+            "team_id",
+            "organisation_id"
+          ],
+          "columnsTo": [
+            "id",
+            "organisation_id"
+          ],
+          "onDelete": "cascade",
+          "onUpdate": "no action"
         }
       },
       "compositePrimaryKeys": {},
@@ -2024,7 +2054,16 @@
         }
       },
       "compositePrimaryKeys": {},
-      "uniqueConstraints": {},
+      "uniqueConstraints": {
+        "teams_id_organisation_id_unique": {
+          "name": "teams_id_organisation_id_unique",
+          "nullsNotDistinct": false,
+          "columns": [
+            "id",
+            "organisation_id"
+          ]
+        }
+      },
       "policies": {},
       "checkConstraints": {},
       "isRLSEnabled": false
@@ -2118,8 +2157,7 @@
       "schema": "public",
       "values": [
         "active",
-        "suspended",
-        "deleted"
+        "suspended"
       ]
     },
     "public.pilot_request_status": {
@@ -2136,8 +2174,7 @@
       "schema": "public",
       "values": [
         "active",
-        "archived",
-        "deleted"
+        "archived"
       ]
     }
   },

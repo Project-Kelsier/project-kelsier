@@ -5,16 +5,13 @@ import {
 	pgTable,
 	text,
 	timestamp,
+	unique,
 	uniqueIndex,
 	uuid,
 } from "drizzle-orm/pg-core";
 import { organisations } from "./organisations";
 
-export const teamStatus = pgEnum("team_status", [
-	"active",
-	"archived",
-	"deleted",
-]);
+export const teamStatus = pgEnum("team_status", ["active", "archived"]);
 
 export const teams = pgTable(
 	"teams",
@@ -39,7 +36,7 @@ export const teams = pgTable(
 			table.organisationId,
 			table.slug,
 		),
-		uniqueIndex("teams_id_organisation_id_unique").on(
+		unique("teams_id_organisation_id_unique").on(
 			table.id,
 			table.organisationId,
 		),

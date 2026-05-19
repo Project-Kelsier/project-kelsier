@@ -12,7 +12,6 @@ import {
 export const organisationStatus = pgEnum("organisation_status", [
 	"active",
 	"suspended",
-	"deleted",
 ]);
 
 export const pilotRequestStatus = pgEnum("pilot_request_status", [
