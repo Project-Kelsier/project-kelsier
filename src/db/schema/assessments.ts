@@ -1,7 +1,6 @@
 import { sql } from "drizzle-orm";
 import {
 	doublePrecision,
-	foreignKey,
 	index,
 	integer,
 	jsonb,
@@ -103,6 +102,9 @@ export const assessmentAttempts = pgTable(
 		organisationId: uuid("organisation_id")
 			.notNull()
 			.references(() => organisations.id, { onDelete: "cascade" }),
+		// Keep attempts owned by their historical organisation even when their
+		// team is deleted. Team/organisation consistency is validated by service
+		// write paths because a composite FK cannot SET NULL only team_id here.
 		teamId: uuid("team_id").references(() => teams.id, {
 			onDelete: "set null",
 		}),
@@ -141,11 +143,6 @@ export const assessmentAttempts = pgTable(
 		index("assessment_attempts_assessment_version_id_idx").on(
 			table.assessmentVersionId,
 		),
-		foreignKey({
-			columns: [table.teamId, table.organisationId],
-			foreignColumns: [teams.id, teams.organisationId],
-			name: "assessment_attempts_team_organisation_fk",
-		}),
 	],
 );
 

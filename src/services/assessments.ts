@@ -5,6 +5,7 @@ import {
 	assessmentQuestions,
 	assessmentResults,
 	assessmentVersions,
+	teams,
 } from "#/db/schema";
 import type { OrganisationUserContext } from "./context";
 
@@ -42,6 +43,26 @@ export async function listAssessmentAttemptsForUser(
 				eq(assessmentAttempts.userId, userId),
 			),
 		);
+}
+
+export async function assertAssessmentAttemptTeamScope(
+	context: OrganisationUserContext,
+	teamId: string,
+) {
+	const [team] = await context.db
+		.select({ id: teams.id })
+		.from(teams)
+		.where(
+			and(
+				eq(teams.id, teamId),
+				eq(teams.organisationId, context.organisationId),
+			),
+		)
+		.limit(1);
+
+	if (!team) {
+		throw new Error("Assessment attempt team must belong to the organisation.");
+	}
 }
 
 export async function getAssessmentResultForAttempt(
