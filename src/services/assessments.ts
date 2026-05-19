@@ -8,10 +8,7 @@ import {
 } from "#/db/schema";
 import type { OrganisationUserContext } from "./context";
 
-export async function getAssessmentVersionBySlug(
-	_context: OrganisationUserContext,
-	slug: string,
-) {
+export async function getAssessmentVersionBySlug(slug: string) {
 	const [version] = await db
 		.select()
 		.from(assessmentVersions)
@@ -22,7 +19,6 @@ export async function getAssessmentVersionBySlug(
 }
 
 export async function listAssessmentQuestionsForVersion(
-	_context: OrganisationUserContext,
 	assessmentVersionId: string,
 ) {
 	return db

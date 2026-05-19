@@ -11,70 +11,56 @@ import {
 	users,
 } from "#/db/schema";
 
-const DEMO_AUTH_USER_ID = "00000000-0000-4000-8000-000000000001";
 // Dev-only fake Neon Auth user ID. Neon Auth owns real identity records.
-const DEMO_USER_ID = "00000000-0000-4000-8000-000000000101";
-const DEMO_ORGANISATION_ID = "00000000-0000-4000-8000-000000000201";
-const DEMO_TEAM_ID = "00000000-0000-4000-8000-000000000202";
-const KELSIER_CORE_VERSION_ID = "00000000-0000-4000-8000-000000000301";
+const DEMO_AUTH_USER_ID = "00000000-0000-4000-8000-000000000001";
 
 const questions = [
 	{
-		id: "00000000-0000-4000-8000-000000001001",
 		dimension: "clarity",
 		sortOrder: 1,
 		prompt: "I understand what my team needs from me this week.",
 	},
 	{
-		id: "00000000-0000-4000-8000-000000001002",
 		dimension: "candour",
 		sortOrder: 2,
 		prompt: "Important concerns are raised directly and respectfully.",
 	},
 	{
-		id: "00000000-0000-4000-8000-000000001003",
 		dimension: "listening",
 		sortOrder: 3,
 		prompt: "People adjust their views when they hear useful new information.",
 	},
 	{
-		id: "00000000-0000-4000-8000-000000001004",
 		dimension: "trust",
 		sortOrder: 4,
 		prompt: "I can rely on teammates to follow through on commitments.",
 	},
 	{
-		id: "00000000-0000-4000-8000-000000001005",
 		dimension: "conflict",
 		sortOrder: 5,
 		prompt: "Disagreements help the team make better decisions.",
 	},
 	{
-		id: "00000000-0000-4000-8000-000000001006",
 		dimension: "decision_making",
 		sortOrder: 6,
 		prompt: "Decision owners and next steps are clear after discussions.",
 	},
 	{
-		id: "00000000-0000-4000-8000-000000001007",
 		dimension: "energy",
 		sortOrder: 7,
 		prompt: "The team's communication leaves me with energy to do good work.",
 	},
 	{
-		id: "00000000-0000-4000-8000-000000001008",
 		dimension: "support",
 		sortOrder: 8,
 		prompt: "When someone is blocked, help arrives early enough to matter.",
 	},
 	{
-		id: "00000000-0000-4000-8000-000000001009",
 		dimension: "accountability",
 		sortOrder: 9,
 		prompt: "The team notices and resolves missed commitments constructively.",
 	},
 	{
-		id: "00000000-0000-4000-8000-000000001010",
 		dimension: "adaptability",
 		sortOrder: 10,
 		prompt:
@@ -96,7 +82,6 @@ async function seed() {
 	const [demoUser] = await db
 		.insert(users)
 		.values({
-			id: DEMO_USER_ID,
 			authUserId: DEMO_AUTH_USER_ID,
 		})
 		.onConflictDoUpdate({
@@ -114,7 +99,6 @@ async function seed() {
 	const [demoOrganisation] = await db
 		.insert(organisations)
 		.values({
-			id: DEMO_ORGANISATION_ID,
 			slug: "demo-organisation",
 			name: "Demo Organisation",
 		})
@@ -152,7 +136,6 @@ async function seed() {
 	const [demoTeam] = await db
 		.insert(teams)
 		.values({
-			id: DEMO_TEAM_ID,
 			organisationId: demoOrganisation.id,
 			slug: "leadership-circle",
 			name: "Leadership Circle",
@@ -190,10 +173,9 @@ async function seed() {
 			},
 		});
 
-	await db
+	const [assessmentVersion] = await db
 		.insert(assessmentVersions)
 		.values({
-			id: KELSIER_CORE_VERSION_ID,
 			slug: "kelsier-core-v1",
 			title: "Kelsier Core V1",
 			description:
@@ -209,14 +191,18 @@ async function seed() {
 				status: "active",
 				updatedAt,
 			},
-		});
+		})
+		.returning({ id: assessmentVersions.id });
+
+	if (!assessmentVersion) {
+		throw new Error("Failed to seed assessment version.");
+	}
 
 	for (const question of questions) {
-		await db
+		const [seededQuestion] = await db
 			.insert(assessmentQuestions)
 			.values({
-				id: question.id,
-				versionId: KELSIER_CORE_VERSION_ID,
+				versionId: assessmentVersion.id,
 				dimension: question.dimension,
 				sortOrder: question.sortOrder,
 				prompt: question.prompt,
@@ -228,13 +214,20 @@ async function seed() {
 					prompt: question.prompt,
 					updatedAt,
 				},
-			});
+			})
+			.returning({ id: assessmentQuestions.id });
+
+		if (!seededQuestion) {
+			throw new Error(
+				`Failed to seed assessment question ${question.sortOrder}.`,
+			);
+		}
 
 		for (const [optionIndex, option] of optionLabels.entries()) {
 			await db
 				.insert(assessmentOptions)
 				.values({
-					questionId: question.id,
+					questionId: seededQuestion.id,
 					sortOrder: optionIndex + 1,
 					label: option.label,
 					value: option.value,
