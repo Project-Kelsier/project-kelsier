@@ -58,12 +58,15 @@ function createContextWithTeamRows(
 	};
 }
 
-function expectOrganisationSoftDeletePredicate() {
+function expectSoftDeletePredicateCount(expectedCount: number) {
 	const predicate = where.mock.calls.at(-1)?.at(0);
 	const predicateSql = collectStringChunks(predicate).join(" ");
+	const deletedAtReferenceCount =
+		predicateSql.match(/deleted_at/g)?.length ?? 0;
 
 	expect(predicateSql).toContain("deleted_at");
 	expect(predicateSql).toContain(" is null");
+	expect(deletedAtReferenceCount).toBe(expectedCount * 4);
 }
 
 describe("assertAssessmentAttemptTeamScope", () => {
@@ -105,7 +108,7 @@ describe("assertAssessmentAttemptTeamScope", () => {
 			"Assessment attempt team must belong to the organisation.",
 		);
 
-		expectOrganisationSoftDeletePredicate();
+		expectSoftDeletePredicateCount(2);
 	});
 
 	it("excludes teams from soft-deleted organisations", async () => {
@@ -114,7 +117,7 @@ describe("assertAssessmentAttemptTeamScope", () => {
 			"00000000-0000-4000-8000-000000000006",
 		).catch(() => undefined);
 
-		expectOrganisationSoftDeletePredicate();
+		expectSoftDeletePredicateCount(2);
 	});
 });
 
@@ -125,7 +128,7 @@ describe("assessment service organisation visibility", () => {
 			"00000000-0000-4000-8000-000000000003",
 		);
 
-		expectOrganisationSoftDeletePredicate();
+		expectSoftDeletePredicateCount(1);
 	});
 
 	it("excludes results from soft-deleted organisations", async () => {
@@ -134,6 +137,6 @@ describe("assessment service organisation visibility", () => {
 			"00000000-0000-4000-8000-000000000003",
 		);
 
-		expectOrganisationSoftDeletePredicate();
+		expectSoftDeletePredicateCount(1);
 	});
 });

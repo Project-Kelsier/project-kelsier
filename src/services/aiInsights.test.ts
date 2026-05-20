@@ -55,9 +55,12 @@ function createContext(): OrganisationUserContext {
 function expectOrganisationSoftDeletePredicate() {
 	const predicate = where.mock.calls.at(-1)?.at(0);
 	const predicateSql = collectStringChunks(predicate).join(" ");
+	const deletedAtReferenceCount =
+		predicateSql.match(/deleted_at/g)?.length ?? 0;
 
 	expect(predicateSql).toContain("deleted_at");
 	expect(predicateSql).toContain(" is null");
+	expect(deletedAtReferenceCount).toBe(4);
 }
 
 describe("AI insight service organisation visibility", () => {

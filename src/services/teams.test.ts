@@ -57,25 +57,28 @@ function createContext(): OrganisationUserContext {
 	};
 }
 
-function expectOrganisationSoftDeletePredicate() {
+function expectSoftDeletePredicateCount(expectedCount: number) {
 	const predicate = where.mock.calls.at(-1)?.at(0);
 	const predicateSql = collectStringChunks(predicate).join(" ");
+	const deletedAtReferenceCount =
+		predicateSql.match(/deleted_at/g)?.length ?? 0;
 
 	expect(predicateSql).toContain("deleted_at");
 	expect(predicateSql).toContain(" is null");
+	expect(deletedAtReferenceCount).toBe(expectedCount * 4);
 }
 
 describe("team service organisation visibility", () => {
 	it("excludes teams from soft-deleted organisations when listing teams", async () => {
 		await listTeamsForOrganisation(createContext());
 
-		expectOrganisationSoftDeletePredicate();
+		expectSoftDeletePredicateCount(2);
 	});
 
 	it("excludes teams from soft-deleted organisations when getting by slug", async () => {
 		await getTeamBySlug(createContext(), "leadership-circle");
 
-		expectOrganisationSoftDeletePredicate();
+		expectSoftDeletePredicateCount(2);
 	});
 
 	it("excludes team members from soft-deleted organisations", async () => {
@@ -84,6 +87,6 @@ describe("team service organisation visibility", () => {
 			"00000000-0000-4000-8000-000000000003",
 		);
 
-		expectOrganisationSoftDeletePredicate();
+		expectSoftDeletePredicateCount(3);
 	});
 });
