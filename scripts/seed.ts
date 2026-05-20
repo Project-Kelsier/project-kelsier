@@ -258,10 +258,10 @@ async function seed() {
 
 try {
 	await seed();
-	await queryClient.end();
 	console.log("Seed complete.");
 } catch (error) {
-	await queryClient.end();
 	console.error(error);
 	process.exitCode = 1;
+} finally {
+	await queryClient.end();
 }

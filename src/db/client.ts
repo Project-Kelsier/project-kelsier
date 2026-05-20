@@ -13,7 +13,7 @@ export type DbConnection = {
 	queryClient: Sql;
 };
 
-const connections = new WeakMap<DatabaseEnv, DbConnection>();
+const connections = new Map<string, DbConnection>();
 
 function createDrizzleClient(queryClient: Sql) {
 	return drizzle(queryClient, { schema });
@@ -54,16 +54,37 @@ export function createDbConnection(connectionString: string): DbConnection {
 }
 
 export function getDbConnection(env: DatabaseEnv): DbConnection {
-	const existingConnection = connections.get(env);
+	const connectionString = getConnectionString(env);
+	const existingConnection = connections.get(connectionString);
 
 	if (existingConnection) {
 		return existingConnection;
 	}
 
-	const connection = createDbConnection(getConnectionString(env));
-	connections.set(env, connection);
+	const connection = createDbConnection(connectionString);
+	connections.set(connectionString, connection);
 
 	return connection;
+}
+
+export async function closeDbConnections(env?: DatabaseEnv) {
+	const entries = env
+		? (() => {
+				const connectionString = getConnectionString(env);
+				return [[connectionString, connections.get(connectionString)] as const];
+			})()
+		: Array.from(connections.entries());
+
+	await Promise.all(
+		entries.map(async ([connectionString, connection]) => {
+			if (!connection) {
+				return;
+			}
+
+			await connection.queryClient.end();
+			connections.delete(connectionString);
+		}),
+	);
 }
 
 export function getDb(env: DatabaseEnv) {
