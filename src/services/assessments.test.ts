@@ -1,5 +1,6 @@
 import { describe, expect, it, vi } from "vitest";
 import type { DbClient } from "#/db/client";
+import { organisations } from "#/db/schema";
 import {
 	assertAssessmentAttemptTeamScope,
 	getAssessmentResultForAttempt,
@@ -58,12 +59,13 @@ function createContextWithTeamRows(
 	};
 }
 
-function expectSoftDeletePredicateCount(expectedCount: number) {
+function expectOrganisationScopedSoftDeletePredicate(expectedCount: number) {
 	const predicate = where.mock.calls.at(-1)?.at(0);
 	const predicateSql = collectStringChunks(predicate).join(" ");
 	const deletedAtReferenceCount =
 		predicateSql.match(/deleted_at/g)?.length ?? 0;
 
+	expect(innerJoin.mock.calls.at(-1)?.at(0)).toBe(organisations);
 	expect(predicateSql).toContain("deleted_at");
 	expect(predicateSql).toContain(" is null");
 	expect(deletedAtReferenceCount).toBe(expectedCount * 4);
@@ -108,7 +110,7 @@ describe("assertAssessmentAttemptTeamScope", () => {
 			"Assessment attempt team must belong to the organisation.",
 		);
 
-		expectSoftDeletePredicateCount(2);
+		expectOrganisationScopedSoftDeletePredicate(2);
 	});
 
 	it("excludes teams from soft-deleted organisations", async () => {
@@ -117,7 +119,7 @@ describe("assertAssessmentAttemptTeamScope", () => {
 			"00000000-0000-4000-8000-000000000006",
 		).catch(() => undefined);
 
-		expectSoftDeletePredicateCount(2);
+		expectOrganisationScopedSoftDeletePredicate(2);
 	});
 });
 
@@ -128,7 +130,7 @@ describe("assessment service organisation visibility", () => {
 			"00000000-0000-4000-8000-000000000003",
 		);
 
-		expectSoftDeletePredicateCount(1);
+		expectOrganisationScopedSoftDeletePredicate(1);
 	});
 
 	it("excludes results from soft-deleted organisations", async () => {
@@ -137,6 +139,6 @@ describe("assessment service organisation visibility", () => {
 			"00000000-0000-4000-8000-000000000003",
 		);
 
-		expectSoftDeletePredicateCount(1);
+		expectOrganisationScopedSoftDeletePredicate(1);
 	});
 });
