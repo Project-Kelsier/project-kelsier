@@ -1,3 +1,4 @@
+CREATE EXTENSION IF NOT EXISTS "pgcrypto";--> statement-breakpoint
 CREATE TYPE "public"."assessment_version_status" AS ENUM('draft', 'active', 'retired');--> statement-breakpoint
 CREATE TYPE "public"."organisation_role" AS ENUM('owner', 'admin', 'member');--> statement-breakpoint
 CREATE TYPE "public"."team_role" AS ENUM('lead', 'member');--> statement-breakpoint
