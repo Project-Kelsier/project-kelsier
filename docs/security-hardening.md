@@ -188,6 +188,18 @@ Rotate secrets immediately after:
 
 Maintain an inventory of GitHub repository secrets, environment secrets, Cloudflare tokens, npm publishing settings, and future Neon credentials.
 
+## Database Runtime Boundary
+
+Keep database clients split by runtime:
+
+- `src/db/client.worker.ts` is the Cloudflare Worker application client. It uses Drizzle's Neon HTTP driver, which runs over `fetch` and does not rely on Node TCP sockets.
+- `src/db/client.node.ts` is for Node-only scripts, local seed work, migration support, and tests that need postgres-js. Do not import it from route, service, or Worker runtime modules.
+- `src/db/client.ts` is a runtime-safe shared surface for environment parsing and `DbClient` typing. It must not import `postgres`, `drizzle-orm/postgres-js`, `node:*`, or other Node-only modules.
+
+Hyperdrive is intentionally not wired into the Worker client yet because this repo does not define a Hyperdrive binding. Add that only with the corresponding Cloudflare binding and generated Worker types.
+
+`src/db/client-boundary.test.ts` statically scans Worker-facing source files so postgres-js and `client.node.ts` cannot enter the Worker bundle by accident.
+
 ## Incident Response
 
 If a developer machine or CI runner installed a known malicious dependency version, treat that host as compromised until proven otherwise.

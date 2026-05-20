@@ -276,6 +276,9 @@ If you cannot run a check locally, say so explicitly in your handoff and explain
 
 - [`docker-compose.yml`](docker-compose.yml) defines the local PostgreSQL 17 service. It publishes container port `5432` on host port `55432` to avoid common Windows reservations around `5432`.
 - [`drizzle.config.ts`](drizzle.config.ts) reads database credentials from `.env`.
+- Keep runtime database clients explicit. [`src/db/client.worker.ts`](src/db/client.worker.ts) is the Cloudflare Worker runtime client and uses Drizzle's Neon HTTP driver; [`src/db/client.node.ts`](src/db/client.node.ts) is Node-only for scripts, seed work, migration support, and tests that need postgres-js; [`src/db/client.ts`](src/db/client.ts) must remain a runtime-safe shared type/env helper and must not import Node-only database modules.
+- Do not import [`src/db/client.node.ts`](src/db/client.node.ts), `postgres`, or `drizzle-orm/postgres-js` from routes, services, or other Worker-facing modules. [`src/db/client-boundary.test.ts`](src/db/client-boundary.test.ts) enforces this boundary.
+- Do not wire Hyperdrive into the Worker client until `wrangler.jsonc` has a Hyperdrive binding and generated Worker types are updated.
 - [`src/db/schema/index.ts`](src/db/schema/index.ts) is the schema export surface used by Drizzle.
 - Keep relation definitions in [`src/db/schema/relations.ts`](src/db/schema/relations.ts) unless a future refactor proves colocated relations are safe and clearer.
 - Generate migrations with `pnpm db:generate`; do not hand-write or casually edit generated migration metadata.

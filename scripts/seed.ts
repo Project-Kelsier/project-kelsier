@@ -1,5 +1,5 @@
 import "dotenv/config";
-import { createDbConnection } from "#/db/client";
+import { createDbConnection } from "#/db/client.node";
 import {
 	assessmentOptions,
 	assessmentQuestions,

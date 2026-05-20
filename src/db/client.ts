@@ -1,6 +1,4 @@
-import { drizzle } from "drizzle-orm/postgres-js";
-import postgres, { type Sql } from "postgres";
-import * as schema from "./schema";
+import type { getDb as getWorkerDb } from "./client.worker";
 
 export type DatabaseEnv = {
 	DATABASE_URL?: string;
@@ -8,16 +6,9 @@ export type DatabaseEnv = {
 	USE_HYPERDRIVE?: boolean | string;
 };
 
-export type DbConnection = {
-	db: ReturnType<typeof createDrizzleClient>;
-	queryClient: Sql;
+export type WorkerDatabaseEnv = {
+	DATABASE_URL?: string;
 };
-
-const connections = new Map<string, DbConnection>();
-
-function createDrizzleClient(queryClient: Sql) {
-	return drizzle(queryClient, { schema });
-}
 
 export function shouldUseHyperdrive(value: DatabaseEnv["USE_HYPERDRIVE"]) {
 	return value === true || value === "true";
@@ -40,55 +31,12 @@ export function getConnectionString(env: DatabaseEnv) {
 	return connectionString;
 }
 
-export function createDbConnection(connectionString: string): DbConnection {
-	// Prepared statements are disabled for compatibility with pooled PostgreSQL
-	// connections, including Cloudflare Hyperdrive-backed deployments.
-	const queryClient = postgres(connectionString, {
-		prepare: false,
-	});
-
-	return {
-		db: createDrizzleClient(queryClient),
-		queryClient,
-	};
-}
-
-export function getDbConnection(env: DatabaseEnv): DbConnection {
-	const connectionString = getConnectionString(env);
-	const existingConnection = connections.get(connectionString);
-
-	if (existingConnection) {
-		return existingConnection;
+export function getWorkerConnectionString(env: WorkerDatabaseEnv) {
+	if (!env.DATABASE_URL) {
+		throw new Error("DATABASE_URL is required.");
 	}
 
-	const connection = createDbConnection(connectionString);
-	connections.set(connectionString, connection);
-
-	return connection;
+	return env.DATABASE_URL;
 }
 
-export async function closeDbConnections(env?: DatabaseEnv) {
-	const entries = env
-		? (() => {
-				const connectionString = getConnectionString(env);
-				return [[connectionString, connections.get(connectionString)] as const];
-			})()
-		: Array.from(connections.entries());
-
-	await Promise.all(
-		entries.map(async ([connectionString, connection]) => {
-			if (!connection) {
-				return;
-			}
-
-			await connection.queryClient.end();
-			connections.delete(connectionString);
-		}),
-	);
-}
-
-export function getDb(env: DatabaseEnv) {
-	return getDbConnection(env).db;
-}
-
-export type DbClient = ReturnType<typeof getDb>;
+export type DbClient = ReturnType<typeof getWorkerDb>;
