@@ -1,12 +1,17 @@
 import { describe, expect, it, vi } from "vitest";
 import type { DbClient } from "#/db/client";
-import { assertAssessmentAttemptTeamScope } from "./assessments";
+import {
+	assertAssessmentAttemptTeamScope,
+	getAssessmentResultForAttempt,
+	listAssessmentAttemptsForUser,
+} from "./assessments";
 import type { OrganisationUserContext } from "./context";
 
 const limit = vi.fn<() => Promise<Array<{ id: string }>>>();
 const where = vi.fn<(predicate: unknown) => { limit: typeof limit }>(() => ({
 	limit,
 }));
+const innerJoin = vi.fn(() => ({ where }));
 
 function collectStringChunks(
 	value: unknown,
@@ -36,11 +41,12 @@ function createContextWithTeamRows(
 ): OrganisationUserContext {
 	limit.mockResolvedValue(rows);
 	where.mockClear();
+	innerJoin.mockClear();
 
 	const db = {
 		select: vi.fn(() => ({
 			from: vi.fn(() => ({
-				where,
+				innerJoin,
 			})),
 		})),
 	} as unknown as DbClient;
@@ -50,6 +56,14 @@ function createContextWithTeamRows(
 		organisationId: "00000000-0000-4000-8000-000000000001",
 		userId: "00000000-0000-4000-8000-000000000002",
 	};
+}
+
+function expectOrganisationSoftDeletePredicate() {
+	const predicate = where.mock.calls.at(-1)?.at(0);
+	const predicateSql = collectStringChunks(predicate).join(" ");
+
+	expect(predicateSql).toContain("deleted_at");
+	expect(predicateSql).toContain(" is null");
 }
 
 describe("assertAssessmentAttemptTeamScope", () => {
@@ -91,10 +105,35 @@ describe("assertAssessmentAttemptTeamScope", () => {
 			"Assessment attempt team must belong to the organisation.",
 		);
 
-		const predicate = where.mock.calls.at(0)?.at(0);
-		const predicateSql = collectStringChunks(predicate).join(" ");
+		expectOrganisationSoftDeletePredicate();
+	});
 
-		expect(predicateSql).toContain("deleted_at");
-		expect(predicateSql).toContain(" is null");
+	it("excludes teams from soft-deleted organisations", async () => {
+		await assertAssessmentAttemptTeamScope(
+			createContextWithTeamRows([]),
+			"00000000-0000-4000-8000-000000000006",
+		).catch(() => undefined);
+
+		expectOrganisationSoftDeletePredicate();
+	});
+});
+
+describe("assessment service organisation visibility", () => {
+	it("excludes attempts from soft-deleted organisations", async () => {
+		await listAssessmentAttemptsForUser(
+			createContextWithTeamRows([]),
+			"00000000-0000-4000-8000-000000000003",
+		);
+
+		expectOrganisationSoftDeletePredicate();
+	});
+
+	it("excludes results from soft-deleted organisations", async () => {
+		await getAssessmentResultForAttempt(
+			createContextWithTeamRows([]),
+			"00000000-0000-4000-8000-000000000003",
+		);
+
+		expectOrganisationSoftDeletePredicate();
 	});
 });
