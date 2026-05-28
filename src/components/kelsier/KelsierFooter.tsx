@@ -55,14 +55,22 @@ const FOOTER_LINK_GROUPS: Array<{
 	},
 ];
 
-export function KelsierFooter() {
+type KelsierFooterProps = {
+	sectionHrefPrefix?: "" | "/";
+};
+
+export function KelsierFooter({
+	sectionHrefPrefix = "",
+}: KelsierFooterProps = {}) {
 	const copyrightYear = new Date().getFullYear();
+	const sectionHref = (href: string) =>
+		href.startsWith("#") ? `${sectionHrefPrefix}${href}` : href;
 
 	return (
 		<footer className="k-footer mx-auto grid max-w-[1000px] grid-cols-[minmax(0,1fr)_minmax(360px,0.9fr)] gap-12 border-[var(--k-border)] border-t px-[60px] pt-14 pb-12 text-[var(--k-text-muted)] max-md:grid-cols-1 max-md:gap-8 max-md:px-6 max-md:pt-11 max-md:pb-10">
 			<div className="max-w-[340px]">
 				<a
-					href="#hero"
+					href={sectionHref("#hero")}
 					className="k-footer-logo mb-[18px] inline-flex text-[var(--k-text)] text-2xl tracking-[0.04em] no-underline hover:text-[rgba(220,200,160,0.88)] focus-visible:text-[rgba(220,200,160,0.88)]"
 				>
 					Kel<span>sier</span>
@@ -94,7 +102,7 @@ export function KelsierFooter() {
 									) : (
 										<a
 											className="text-[13px] text-[var(--k-text-soft)] no-underline transition-colors duration-200 hover:text-[rgba(220,200,160,0.88)] focus-visible:text-[rgba(220,200,160,0.88)]"
-											href={link.href}
+											href={sectionHref(link.href)}
 											rel={link.isExternal ? "noreferrer" : undefined}
 											target={link.isExternal ? "_blank" : undefined}
 										>

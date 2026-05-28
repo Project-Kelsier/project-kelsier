@@ -3,9 +3,15 @@ import { GITHUB_REPOSITORY_URL } from "#/lib/projectLinks";
 
 type KelsierHeaderProps = {
 	navRef: Ref<HTMLElement>;
+	sectionHrefPrefix?: "" | "/";
 };
 
-export function KelsierHeader({ navRef }: KelsierHeaderProps) {
+export function KelsierHeader({
+	navRef,
+	sectionHrefPrefix = "",
+}: KelsierHeaderProps) {
+	const sectionHref = (id: string) => `${sectionHrefPrefix}#${id}`;
+
 	return (
 		<nav
 			className="k-nav fixed inset-x-0 top-0 z-[100] flex items-center justify-between border-transparent border-b px-10 py-5 transition-[background,border-color,box-shadow] duration-[400ms] ease-in-out max-md:px-5 max-md:py-4"
@@ -19,7 +25,7 @@ export function KelsierHeader({ navRef }: KelsierHeaderProps) {
 				<li>
 					<a
 						className="text-[11px] text-[var(--k-text-soft)] no-underline tracking-[0.08em] uppercase hover:text-[rgba(220,200,160,0.85)] focus-visible:text-[rgba(220,200,160,0.85)]"
-						href="#method"
+						href={sectionHref("method")}
 					>
 						Method
 					</a>
@@ -27,7 +33,7 @@ export function KelsierHeader({ navRef }: KelsierHeaderProps) {
 				<li>
 					<a
 						className="text-[11px] text-[var(--k-text-soft)] no-underline tracking-[0.08em] uppercase hover:text-[rgba(220,200,160,0.85)] focus-visible:text-[rgba(220,200,160,0.85)]"
-						href="#teams"
+						href={sectionHref("teams")}
 					>
 						Teams
 					</a>
@@ -35,7 +41,7 @@ export function KelsierHeader({ navRef }: KelsierHeaderProps) {
 				<li>
 					<a
 						className="text-[11px] text-[var(--k-text-soft)] no-underline tracking-[0.08em] uppercase hover:text-[rgba(220,200,160,0.85)] focus-visible:text-[rgba(220,200,160,0.85)]"
-						href="#science"
+						href={sectionHref("science")}
 					>
 						Science
 					</a>
@@ -51,7 +57,7 @@ export function KelsierHeader({ navRef }: KelsierHeaderProps) {
 					GitHub
 				</a>
 				<a
-					href="#begin"
+					href={sectionHref("begin")}
 					className="k-nav-cta inline-flex items-center justify-center rounded-3xl border border-[var(--k-ember-dim)] px-[18px] py-[7px] text-xs text-[var(--k-ember)] tracking-[0.05em] no-underline hover:border-[rgba(191,146,72,0.6)] hover:bg-[var(--k-ember-glow)] focus-visible:border-[rgba(191,146,72,0.6)] focus-visible:bg-[var(--k-ember-glow)] max-[380px]:px-3"
 				>
 					Begin
