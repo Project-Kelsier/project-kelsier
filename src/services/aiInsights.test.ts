@@ -1,4 +1,4 @@
-import { isNull } from "drizzle-orm";
+import { eq, isNull } from "drizzle-orm";
 import { describe, expect, it, vi } from "vitest";
 import type { DbClient } from "#/db/client";
 import { organisations } from "#/db/schema";
@@ -26,6 +26,7 @@ function createContext(): OrganisationUserContext {
 	where.mockResolvedValue([]);
 	where.mockClear();
 	innerJoin.mockClear();
+	vi.mocked(eq).mockClear();
 	vi.mocked(isNull).mockClear();
 
 	const db = {
@@ -58,9 +59,14 @@ describe("AI insight service organisation visibility", () => {
 	it("excludes source insights from soft-deleted organisations", async () => {
 		await listAiInsightsForSource(
 			createContext(),
+			"assessment_attempt",
 			"00000000-0000-4000-8000-000000000003",
 		);
 
+		expect(eq).toHaveBeenCalledWith(
+			expect.objectContaining({ name: "source_entity_type" }),
+			"assessment_attempt",
+		);
 		expectOrganisationSoftDeletePredicate();
 	});
 });

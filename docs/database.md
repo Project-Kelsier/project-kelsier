@@ -67,6 +67,26 @@ pnpm db:seed
 
 Review generated SQL before applying it to any hosted database. Initial/fresh database setup must be reproducible from committed migrations, including required extensions such as `pgcrypto`.
 
+## Tenant Integrity
+
+Tables that duplicate `organisation_id` for tenant-scoped lookup speed must still enforce that duplicated tenant key at the database level when they also reference a parent row.
+
+Use this pattern when practical:
+
+1. Add a composite unique key on the parent table, such as `(id, organisation_id)`.
+2. Add a composite foreign key from the child table, such as `(parent_id, organisation_id)`.
+3. Keep service-layer `organisationId` predicates, but do not rely on them as the only protection against cross-tenant rows.
+
+Current assessment examples:
+
+- `assessment_attempts` has a unique key on `(id, organisation_id)`.
+- `assessment_answers` references attempts through `(attempt_id, organisation_id)`.
+- `assessment_results` references attempts through `(attempt_id, organisation_id)`.
+
+This prevents answer/result rows from referencing an attempt that belongs to a different organisation while still allowing tenant-scoped query helpers to filter by local `organisation_id`.
+
+For source-scoped lookup helpers, include all columns that define the source identity. For AI insights, source lookups must filter by both `sourceEntityType` and `sourceEntityId`.
+
 ## Runtime Import Rules
 
 - App runtime code should use `src/db/client.worker.ts` when it needs a concrete database client.

@@ -1,0 +1,3 @@
+CREATE UNIQUE INDEX "assessment_attempts_id_organisation_id_unique" ON "assessment_attempts" USING btree ("id","organisation_id");--> statement-breakpoint
+ALTER TABLE "assessment_answers" ADD CONSTRAINT "assessment_answers_attempt_organisation_fk" FOREIGN KEY ("attempt_id","organisation_id") REFERENCES "public"."assessment_attempts"("id","organisation_id") ON DELETE cascade ON UPDATE no action;--> statement-breakpoint
+ALTER TABLE "assessment_results" ADD CONSTRAINT "assessment_results_attempt_organisation_fk" FOREIGN KEY ("attempt_id","organisation_id") REFERENCES "public"."assessment_attempts"("id","organisation_id") ON DELETE cascade ON UPDATE no action;

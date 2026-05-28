@@ -38,6 +38,7 @@ export async function listAiInsightsForOrganisation(
 
 export async function listAiInsightsForSource(
 	context: OrganisationUserContext,
+	sourceEntityType: string,
 	sourceEntityId: string,
 ) {
 	return context.db
@@ -47,6 +48,7 @@ export async function listAiInsightsForSource(
 		.where(
 			and(
 				eq(aiInsights.organisationId, context.organisationId),
+				eq(aiInsights.sourceEntityType, sourceEntityType),
 				eq(aiInsights.sourceEntityId, sourceEntityId),
 				isNull(organisations.deletedAt),
 			),

@@ -159,6 +159,8 @@ The current UI is mostly static, but the repository now includes a production-sh
 - Avoid introducing a global client state library without a concrete need.
 - Keep database services thin and explicit. Do not introduce generic repositories, CQRS, event sourcing, or domain frameworks without a concrete product need.
 - Preserve tenant boundaries in service helpers. Organisation-scoped and team-scoped queries should include explicit `organisationId` predicates and should filter soft-deleted organisations, teams, and memberships from normal list/get helpers.
+- Source-scoped lookup helpers should include all columns that define the source identity. For example, AI insight source lookups must filter by both `sourceEntityType` and `sourceEntityId`, not just the ID.
+- When a table stores a duplicated `organisationId` for tenant-scoped lookup speed and also references a parent row, enforce that tenant relationship at the database level with composite unique keys/foreign keys where practical. Do not rely only on service-layer predicates to prevent cross-tenant rows.
 - Keep external auth decoupled from domain users. `users.authUserId` is the bridge to managed auth identity; do not add foreign keys to provider-owned auth tables.
 - Local database work should use Docker PostgreSQL through `DATABASE_URL=postgres://kelsier:kelsier@localhost:55432/kelsier_dev`. Do not run destructive development commands against Neon.
 
@@ -295,6 +297,7 @@ If you cannot run a check locally, say so explicitly in your handoff and explain
 - Do not wire Hyperdrive into the Worker client until `wrangler.jsonc` has a Hyperdrive binding and generated Worker types are updated.
 - [`src/db/schema/index.ts`](src/db/schema/index.ts) is the schema export surface used by Drizzle.
 - Keep relation definitions in [`src/db/schema/relations.ts`](src/db/schema/relations.ts) unless a future refactor proves colocated relations are safe and clearer.
+- Preserve tenant integrity in schema design. If child rows duplicate `organisation_id` while referencing a parent row, add a composite unique key on the parent and a composite foreign key from the child so mismatched tenant rows are impossible. Current examples include `assessment_answers(attempt_id, organisation_id)` and `assessment_results(attempt_id, organisation_id)` referencing `assessment_attempts(id, organisation_id)`.
 - Generate migrations with `pnpm db:generate`; do not hand-write or casually edit generated migration metadata.
 - Apply and seed locally with `pnpm db:migrate` and `pnpm db:seed` after confirming `.env` points at `localhost:55432`.
 - Keep seed data idempotent and useful for frontend/API development. Avoid seed records that imply product behavior not yet supported.

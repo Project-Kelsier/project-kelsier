@@ -1,6 +1,7 @@
 import { sql } from "drizzle-orm";
 import {
 	doublePrecision,
+	foreignKey,
 	index,
 	integer,
 	jsonb,
@@ -129,6 +130,10 @@ export const assessmentAttempts = pgTable(
 			.defaultNow(),
 	},
 	(table) => [
+		uniqueIndex("assessment_attempts_id_organisation_id_unique").on(
+			table.id,
+			table.organisationId,
+		),
 		index("assessment_attempts_organisation_id_idx").on(table.organisationId),
 		index("assessment_attempts_organisation_id_user_id_idx").on(
 			table.organisationId,
@@ -175,6 +180,14 @@ export const assessmentAnswers = pgTable(
 		index("assessment_answers_attempt_id_idx").on(table.attemptId),
 		index("assessment_answers_question_id_idx").on(table.questionId),
 		index("assessment_answers_option_id_idx").on(table.optionId),
+		foreignKey({
+			columns: [table.attemptId, table.organisationId],
+			foreignColumns: [
+				assessmentAttempts.id,
+				assessmentAttempts.organisationId,
+			],
+			name: "assessment_answers_attempt_organisation_fk",
+		}).onDelete("cascade"),
 	],
 );
 
@@ -214,6 +227,14 @@ export const assessmentResults = pgTable(
 		index("assessment_results_assessment_version_id_idx").on(
 			table.assessmentVersionId,
 		),
+		foreignKey({
+			columns: [table.attemptId, table.organisationId],
+			foreignColumns: [
+				assessmentAttempts.id,
+				assessmentAttempts.organisationId,
+			],
+			name: "assessment_results_attempt_organisation_fk",
+		}).onDelete("cascade"),
 	],
 );
 
