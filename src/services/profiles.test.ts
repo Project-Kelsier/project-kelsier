@@ -1,7 +1,20 @@
+import { isNull } from "drizzle-orm";
 import { describe, expect, it, vi } from "vitest";
 import type { DbClient } from "#/db/client";
+import { organisations } from "#/db/schema";
 import type { OrganisationUserContext } from "./context";
 import { getPersonalityProfileForUser } from "./profiles";
+
+vi.mock("drizzle-orm", async (importOriginal) => {
+	const actual = await importOriginal<typeof import("drizzle-orm")>();
+
+	return {
+		...actual,
+		and: vi.fn((...conditions: unknown[]) => ({ conditions })),
+		eq: vi.fn((left: unknown, right: unknown) => ({ left, right })),
+		isNull: vi.fn((column: unknown) => ({ column })),
+	};
+});
 
 const limit = vi.fn<() => Promise<unknown[]>>();
 const where = vi.fn<(predicate: unknown) => { limit: typeof limit }>(() => ({
@@ -9,33 +22,11 @@ const where = vi.fn<(predicate: unknown) => { limit: typeof limit }>(() => ({
 }));
 const innerJoin = vi.fn(() => ({ where }));
 
-function collectStringChunks(
-	value: unknown,
-	seen = new WeakSet<object>(),
-): string[] {
-	if (typeof value === "string") {
-		return [value];
-	}
-
-	if (!value || typeof value !== "object" || seen.has(value)) {
-		return [];
-	}
-
-	seen.add(value);
-
-	if (Array.isArray(value)) {
-		return value.flatMap((item) => collectStringChunks(item, seen));
-	}
-
-	return Object.values(value).flatMap((item) =>
-		collectStringChunks(item, seen),
-	);
-}
-
 function createContext(): OrganisationUserContext {
 	limit.mockResolvedValue([]);
 	where.mockClear();
 	innerJoin.mockClear();
+	vi.mocked(isNull).mockClear();
 
 	const db = {
 		select: vi.fn(() => ({
@@ -59,13 +50,7 @@ describe("profile service organisation visibility", () => {
 			"00000000-0000-4000-8000-000000000003",
 		);
 
-		const predicate = where.mock.calls.at(-1)?.at(0);
-		const predicateSql = collectStringChunks(predicate).join(" ");
-		const deletedAtReferenceCount =
-			predicateSql.match(/deleted_at/g)?.length ?? 0;
-
-		expect(predicateSql).toContain("deleted_at");
-		expect(predicateSql).toContain(" is null");
-		expect(deletedAtReferenceCount).toBe(4);
+		expect(innerJoin.mock.calls.at(-1)?.at(0)).toBe(organisations);
+		expect(isNull).toHaveBeenCalledWith(organisations.deletedAt);
 	});
 });

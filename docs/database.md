@@ -75,6 +75,12 @@ Review generated SQL before applying it to any hosted database. Initial/fresh da
 - Do not import `src/db/client.node.ts` from `src/routes`, Worker route handlers, or service modules used by the app runtime.
 - Keep `src/db/client.ts` free of `node:*`, `postgres`, and `drizzle-orm/postgres-js` imports.
 
+## Testing Query Boundaries
+
+Service tests for tenant-scoped Drizzle helpers should assert the semantic query contract, not Drizzle internals.
+
+For soft-delete and tenant visibility tests, assert specific schema columns are used, such as `organisations.deletedAt`, `teams.deletedAt`, and `teamMembers.deletedAt`. Avoid counting repeated `deleted_at` tokens from Drizzle predicate objects.
+
 ## Sources
 
 - Drizzle Neon driver docs: <https://orm.drizzle.team/docs/connect-neon>

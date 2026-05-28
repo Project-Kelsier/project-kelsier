@@ -178,6 +178,20 @@ This repo already has a clear split between unit and end-to-end coverage.
 - Vitest includes `src/**/*.test.{ts,tsx}`.
 - Do not place unit tests under `e2e`.
 
+### Query Helper Tests
+
+When testing Drizzle query helpers, avoid assertions that depend on Drizzle's internal predicate object shape, generated SQL chunk repetition, or magic string counts.
+
+Prefer assertions that verify the intended contract directly:
+
+- Mock Drizzle operators such as `eq`, `and`, and `isNull` when needed.
+- Assert that expected schema columns are passed to operators, such as `isNull(organisations.deletedAt)`.
+- Assert required joins by checking the joined schema table object.
+- Keep tests focused on tenant visibility, soft-delete filtering, and return-shape behavior.
+- Do not assert on generated SQL strings unless the test is explicitly about SQL generation.
+
+For organisation-scoped helpers, tests should prove that `organisations.deletedAt` is filtered, not merely that some `deleted_at IS NULL` predicate exists.
+
 ### E2E Tests
 
 - Put browser tests under [`e2e`](e2e).

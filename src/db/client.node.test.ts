@@ -1,11 +1,9 @@
-import { describe, expect, it, vi } from "vitest";
+import { describe, expect, it } from "vitest";
 import { getConnectionString } from "./client";
 import { closeDbConnections, getDb, getDbConnection } from "./client.node";
 
 describe("database client factory", () => {
-	it("defers missing credential validation until a db is requested", async () => {
-		vi.resetModules();
-
+	it("requires a direct database URL by default", () => {
 		expect(() => getConnectionString({})).toThrow("DATABASE_URL is required.");
 	});
 
