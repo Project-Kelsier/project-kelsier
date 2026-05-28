@@ -15,6 +15,12 @@ This project follows semantic versioning while it moves toward MVP. Versions bel
 
 - Documented local database setup, Drizzle migration workflow, and the local Docker PostgreSQL default separate from hosted Neon environments.
 
+## [0.1.3] - 2026-05-24
+
+### Added
+
+- Added a Kelsier-styled invalid route page for unknown URLs.
+
 ## [0.1.2] - 2026-05-18
 
 ### Added

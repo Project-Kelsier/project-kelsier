@@ -44,3 +44,18 @@ test("terms route renders placeholder page", async ({ page }) => {
 		page.getByRole("heading", { name: "Terms of Use" }),
 	).toBeVisible();
 });
+
+test("unknown routes render the Kelsier invalid route page", async ({
+	page,
+}) => {
+	await page.goto("/unknown-team-signal");
+	await expect(
+		page.getByRole("heading", {
+			name: "This route sits beyond the mapped team dynamic.",
+		}),
+	).toBeVisible();
+	await expect(page.getByRole("link", { name: "Return home" })).toHaveAttribute(
+		"href",
+		"/",
+	);
+});
