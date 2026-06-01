@@ -36,6 +36,13 @@
       "when": 1780321944723,
       "tag": "0004_curved_post",
       "breakpoints": true
+    },
+    {
+      "idx": 5,
+      "version": "7",
+      "when": 1780324226381,
+      "tag": "0005_unique_scalphunter",
+      "breakpoints": true
     }
   ]
 }

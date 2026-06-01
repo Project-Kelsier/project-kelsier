@@ -184,6 +184,10 @@ export const assessmentAnswers = pgTable(
 		index("assessment_answers_attempt_id_idx").on(table.attemptId),
 		index("assessment_answers_question_id_idx").on(table.questionId),
 		index("assessment_answers_option_id_idx").on(table.optionId),
+		index("assessment_answers_option_id_question_id_idx").on(
+			table.optionId,
+			table.questionId,
+		),
 		foreignKey({
 			columns: [table.attemptId, table.organisationId],
 			foreignColumns: [

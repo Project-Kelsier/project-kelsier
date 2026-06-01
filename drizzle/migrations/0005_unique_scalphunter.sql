@@ -1,0 +1,1 @@
+CREATE INDEX "assessment_answers_option_id_question_id_idx" ON "assessment_answers" USING btree ("option_id","question_id");
