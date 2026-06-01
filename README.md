@@ -8,6 +8,12 @@ Built with TanStack Start, React, Vite, Biome, Vitest, Playwright, GitHub Action
 
 Current app version: see [`package.json`](./package.json) or run `pnpm version:show`.
 
+## Environment
+
+Copy [`.env.example`](./.env.example) to `.env` for local development. The default database URL points at the Docker Compose PostgreSQL service on `localhost:55432`; use Neon connection strings only when intentionally working against hosted staging or production databases.
+
+See [`CONTRIBUTING.md`](./CONTRIBUTING.md) for generated-file and secret-handling rules before opening a PR.
+
 ## Commands
 
 ```bash
@@ -22,7 +28,40 @@ pnpm preview
 pnpm cf-typegen
 pnpm deploy
 pnpm test:e2e
+pnpm db:generate
+pnpm db:migrate
+pnpm db:seed
 pnpm version:show
+```
+
+## Local Database Setup
+
+Local PostgreSQL runs through Docker Compose for daily development, migration checks, seed testing, and destructive resets. Neon remains the hosted database target for staging and production.
+
+Prerequisite: Docker Desktop.
+
+The local container exposes PostgreSQL on `localhost:55432` to avoid common Windows port reservations around `5432`.
+
+```bash
+# Start local PostgreSQL
+docker compose up -d
+
+# Stop local PostgreSQL
+docker compose down
+
+# Fully reset local PostgreSQL data
+docker compose down -v
+
+# Check running containers
+docker ps
+
+# Connect with psql inside the container
+docker exec -it kelsier-postgres psql -U kelsier -d kelsier_dev
+
+# Generate, apply, and seed the local database
+pnpm db:generate
+pnpm db:migrate
+pnpm db:seed
 ```
 
 ## Tooling Notes

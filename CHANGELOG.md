@@ -4,6 +4,17 @@ All notable changes to Project Kelsier will be documented in this file.
 
 This project follows semantic versioning while it moves toward MVP. Versions below `1.0.0` may still include breaking product or API changes when they are called out here.
 
+## [0.2.0] - 2026-05-28
+
+### Added
+
+- Added a Drizzle/PostgreSQL foundation with schema modules, relations, migrations, local seed data, and thin service-layer query helpers.
+- Added Docker Compose local PostgreSQL development on `localhost:55432` for migrations, seed testing, and destructive resets.
+
+### Changed
+
+- Documented local database setup, Drizzle migration workflow, and the local Docker PostgreSQL default separate from hosted Neon environments.
+
 ## [0.1.3] - 2026-05-24
 
 ### Added

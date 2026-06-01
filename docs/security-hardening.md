@@ -113,6 +113,13 @@ SHA pinning prevents a moved tag from changing executed workflow code. Version t
 - Store Cloudflare credentials only as GitHub environment secrets with required reviewer approval for production.
 - Never expose Cloudflare, Neon, npm, GitHub publishing, or database credentials to pull request workflows.
 
+## Database Secrets
+
+- Local development should use Docker PostgreSQL with the non-secret development credentials documented in [`.env.example`](../.env.example).
+- Keep Neon connection strings out of committed files. Use local untracked env files, password managers, or protected hosting secrets for hosted database credentials.
+- Before running `pnpm db:migrate`, `pnpm db:seed`, destructive resets, or ad hoc database scripts, confirm `DATABASE_URL` points at the intended target.
+- Do not run seed data or destructive local reset workflows against Neon unless the operation is explicitly planned and reviewed.
+
 ## Branch Protection
 
 Require branch protection on `main`:
@@ -180,6 +187,18 @@ Rotate secrets immediately after:
 - A Cloudflare, npm, GitHub, Neon, or database token appears in logs.
 
 Maintain an inventory of GitHub repository secrets, environment secrets, Cloudflare tokens, npm publishing settings, and future Neon credentials.
+
+## Database Runtime Boundary
+
+Keep database clients split by runtime:
+
+- `src/db/client.worker.ts` is the Cloudflare Worker application client. It uses Drizzle's Neon HTTP driver, which runs over `fetch` and does not rely on Node TCP sockets.
+- `src/db/client.node.ts` is for Node-only scripts, local seed work, migration support, and tests that need postgres-js. Do not import it from route, service, or Worker runtime modules.
+- `src/db/client.ts` is a runtime-safe shared surface for environment parsing and `DbClient` typing. It must not import `postgres`, `drizzle-orm/postgres-js`, `node:*`, or other Node-only modules.
+
+Hyperdrive is intentionally not wired into the Worker client yet because this repo does not define a Hyperdrive binding. Add that only with the corresponding Cloudflare binding and generated Worker types.
+
+`src/db/client-boundary.test.ts` statically scans Worker-facing source files so postgres-js and `client.node.ts` cannot enter the Worker bundle by accident.
 
 ## Incident Response
 

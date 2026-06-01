@@ -1,0 +1,66 @@
+# .coderabbit.yaml
+# yaml-language-server: $schema=https://coderabbit.ai/integrations/schema.v2.json
+
+language: "en-US"
+
+reviews:
+  profile: "chill"
+  request_changes_workflow: false
+  high_level_summary: true
+  poem: false
+  review_status: true
+  review_details: false
+
+  auto_review:
+    enabled: true
+    drafts: false
+
+  path_filters:
+    - "!**/dist/**"
+    - "!**/build/**"
+    - "!**/.output/**"
+    - "!**/.wrangler/**"
+    - "!**/.tanstack/**"
+    - "!**/.nitro/**"
+    - "!**/.vinxi/**"
+    - "!**/coverage/**"
+    - "!**/playwright-report/**"
+    - "!**/test-results/**"
+    - "!**/node_modules/**"
+    - "!**/package-lock.json"
+    - "!**/yarn.lock"
+
+  path_instructions:
+    - path: "src/**"
+      instructions: |
+        Focus on correctness, TypeScript safety, architecture boundaries, security issues, and maintainability.
+        Avoid nitpicks about formatting unless they affect readability or correctness.
+        For TanStack Start/React code, check server/client boundaries and avoid leaking server-only logic into browser bundles.
+
+    - path: "src/db/**"
+      instructions: |
+        Review Drizzle schema and migrations carefully.
+        Check nullable fields, foreign keys, indexes, cascade/delete behavior, tenant integrity, migration safety, and Postgres compatibility.
+        Do not allow Worker-facing imports of src/db/client.node.ts, postgres, or drizzle-orm/postgres-js.
+
+    - path: "src/services/**"
+      instructions: |
+        Check tenant scoping, soft-delete filters, return shapes, and Worker-safe imports.
+        Organisation-scoped and team-scoped helpers should include explicit organisationId predicates and filter soft-deleted parent rows.
+
+    - path: "drizzle/migrations/**"
+      instructions: |
+        Review generated SQL for migration safety, tenant integrity, Postgres compatibility, indexes, foreign keys, and destructive operations.
+        Do not suggest hand-editing Drizzle metadata unless there is a clear generated-file issue.
+
+    - path: ".github/workflows/**"
+      instructions: |
+        Review CI for supply-chain safety, least privilege permissions, reproducible pnpm installs, and secret leakage.
+
+    - path: "**/*.test.{ts,tsx}"
+      instructions: |
+        Prefer contract-focused assertions over assertions against framework internals.
+        For Drizzle helper tests, check tenant visibility, soft-delete filtering, joins, and schema columns passed to operators.
+
+chat:
+  auto_reply: true

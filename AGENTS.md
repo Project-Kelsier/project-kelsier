@@ -24,6 +24,7 @@ This repo should be easy for a new contributor to understand without private con
 - Framework: TanStack Start with React 19, Vite, and TanStack Router.
 - Deployment target: Cloudflare Workers via Wrangler and the Cloudflare Vite plugin.
 - Styling: Tailwind CSS v4, global baseline CSS in [`src/styles.css`](src/styles.css), and Kelsier-specific authored CSS in [`src/styles/kelsier.css`](src/styles/kelsier.css).
+- Database: Drizzle ORM with PostgreSQL. Local development uses Docker Compose PostgreSQL on `localhost:55432`; Neon remains the hosted staging/production database target.
 - Testing: Vitest for unit tests and Playwright for end-to-end coverage.
 - Quality gate: Biome for formatting, linting, and import organization.
 - Package manager: `pnpm`
@@ -37,6 +38,9 @@ Current app shape is intentionally small:
 - Route files in [`src/routes/index.tsx`](src/routes/index.tsx), [`src/routes/privacy.tsx`](src/routes/privacy.tsx), and [`src/routes/terms.tsx`](src/routes/terms.tsx)
 - Kelsier page composition in [`src/components/kelsier/KelsierPage.tsx`](src/components/kelsier/KelsierPage.tsx)
 - Reusable Kelsier shell components in [`src/components/kelsier/KelsierHeader.tsx`](src/components/kelsier/KelsierHeader.tsx) and [`src/components/kelsier/KelsierFooter.tsx`](src/components/kelsier/KelsierFooter.tsx)
+- Drizzle schema modules in [`src/db/schema`](src/db/schema), including explicit relations in [`src/db/schema/relations.ts`](src/db/schema/relations.ts)
+- Thin database service helpers in [`src/services`](src/services)
+- Local seed data in [`scripts/seed.ts`](scripts/seed.ts)
 - Global CSS baseline in [`src/styles.css`](src/styles.css) and Kelsier visual styles in [`src/styles/kelsier.css`](src/styles/kelsier.css)
 
 This guide assumes the repo will grow from that starting point, so several sections below define conventions for scale before they are strictly required.
@@ -71,6 +75,10 @@ Use the current layout as the baseline and expand it with these responsibilities
 - [`src/components`](src/components): Reusable presentational components shared by multiple routes or sections.
 - [`src/styles.css`](src/styles.css): Tailwind imports, global font theme, and document-level baseline styles.
 - [`src/styles/kelsier.css`](src/styles/kelsier.css): Kelsier design tokens, page layout, animations, and route-specific component styles.
+- [`src/db`](src/db): Drizzle client and schema definitions.
+- [`src/services`](src/services): Thin service-layer query helpers that keep tenant scoping explicit.
+- [`drizzle/migrations`](drizzle/migrations): Drizzle-generated PostgreSQL migration SQL and metadata.
+- [`scripts`](scripts): Local operational scripts such as database seed setup.
 - [`src/router.tsx`](src/router.tsx): Router creation only.
 - [`e2e`](e2e): End-to-end tests that validate cross-page user-visible behavior.
 - [`public`](public): Static assets that should be served directly.
@@ -143,12 +151,18 @@ Every user-facing change should maintain or improve baseline accessibility.
 
 ## State And Data
 
-The current app is mostly static. As data needs grow:
+The current UI is mostly static, but the repository now includes a production-shaped Drizzle/PostgreSQL foundation.
 
 - Keep route data fetching close to the route when the data is route-owned.
 - Move shared transformation logic into `src/lib` rather than embedding it in JSX.
 - Separate server-only logic from client components as soon as that distinction matters.
 - Avoid introducing a global client state library without a concrete need.
+- Keep database services thin and explicit. Do not introduce generic repositories, CQRS, event sourcing, or domain frameworks without a concrete product need.
+- Preserve tenant boundaries in service helpers. Organisation-scoped and team-scoped queries should include explicit `organisationId` predicates and should filter soft-deleted organisations, teams, and memberships from normal list/get helpers.
+- Source-scoped lookup helpers should include all columns that define the source identity. For example, AI insight source lookups must filter by both `sourceEntityType` and `sourceEntityId`, not just the ID.
+- When a table stores a duplicated `organisationId` for tenant-scoped lookup speed and also references a parent row, enforce that tenant relationship at the database level with composite unique keys/foreign keys where practical. Do not rely only on service-layer predicates to prevent cross-tenant rows.
+- Keep external auth decoupled from domain users. `users.authUserId` is the bridge to managed auth identity; do not add foreign keys to provider-owned auth tables.
+- Local database work should use Docker PostgreSQL through `DATABASE_URL=postgres://kelsier:kelsier@localhost:55432/kelsier_dev`. Do not run destructive development commands against Neon.
 
 Default bias: start local, then extract when reuse or complexity justifies it.
 
@@ -165,6 +179,20 @@ This repo already has a clear split between unit and end-to-end coverage.
 - Put unit tests next to source files using `*.test.ts` or `*.test.tsx`.
 - Vitest includes `src/**/*.test.{ts,tsx}`.
 - Do not place unit tests under `e2e`.
+
+### Query Helper Tests
+
+When testing Drizzle query helpers, avoid assertions that depend on Drizzle's internal predicate object shape, generated SQL chunk repetition, or magic string counts.
+
+Prefer assertions that verify the intended contract directly:
+
+- Mock Drizzle operators such as `eq`, `and`, and `isNull` when needed.
+- Assert that expected schema columns are passed to operators, such as `isNull(organisations.deletedAt)`.
+- Assert required joins by checking the joined schema table object.
+- Keep tests focused on tenant visibility, soft-delete filtering, and return-shape behavior.
+- Do not assert on generated SQL strings unless the test is explicitly about SQL generation.
+
+For organisation-scoped helpers, tests should prove that `organisations.deletedAt` is filtered, not merely that some `deleted_at IS NULL` predicate exists.
 
 ### E2E Tests
 
@@ -208,6 +236,20 @@ pnpm test
 pnpm build
 ```
 
+### Required For Database Schema Or Seed Changes
+
+```bash
+docker compose up -d
+pnpm db:generate
+pnpm db:migrate
+pnpm db:seed
+pnpm check
+pnpm typecheck
+pnpm test
+```
+
+Review generated SQL under [`drizzle/migrations`](drizzle/migrations) before applying it to any hosted database. Neon should be used only intentionally for hosted environments, not as the default local development target.
+
 If you cannot run a check locally, say so explicitly in your handoff and explain why.
 
 ## Tooling Guardrails
@@ -246,6 +288,20 @@ If you cannot run a check locally, say so explicitly in your handoff and explain
 - Prefer `pnpm preview` before `pnpm deploy` when validating runtime changes.
 - If bindings are added or changed, rerun `pnpm cf-typegen` and keep generated types aligned with the Wrangler config.
 
+### Drizzle And PostgreSQL
+
+- [`docker-compose.yml`](docker-compose.yml) defines the local PostgreSQL 17 service. It publishes container port `5432` on host port `55432` to avoid common Windows reservations around `5432`.
+- [`drizzle.config.ts`](drizzle.config.ts) reads database credentials from `.env`.
+- Keep runtime database clients explicit. [`src/db/client.worker.ts`](src/db/client.worker.ts) is the Cloudflare Worker runtime client and uses Drizzle's Neon HTTP driver; [`src/db/client.node.ts`](src/db/client.node.ts) is Node-only for scripts, seed work, migration support, and tests that need postgres-js; [`src/db/client.ts`](src/db/client.ts) must remain a runtime-safe shared type/env helper and must not import Node-only database modules.
+- Do not import [`src/db/client.node.ts`](src/db/client.node.ts), `postgres`, or `drizzle-orm/postgres-js` from routes, services, or other Worker-facing modules. [`src/db/client-boundary.test.ts`](src/db/client-boundary.test.ts) enforces this boundary.
+- Do not wire Hyperdrive into the Worker client until `wrangler.jsonc` has a Hyperdrive binding and generated Worker types are updated.
+- [`src/db/schema/index.ts`](src/db/schema/index.ts) is the schema export surface used by Drizzle.
+- Keep relation definitions in [`src/db/schema/relations.ts`](src/db/schema/relations.ts) unless a future refactor proves colocated relations are safe and clearer.
+- Preserve tenant integrity in schema design. If child rows duplicate `organisation_id` while referencing a parent row, add a composite unique key on the parent and a composite foreign key from the child so mismatched tenant rows are impossible. Current examples include `assessment_attempts(team_id, organisation_id)` referencing `teams(id, organisation_id)`, and `assessment_answers(attempt_id, organisation_id)` plus `assessment_results(attempt_id, organisation_id)` referencing `assessment_attempts(id, organisation_id)`.
+- Generate migrations with `pnpm db:generate`; do not hand-write or casually edit generated migration metadata.
+- Apply and seed locally with `pnpm db:migrate` and `pnpm db:seed` after confirming `.env` points at `localhost:55432`.
+- Keep seed data idempotent and useful for frontend/API development. Avoid seed records that imply product behavior not yet supported.
+
 ### Playwright
 
 - [`playwright.config.ts`](playwright.config.ts) starts Vite directly for Windows-friendly cleanup.
@@ -255,6 +311,32 @@ If you cannot run a check locally, say so explicitly in your handoff and explain
 
 - `#/*` and `@/*` both resolve to `src/*`.
 - Prefer one alias style consistently within a file. Avoid mixing aliases and long relative traversals in the same area without a reason.
+
+## Generated Files And Local Artifacts
+
+Some files are generated or tool-owned. Treat them according to their owner and commit policy.
+
+| Path | Owner | Commit? | Notes |
+| --- | --- | --- | --- |
+| [`drizzle/migrations/*.sql`](drizzle/migrations) | Drizzle Kit | Yes | Generated by `pnpm db:generate`; review SQL before applying it anywhere. |
+| [`drizzle/migrations/meta/*.json`](drizzle/migrations/meta) | Drizzle Kit | Yes | Migration metadata; keep aligned with generated SQL and do not hand-edit casually. |
+| [`worker-configuration.d.ts`](worker-configuration.d.ts) | Wrangler | Yes | Generated by `pnpm cf-typegen` after Cloudflare binding changes. |
+| [`pnpm-lock.yaml`](pnpm-lock.yaml) | pnpm | Yes | Commit when dependencies or package-manager resolution change. |
+| `src/routeTree.gen.ts` | TanStack Router | No | Generated route tree; ignored by git and should not be hand-edited. |
+| `.env` | Developer-local config | No | Local secrets/config only. Document names and safe defaults in [`.env.example`](.env.example). |
+| `node_modules/`, `.pnpm-store/` | pnpm | No | Local dependency install/cache output. |
+| `dist/`, `.output/`, `.wrangler/`, `.tanstack/`, `.nitro/`, `.vinxi/` | Build/runtime tools | No | Local generated build, preview, and tool state. |
+| `coverage/`, `playwright-report/`, `test-results/` | Test tools | No | Local test and coverage output. |
+
+## Secrets Handling
+
+Never commit real credentials, tokens, hosted database URLs, Neon connection strings, Cloudflare secrets, R2 keys, npm tokens, or GitHub tokens.
+
+- Use [`.env.example`](.env.example) for variable names and safe local defaults only.
+- Use `.env` for local untracked values.
+- Store hosted/staging/production secrets in the relevant platform secret manager, such as GitHub environments, Cloudflare settings, or the hosting provider secret store.
+- Local Docker PostgreSQL credentials in [`.env.example`](.env.example) are non-secret development defaults. Neon URLs and pooled hosted database URLs are secrets.
+- Before sharing logs, PR descriptions, screenshots, or generated docs, redact values for `DATABASE_URL`, `DATABASE_URL_POOLED`, R2 keys, Cloudflare tokens, Neon connection strings, and any access token.
 
 ## Change Management
 
@@ -334,6 +416,7 @@ These changes need extra caution:
 - Editing [`src/routes/__root.tsx`](src/routes/__root.tsx)
 - Changing router creation in [`src/router.tsx`](src/router.tsx)
 - Modifying generated-file behavior
+- Changing Drizzle schema, generated migrations, database client behavior, or tenant-scoped service helpers
 - Changing Vite, Vitest, Playwright, Biome, or CI configuration
 - Reworking the Kelsier visual system in [`src/styles/kelsier.css`](src/styles/kelsier.css)
 
