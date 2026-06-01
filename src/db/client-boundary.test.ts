@@ -7,6 +7,7 @@ const nodeOnlyClientPath = join(sourceRoot, "db", "client.node.ts");
 const nodeOnlyClientModulePath = normalize(
 	join(sourceRoot, "db", "client.node"),
 );
+const moduleSpecifierExtensions = ["", ".ts", ".tsx", ".js", ".jsx"];
 const forbiddenRuntimeImportPatterns = [
 	/from\s+["']postgres["']/,
 	/from\s+["']drizzle-orm\/postgres-js["']/,
@@ -37,7 +38,14 @@ function collectModuleSpecifiers(source: string): string[] {
 }
 
 function isNodeOnlyClientSpecifier(filePath: string, specifier: string) {
-	if (specifier === "#/db/client.node" || specifier === "@/db/client.node") {
+	const aliasNodeOnlySpecifiers = moduleSpecifierExtensions.flatMap(
+		(extension) => [
+			`#/db/client.node${extension}`,
+			`@/db/client.node${extension}`,
+		],
+	);
+
+	if (aliasNodeOnlySpecifiers.includes(specifier)) {
 		return true;
 	}
 
@@ -47,7 +55,10 @@ function isNodeOnlyClientSpecifier(filePath: string, specifier: string) {
 
 	const resolvedSpecifier = normalize(resolve(dirname(filePath), specifier));
 
-	return resolvedSpecifier === nodeOnlyClientModulePath;
+	return moduleSpecifierExtensions.some(
+		(extension) =>
+			resolvedSpecifier === `${nodeOnlyClientModulePath}${extension}`,
+	);
 }
 
 describe("database runtime boundary", () => {

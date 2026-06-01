@@ -1,6 +1,7 @@
 import { sql } from "drizzle-orm";
 import {
 	doublePrecision,
+	foreignKey,
 	index,
 	jsonb,
 	pgTable,
@@ -19,9 +20,7 @@ export const aiInsights = pgTable(
 		organisationId: uuid("organisation_id")
 			.notNull()
 			.references(() => organisations.id, { onDelete: "cascade" }),
-		teamId: uuid("team_id").references(() => teams.id, {
-			onDelete: "set null",
-		}),
+		teamId: uuid("team_id"),
 		userId: uuid("user_id").references(() => users.id, {
 			onDelete: "set null",
 		}),
@@ -53,8 +52,12 @@ export const aiInsights = pgTable(
 		),
 		index("ai_insights_team_id_idx").on(table.teamId),
 		index("ai_insights_user_id_idx").on(table.userId),
-		index("ai_insights_source_entity_id_idx").on(table.sourceEntityId),
 		index("ai_insights_generated_at_idx").on(table.generatedAt),
+		foreignKey({
+			columns: [table.teamId, table.organisationId],
+			foreignColumns: [teams.id, teams.organisationId],
+			name: "ai_insights_team_organisation_fk",
+		}).onDelete("restrict"),
 	],
 );
 

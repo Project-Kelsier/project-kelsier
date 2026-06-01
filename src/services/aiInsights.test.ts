@@ -1,7 +1,7 @@
 import { eq, isNull } from "drizzle-orm";
 import { describe, expect, it, vi } from "vitest";
 import type { DbClient } from "#/db/client";
-import { organisations } from "#/db/schema";
+import { aiInsights, organisations } from "#/db/schema";
 import {
 	listAiInsightsForOrganisation,
 	listAiInsightsForSource,
@@ -64,8 +64,12 @@ describe("AI insight service organisation visibility", () => {
 		);
 
 		expect(eq).toHaveBeenCalledWith(
-			expect.objectContaining({ name: "source_entity_type" }),
+			aiInsights.sourceEntityType,
 			"assessment_attempt",
+		);
+		expect(eq).toHaveBeenCalledWith(
+			aiInsights.sourceEntityId,
+			"00000000-0000-4000-8000-000000000003",
 		);
 		expectOrganisationSoftDeletePredicate();
 	});

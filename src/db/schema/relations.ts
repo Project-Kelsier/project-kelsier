@@ -72,8 +72,8 @@ export const teamMembersRelations = relations(teamMembers, ({ one }) => ({
 		references: [organisations.id],
 	}),
 	team: one(teams, {
-		fields: [teamMembers.teamId],
-		references: [teams.id],
+		fields: [teamMembers.teamId, teamMembers.organisationId],
+		references: [teams.id, teams.organisationId],
 	}),
 	user: one(users, {
 		fields: [teamMembers.userId],
@@ -201,8 +201,8 @@ export const aiInsightsRelations = relations(aiInsights, ({ one }) => ({
 		references: [organisations.id],
 	}),
 	team: one(teams, {
-		fields: [aiInsights.teamId],
-		references: [teams.id],
+		fields: [aiInsights.teamId, aiInsights.organisationId],
+		references: [teams.id, teams.organisationId],
 	}),
 	user: one(users, {
 		fields: [aiInsights.userId],

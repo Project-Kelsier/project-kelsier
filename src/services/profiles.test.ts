@@ -1,7 +1,7 @@
-import { isNull } from "drizzle-orm";
+import { eq, isNull } from "drizzle-orm";
 import { describe, expect, it, vi } from "vitest";
 import type { DbClient } from "#/db/client";
-import { organisations } from "#/db/schema";
+import { organisations, personalityProfiles } from "#/db/schema";
 import type { OrganisationUserContext } from "./context";
 import { getPersonalityProfileForUser } from "./profiles";
 
@@ -26,6 +26,7 @@ function createContext(): OrganisationUserContext {
 	limit.mockResolvedValue([]);
 	where.mockClear();
 	innerJoin.mockClear();
+	vi.mocked(eq).mockClear();
 	vi.mocked(isNull).mockClear();
 
 	const db = {
@@ -51,6 +52,14 @@ describe("profile service organisation visibility", () => {
 		);
 
 		expect(innerJoin.mock.calls.at(-1)?.at(0)).toBe(organisations);
+		expect(eq).toHaveBeenCalledWith(
+			personalityProfiles.organisationId,
+			"00000000-0000-4000-8000-000000000001",
+		);
+		expect(eq).toHaveBeenCalledWith(
+			personalityProfiles.userId,
+			"00000000-0000-4000-8000-000000000003",
+		);
 		expect(isNull).toHaveBeenCalledWith(organisations.deletedAt);
 	});
 });
