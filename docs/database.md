@@ -80,10 +80,11 @@ Use this pattern when practical:
 Current assessment examples:
 
 - `assessment_attempts` has a unique key on `(id, organisation_id)`.
+- `assessment_attempts` references teams through `(team_id, organisation_id)`.
 - `assessment_answers` references attempts through `(attempt_id, organisation_id)`.
 - `assessment_results` references attempts through `(attempt_id, organisation_id)`.
 
-This prevents answer/result rows from referencing an attempt that belongs to a different organisation while still allowing tenant-scoped query helpers to filter by local `organisation_id`.
+This prevents assessment rows from referencing a team or attempt that belongs to a different organisation while still allowing tenant-scoped query helpers to filter by local `organisation_id`.
 
 For source-scoped lookup helpers, include all columns that define the source identity. For AI insights, source lookups must filter by both `sourceEntityType` and `sourceEntityId`.
 
