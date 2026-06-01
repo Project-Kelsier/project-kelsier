@@ -92,6 +92,10 @@ export const assessmentOptions = pgTable(
 			table.questionId,
 			table.sortOrder,
 		),
+		uniqueIndex("assessment_options_id_question_id_unique").on(
+			table.id,
+			table.questionId,
+		),
 		index("assessment_options_question_id_idx").on(table.questionId),
 	],
 );
@@ -188,6 +192,11 @@ export const assessmentAnswers = pgTable(
 			],
 			name: "assessment_answers_attempt_organisation_fk",
 		}).onDelete("cascade"),
+		foreignKey({
+			columns: [table.optionId, table.questionId],
+			foreignColumns: [assessmentOptions.id, assessmentOptions.questionId],
+			name: "assessment_answers_option_question_fk",
+		}).onDelete("restrict"),
 	],
 );
 
