@@ -121,8 +121,8 @@ export const assessmentAttemptsRelations = relations(
 			references: [organisations.id],
 		}),
 		team: one(teams, {
-			fields: [assessmentAttempts.teamId],
-			references: [teams.id],
+			fields: [assessmentAttempts.teamId, assessmentAttempts.organisationId],
+			references: [teams.id, teams.organisationId],
 		}),
 		user: one(users, {
 			fields: [assessmentAttempts.userId],

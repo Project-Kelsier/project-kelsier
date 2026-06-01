@@ -7,11 +7,19 @@ const nodeOnlyClientPath = join(sourceRoot, "db", "client.node.ts");
 const nodeOnlyClientModulePath = normalize(
 	join(sourceRoot, "db", "client.node"),
 );
-const moduleSpecifierExtensions = ["", ".ts", ".tsx", ".js", ".jsx"];
-const forbiddenRuntimeImportPatterns = [
-	/from\s+["']postgres["']/,
-	/from\s+["']drizzle-orm\/postgres-js["']/,
+const moduleSpecifierExtensions = [
+	"",
+	".ts",
+	".tsx",
+	".js",
+	".jsx",
+	".mts",
+	".cts",
 ];
+const forbiddenRuntimePackages = new Set([
+	"postgres",
+	"drizzle-orm/postgres-js",
+]);
 
 function listSourceFiles(directory: string): string[] {
 	return readdirSync(directory).flatMap((entry) => {
@@ -72,15 +80,15 @@ describe("database runtime boundary", () => {
 				path: relative(process.cwd(), path),
 				source: readFileSync(path, "utf8"),
 			}))
-			.filter(
-				({ path, source }) =>
-					forbiddenRuntimeImportPatterns.some((pattern) =>
-						pattern.test(source),
-					) ||
-					collectModuleSpecifiers(source).some((specifier) =>
+			.filter(({ path, source }) => {
+				const moduleSpecifiers = collectModuleSpecifiers(source);
+
+				return moduleSpecifiers.some(
+					(specifier) =>
+						forbiddenRuntimePackages.has(specifier) ||
 						isNodeOnlyClientSpecifier(join(process.cwd(), path), specifier),
-					),
-			)
+				);
+			})
 			.map(({ path }) => path);
 
 		expect(violations).toEqual([]);
