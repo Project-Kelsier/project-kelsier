@@ -9,3 +9,7 @@ allowBuilds:
 engineStrict: true
 
 strictDepBuilds: true
+
+overrides:
+  shell-quote: ">=1.8.4"
+  ws: ">=8.20.1"
