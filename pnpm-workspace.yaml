@@ -10,6 +10,10 @@ engineStrict: true
 
 strictDepBuilds: true
 
+# Temporary overrides for transitive CVEs that upstream packages haven't fixed yet.
+# Remove each entry once the parent package ships a version that satisfies the minimum:
+#   shell-quote >=1.8.4  — GHSA-w7jw-789q-3m8p (shell injection); parent: @tanstack/devtools-vite → launch-editor
+#   ws >=8.20.1          — GHSA-58qx-3vcg-4xpx (memory disclosure); parent: @tanstack/react-devtools, @tanstack/devtools-vite
 overrides:
   shell-quote: ">=1.8.4"
   ws: ">=8.20.1"
