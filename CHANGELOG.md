@@ -4,6 +4,13 @@ All notable changes to Project Kelsier will be documented in this file.
 
 This project follows semantic versioning while it moves toward MVP. Versions below `1.0.0` may still include breaking product or API changes when they are called out here.
 
+## [0.2.2] - 2026-06-25
+
+### Changed
+
+- Updated dependencies to latest compatible versions: `tailwindcss` + `@tailwindcss/vite` 4.3.1, `vite` 8.1.0, `@cloudflare/vite-plugin` 1.42.3, `wrangler` 4.105.0, `@biomejs/biome` 2.5.1, `@playwright/test` 1.61.1, `@tanstack/react-router` 1.170.16, `@tanstack/react-start` 1.168.26, `@tanstack/react-devtools` 0.10.8, `@tanstack/devtools-vite` 0.8.1, `vitest` + `@vitest/coverage-v8` 4.1.9, `@vitejs/plugin-react` 6.0.3, `lucide-react` 1.21.0.
+- Migrated `biome.json` to the 2.5.1 schema (`recommended` → `preset: "recommended"`).
+
 ## [0.2.1] - 2026-06-10
 
 ### Changed
