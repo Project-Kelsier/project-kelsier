@@ -236,6 +236,10 @@ pnpm test
 pnpm build
 ```
 
+Dependency changes are not ready to hand off just because installation succeeds. Agents and contributors must inspect policy-relevant failures instead of bypassing them. If pnpm rejects a package because of release-age policy, prefer the newest policy-compatible version. Do not commit `minimumReleaseAgeExclude` or similar cooldown bypasses unless a maintainer explicitly requests a reviewed emergency exception.
+
+Temporary transitive overrides must be narrow, documented, and verified. Prefer exact compatible versions over broad `>=` ranges when the parent package imports internal APIs or otherwise has a tight compatibility surface. After adding or changing an override, rerun the dependency-change gate above; if a low or moderate advisory cannot be fixed safely, explain the upstream blocker rather than forcing an incompatible major version.
+
 ### Required For Database Schema Or Seed Changes
 
 ```bash
@@ -440,6 +444,7 @@ A change is ready to hand off when:
 - The code follows the routing and styling conventions above.
 - Generated files were not manually edited.
 - Relevant checks were run, or skipped checks were called out explicitly.
+- Claims of completion are backed by exact command results, not assumptions from partial checks.
 - Tests were added or updated where behavior changed.
 - Docs were updated if contributors or agents would otherwise guess.
 - The PR scope remains focused enough for an open source maintainer to review efficiently.
