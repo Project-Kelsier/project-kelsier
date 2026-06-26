@@ -4,6 +4,14 @@ All notable changes to Project Kelsier will be documented in this file.
 
 This project follows semantic versioning while it moves toward MVP. Versions below `1.0.0` may still include breaking product or API changes when they are called out here.
 
+## [0.2.3] - 2026-06-26
+
+### Changed
+
+- Updated the pinned pnpm package manager from 11.5.3 to 11.9.0.
+- Tightened agent-facing dependency maintenance guidance to require policy-compatible upgrades, narrow overrides, and exact command results in handoffs.
+- Documented future release SBOM generation as a release artifact, without adding it to normal CI or committing generated SBOM files.
+
 ## [0.2.2] - 2026-06-25
 
 ### Changed

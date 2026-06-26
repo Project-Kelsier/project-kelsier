@@ -181,6 +181,18 @@ If this project later publishes packages:
 - Use protected environments and maintainer approval for publish jobs.
 - Publish from immutable release tags, not arbitrary branch pushes.
 
+## Future Release SBOMs
+
+When Project Kelsier starts tagging public releases, deploying production builds for real users, or needing partner/compliance evidence, generate a Software Bill of Materials as a release artifact.
+
+Use pnpm's built-in SBOM command rather than committing generated SBOM files by default:
+
+```bash
+pnpm sbom --sbom-format cyclonedx --lockfile-only --out sbom.cdx.json
+```
+
+Treat SBOMs as release evidence for incident response and dependency review. Do not add them to the normal CI gate until release automation exists and the artifact storage location is clear.
+
 ## Secret Rotation
 
 Rotate secrets immediately after:
