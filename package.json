@@ -48,7 +48,7 @@
 	},
 	"devDependencies": {
 		"@biomejs/biome": "2.5.1",
-		"@cloudflare/vite-plugin": "^1.42.3",
+		"@cloudflare/vite-plugin": "^1.42.2",
 		"@playwright/test": "^1.61.1",
 		"@tailwindcss/typography": "^0.5.20",
 		"@tanstack/devtools-vite": "0.8.1",
@@ -66,6 +66,6 @@
 		"typescript": "^6.0.3",
 		"vite": "^8.1.0",
 		"vitest": "^4.1.9",
-		"wrangler": "^4.105.0"
+		"wrangler": "^4.104.0"
 	}
 }

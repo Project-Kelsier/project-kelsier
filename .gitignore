@@ -1,5 +1,6 @@
 node_modules
 .pnpm-store
+.claude/
 .DS_Store
 dist
 dist-ssr

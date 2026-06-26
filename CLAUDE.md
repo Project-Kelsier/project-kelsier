@@ -118,7 +118,7 @@ pnpm check && pnpm typecheck && pnpm test && pnpm coverage && pnpm build && pnpm
 
 **Dependency or install-path changes:**
 ```bash
-pnpm install --frozen-lockfile --ignore-scripts && pnpm audit signatures && pnpm audit && pnpm check && pnpm typecheck && pnpm test && pnpm build
+pnpm install --frozen-lockfile --ignore-scripts && pnpm audit signatures && pnpm audit --audit-level high && pnpm version:check && pnpm check && pnpm typecheck && pnpm test && pnpm build
 ```
 
 **Database schema or seed changes:**
