@@ -15,13 +15,16 @@ strictDepBuilds: true
 #   @esbuild-kit/core-utils>esbuild 0.25.12 — GHSA-67mh-4wv8-2f99; parent: drizzle-kit → @esbuild-kit/esm-loader
 #   esbuild 0.28.1       — GHSA-g7r4-m6w7-qqqr; parent: tsx
 #   launch-editor 2.14.1 — GHSA-v6wh-96g9-6wx3; parent: @tanstack/devtools-vite
-#   shell-quote 1.9.0    — GHSA-w7jw-789q-3m8p (shell injection); parent: @tanstack/devtools-vite → launch-editor
-#   undici 7.28.0        — GHSA-vmh5-mc38-953g, GHSA-vxpw-j846-p89q, GHSA-hm92-r4w5-c3mj; parent: jsdom
-#   ws 8.21.0            — GHSA-58qx-3vcg-4xpx, GHSA-96hv-2xvq-fx4p; parent: @tanstack/react-devtools, @tanstack/devtools-vite
+#   shell-quote 1.9.0    — GHSA-w7jw-789q-3m8p (shell injection); parent: launch-editor
+#   undici 7.28.0        — GHSA-vmh5-mc38-953g, GHSA-vxpw-j846-p89q, GHSA-hm92-r4w5-c3mj; parents: jsdom, miniflare
+#   ws 8.21.0            — GHSA-58qx-3vcg-4xpx, GHSA-96hv-2xvq-fx4p; parents: @cloudflare/vite-plugin, @tanstack/devtools-event-bus, miniflare
 overrides:
   "@esbuild-kit/core-utils>esbuild": "0.25.12"
   "esbuild@>=0.27.3 <0.28.1": "0.28.1"
-  launch-editor: "2.14.1"
-  shell-quote: "1.9.0"
-  undici: "7.28.0"
-  ws: "8.21.0"
+  "@cloudflare/vite-plugin>ws": "8.21.0"
+  "@tanstack/devtools-event-bus>ws": "8.21.0"
+  "@tanstack/devtools-vite>launch-editor": "2.14.1"
+  "jsdom>undici": "7.28.0"
+  "launch-editor>shell-quote": "1.9.0"
+  "miniflare>undici": "7.28.0"
+  "miniflare>ws": "8.21.0"
