@@ -98,6 +98,18 @@ Biome handles both linting and formatting (no ESLint or Prettier). Run `pnpm che
 
 Direct `@tanstack/*` dependencies are pinned to **exact versions** (no `^` or `~`). This is a deliberate security policy following a May 2026 supply-chain incident (CVE-2026-45321) affecting the TanStack ecosystem. Do not convert them to range pins. When updating TanStack packages, pin to a specific reviewed version.
 
+### Dependency upgrade discipline
+
+Dependency work is not complete when `pnpm install` succeeds. Before editing dependency files, read `AGENTS.md`, this file, `CONTRIBUTING.md`, and `docs/security-hardening.md`. Follow the strictest applicable instruction.
+
+When pnpm blocks a version because of release-age policy, choose the newest policy-compliant version unless the user explicitly approves a security exception. Do not commit `minimumReleaseAgeExclude` or other cooldown bypasses as repository configuration.
+
+Prefer direct package upgrades over transitive overrides. If an override is necessary, put it in `pnpm-workspace.yaml`, document the advisory and removal condition nearby, and use the narrowest compatible version. Do not use broad `>=` overrides when an exact compatible version is safer. After every override, run the full dependency-change quality gate and verify that tests still execute.
+
+If a low or moderate advisory cannot be fixed safely because no compatible patched version exists, leave it unresolved and explain the blocker. Do not force incompatible major versions through transitive overrides just to make `pnpm audit` quiet.
+
+Do not claim completion unless the required checks have actually passed. In the handoff, list the exact commands run and their result. If a command was skipped, failed, required escalation, or needed a workaround, say so plainly.
+
 ### Vitest config
 
 `vitest.config.ts` intentionally excludes the full TanStack Start and Cloudflare Workers plugin stack. Do not add those plugins to the Vitest config — they cause runtime mismatch issues in tests.
@@ -118,7 +130,7 @@ pnpm check && pnpm typecheck && pnpm test && pnpm coverage && pnpm build && pnpm
 
 **Dependency or install-path changes:**
 ```bash
-pnpm install --frozen-lockfile --ignore-scripts && pnpm audit signatures && pnpm audit && pnpm check && pnpm typecheck && pnpm test && pnpm build
+pnpm install --frozen-lockfile --ignore-scripts && pnpm audit signatures && pnpm audit --audit-level high && pnpm version:check && pnpm check && pnpm typecheck && pnpm test && pnpm build
 ```
 
 **Database schema or seed changes:**

@@ -64,6 +64,10 @@ Normal dependency updates should keep PRs small and grouped by ecosystem. Separa
 
 Security updates may bypass normal dependency timing controls only when the PR explains why the newer version materially reduces risk. If pnpm's release-age cooldown is bypassed for a security update, do it only as a local command option. Do not commit a cooldown bypass as repository configuration.
 
+If pnpm rejects an update because the release is inside the cooldown window, first look for the newest already-aged version that satisfies the same compatibility range. Treat committed cooldown bypasses, broad transitive overrides, and audit-only fixes that break tests as failed dependency maintenance.
+
+When fixing advisories through `pnpm-workspace.yaml` overrides, prefer the narrowest compatible override and verify the parent package still works. Some packages import internal files from dependencies, so forcing a new major version can pass audit while breaking runtime or tests. If no compatible patched version exists, document the residual advisory and upstream blocker instead of hiding it with an unsafe override.
+
 For dependency maintenance PRs, run:
 
 ```bash
@@ -176,6 +180,18 @@ If this project later publishes packages:
 - Do not grant `id-token: write` to jobs that install arbitrary PR dependencies.
 - Use protected environments and maintainer approval for publish jobs.
 - Publish from immutable release tags, not arbitrary branch pushes.
+
+## Future Release SBOMs
+
+When Project Kelsier starts tagging public releases, deploying production builds for real users, or needing partner/compliance evidence, generate a Software Bill of Materials as a release artifact.
+
+Use pnpm's built-in SBOM command rather than committing generated SBOM files by default:
+
+```bash
+pnpm sbom --sbom-format cyclonedx --lockfile-only --out sbom.cdx.json
+```
+
+Treat SBOMs as release evidence for incident response and dependency review. Do not add them to the normal CI gate until release automation exists and the artifact storage location is clear.
 
 ## Secret Rotation
 

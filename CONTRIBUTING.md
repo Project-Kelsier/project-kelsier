@@ -14,7 +14,7 @@ pnpm cf-typegen
 This repo expects:
 
 - Node `24.x`
-- pnpm `11.1.2`
+- pnpm `11.9.0`
 - Docker Desktop for local PostgreSQL development
 
 Those versions are declared in [`package.json`](./package.json).
@@ -80,7 +80,7 @@ Generated files that should usually be committed:
 - [`worker-configuration.d.ts`](./worker-configuration.d.ts)
 - [`pnpm-lock.yaml`](./pnpm-lock.yaml)
 
-Local generated output that should not be committed includes `.env`, `node_modules/`, `.pnpm-store/`, `dist/`, `.output/`, `.wrangler/`, `.tanstack/`, `coverage/`, `playwright-report/`, and `test-results/`.
+Local generated output that should not be committed includes `.claude/`, `.env`, `node_modules/`, `.pnpm-store/`, `dist/`, `.output/`, `.wrangler/`, `.tanstack/`, `coverage/`, `playwright-report/`, and `test-results/`.
 
 ## Secrets
 
