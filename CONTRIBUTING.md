@@ -14,7 +14,7 @@ pnpm cf-typegen
 This repo expects:
 
 - Node `24.x`
-- pnpm `11.9.0`
+- pnpm `11.11.0`
 - Docker Desktop for local PostgreSQL development
 
 Those versions are declared in [`package.json`](./package.json).
