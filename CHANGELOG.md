@@ -10,6 +10,7 @@ This project follows semantic versioning while it moves toward MVP. Versions bel
 
 - Updated safer same-major dependencies: `@tailwindcss/vite` and `tailwindcss` 4.3.2, `@tanstack/react-router` 1.170.17, `@tanstack/react-start` 1.168.27, `@tanstack/router-plugin` 1.168.19, `lucide-react` 1.24.0, `@biomejs/biome` 2.5.3, `@types/node` 24.13.3, `vitest` and `@vitest/coverage-v8` 4.1.10, `tsx` 4.23.0, `vite` 8.1.4, `@cloudflare/vite-plugin` 1.44.0, `wrangler` 4.110.0, and `typescript` 7.0.2.
 - Updated the pinned pnpm package manager from 11.9.0 to 11.11.0.
+- Added Storybook with React Vite, an accessibility addon, baseline Kelsier stories, and documented Storybook commands for isolated UI review.
 
 ## [0.2.3] - 2026-06-26
 

@@ -25,7 +25,7 @@ This repo should be easy for a new contributor to understand without private con
 - Deployment target: Cloudflare Workers via Wrangler and the Cloudflare Vite plugin.
 - Styling: Tailwind CSS v4, global baseline CSS in [`src/styles.css`](src/styles.css), and Kelsier-specific authored CSS in [`src/styles/kelsier.css`](src/styles/kelsier.css).
 - Database: Drizzle ORM with PostgreSQL. Local development uses Docker Compose PostgreSQL on `localhost:55432`; Neon remains the hosted staging/production database target.
-- Testing: Vitest for unit tests and Playwright for end-to-end coverage.
+- Testing: Vitest for unit tests, Playwright for end-to-end coverage, and Storybook for isolated UI review.
 - Quality gate: Biome for formatting, linting, and import organization.
 - Package manager: `pnpm`
 - Runtime target: Node `24.x`
@@ -81,6 +81,7 @@ Use the current layout as the baseline and expand it with these responsibilities
 - [`scripts`](scripts): Local operational scripts such as database seed setup.
 - [`src/router.tsx`](src/router.tsx): Router creation only.
 - [`e2e`](e2e): End-to-end tests that validate cross-page user-visible behavior.
+- [`.storybook`](.storybook): Storybook configuration for isolated UI review, shared preview styling, and app-specific Vite defines used by stories.
 - [`public`](public): Static assets that should be served directly.
 
 When the app grows, prefer adding these folders rather than overloading existing files:
@@ -200,6 +201,13 @@ For organisation-scoped helpers, tests should prove that `organisations.deletedA
 - Prefer stable role- and text-based selectors over brittle implementation selectors.
 - Keep smoke coverage fast and focused. Add deeper scenarios only when a feature introduces real interaction risk.
 
+### Storybook
+
+- Put stories next to the component they document using `*.stories.tsx`.
+- Use Storybook for isolated visual review of component states before wiring larger questionnaire flows into routes.
+- Keep Storybook decorators and app-wide preview setup in [`.storybook`](.storybook), including CSS imports, font links, and Vite defines such as `__APP_VERSION__`.
+- Run `pnpm storybook` for local review and `pnpm build-storybook` before sharing a static Storybook build.
+
 ## Quality Gates
 
 Before handing off substantial work, run the smallest relevant set of checks.
@@ -220,6 +228,7 @@ pnpm typecheck
 pnpm test
 pnpm coverage
 pnpm build
+pnpm build-storybook
 pnpm test:e2e
 ```
 
@@ -331,7 +340,7 @@ Some files are generated or tool-owned. Treat them according to their owner and 
 | `.env` | Developer-local config | No | Local secrets/config only. Document names and safe defaults in [`.env.example`](.env.example). |
 | `node_modules/`, `.pnpm-store/` | pnpm | No | Local dependency install/cache output. |
 | `dist/`, `.output/`, `.wrangler/`, `.tanstack/`, `.nitro/`, `.vinxi/` | Build/runtime tools | No | Local generated build, preview, and tool state. |
-| `coverage/`, `playwright-report/`, `test-results/` | Test tools | No | Local test and coverage output. |
+| `coverage/`, `playwright-report/`, `test-results/`, `storybook-static/` | Test and UI review tools | No | Local test, coverage, and Storybook build output. |
 
 ## Secrets Handling
 
