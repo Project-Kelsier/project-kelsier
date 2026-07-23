@@ -107,4 +107,5 @@ GitHub Actions runs the baseline checks on pushes to `main` and on pull requests
 - `pnpm test`
 - `pnpm coverage`
 - `pnpm build`
+- `pnpm build-storybook`
 - `pnpm test:e2e`
