@@ -10,8 +10,10 @@ engineStrict: true
 
 strictDepBuilds: true
 
-# Temporary overrides for transitive CVEs that upstream packages haven't fixed yet.
-# Remove each entry once the parent package ships a version that satisfies the minimum:
+# Temporary overrides for transitive CVEs.
+# Remove each entry once the dependency graph resolves a patched version without it:
 #   @esbuild-kit/core-utils>esbuild 0.25.12 — GHSA-67mh-4wv8-2f99; parent: drizzle-kit → @esbuild-kit/esm-loader
+#   xmlbuilder2>js-yaml 4.3.0 — GHSA-52cp-r559-cp3m; parent: TanStack Start → xmlbuilder2
 overrides:
   "@esbuild-kit/core-utils>esbuild": "0.25.12"
+  "xmlbuilder2>js-yaml": "4.3.0"

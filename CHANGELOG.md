@@ -4,6 +4,13 @@ All notable changes to Project Kelsier will be documented in this file.
 
 This project follows semantic versioning while it moves toward MVP. Versions below `1.0.0` may still include breaking product or API changes when they are called out here.
 
+## [0.2.5] - 2026-07-23
+
+### Changed
+
+- Added Storybook with React Vite, an accessibility addon, component-specific baseline Kelsier stories, and a CI build smoke check for the lightweight visual workbench.
+- Pinned patched `js-yaml` 4.3.0 for TanStack Start's transitive XML tooling and documented the remaining development-only Sharp advisory blocked by Miniflare's exact dependency pin.
+
 ## [0.2.4] - 2026-07-11
 
 ### Changed

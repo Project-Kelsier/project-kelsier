@@ -1,6 +1,6 @@
 {
 	"name": "project-kelsier",
-	"version": "0.2.4",
+	"version": "0.2.5",
 	"private": true,
 	"type": "module",
 	"packageManager": "pnpm@11.11.0+sha512.4463f65fd80ed80d69bc1d4bf163ee94f605c7380fc318bb5b2ebe15f8cd12d49c51a4d59e951b401e764d3b6ca751cbf51bc50ed7001a6bcb4935e684c34882",
@@ -23,12 +23,14 @@
 		"test": "vitest run --config vitest.config.ts",
 		"coverage": "vitest run --config vitest.config.ts --coverage",
 		"test:e2e": "playwright test",
+		"storybook": "storybook dev -p 6006",
+		"build-storybook": "storybook build",
 		"db:generate": "drizzle-kit generate",
 		"db:migrate": "drizzle-kit migrate",
 		"db:seed": "tsx scripts/seed.ts",
 		"version:show": "node -p \"require('./package.json').version\"",
 		"version:check": "node scripts/check-version-metadata.mjs",
-		"ci": "pnpm check && pnpm typecheck && pnpm test && pnpm build"
+		"ci": "pnpm check && pnpm typecheck && pnpm test && pnpm build && pnpm build-storybook"
 	},
 	"dependencies": {
 		"@neondatabase/serverless": "^1.1.0",
@@ -50,6 +52,8 @@
 		"@biomejs/biome": "2.5.3",
 		"@cloudflare/vite-plugin": "^1.44.0",
 		"@playwright/test": "^1.61.1",
+		"@storybook/addon-a11y": "10.5.0",
+		"@storybook/react-vite": "10.5.0",
 		"@tailwindcss/typography": "^0.5.20",
 		"@tanstack/devtools-vite": "0.8.1",
 		"@testing-library/dom": "^10.4.1",
@@ -62,6 +66,7 @@
 		"dotenv": "^17.4.2",
 		"drizzle-kit": "^0.31.10",
 		"jsdom": "^29.1.1",
+		"storybook": "10.5.0",
 		"tsx": "^4.23.0",
 		"typescript": "^7.0.2",
 		"vite": "^8.1.4",

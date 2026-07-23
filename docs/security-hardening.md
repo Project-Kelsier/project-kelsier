@@ -68,6 +68,14 @@ If pnpm rejects an update because the release is inside the cooldown window, fir
 
 When fixing advisories through `pnpm-workspace.yaml` overrides, prefer the narrowest compatible override and verify the parent package still works. Some packages import internal files from dependencies, so forcing a new major version can pass audit while breaking runtime or tests. If no compatible patched version exists, document the residual advisory and upstream blocker instead of hiding it with an unsafe override.
 
+### Current Residual Advisory
+
+As of 2026-07-23, GHSA-f88m-g3jw-g9cj remains in development tooling through `@cloudflare/vite-plugin` and `wrangler`, which depend on Miniflare. The current Miniflare release pins `sharp` 0.34.5, while the advisory is fixed in `sharp` 0.35.0 and later.
+
+Do not override Miniflare's exact Sharp pin across the `0.34` to `0.35` compatibility boundary. Project Kelsier does not process untrusted image input through Miniflare, so the residual exposure is limited to local and CI development tooling rather than the production application dependency set.
+
+Remove this exception once a compatible Miniflare release uses `sharp` 0.35.0 or later, update the Cloudflare parent packages, and rerun the complete dependency maintenance gate.
+
 For dependency maintenance PRs, run:
 
 ```bash
