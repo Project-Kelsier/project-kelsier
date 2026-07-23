@@ -93,5 +93,8 @@ jobs:
       - name: Build
         run: pnpm build
 
+      - name: Build Storybook
+        run: pnpm build-storybook
+
       - name: E2E tests
         run: pnpm test:e2e

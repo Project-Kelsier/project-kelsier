@@ -30,7 +30,7 @@
 		"db:seed": "tsx scripts/seed.ts",
 		"version:show": "node -p \"require('./package.json').version\"",
 		"version:check": "node scripts/check-version-metadata.mjs",
-		"ci": "pnpm check && pnpm typecheck && pnpm test && pnpm build"
+		"ci": "pnpm check && pnpm typecheck && pnpm test && pnpm build && pnpm build-storybook"
 	},
 	"dependencies": {
 		"@neondatabase/serverless": "^1.1.0",

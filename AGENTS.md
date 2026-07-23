@@ -204,9 +204,12 @@ For organisation-scoped helpers, tests should prove that `organisations.deletedA
 ### Storybook
 
 - Put stories next to the component they document using `*.stories.tsx`.
-- Use Storybook for isolated visual review of component states before wiring larger questionnaire flows into routes.
+- Add a story when isolated rendering makes UI development meaningfully easier, such as for a reused component, a visually distinct state, or a state that is cumbersome to reach through normal navigation. Do not create stories for every wrapper or incidental component.
+- Use Storybook as a lightweight workbench for isolated visual review of component states. It is not a separate source of behavioral test coverage.
+- Keep important product contracts covered by Vitest or Playwright even when a Storybook story illustrates the same state.
 - Keep Storybook decorators and app-wide preview setup in [`.storybook`](.storybook), including CSS imports, font links, and Vite defines such as `__APP_VERSION__`.
-- Run `pnpm storybook` for local review and `pnpm build-storybook` before sharing a static Storybook build.
+- Run `pnpm storybook` for local review. CI runs `pnpm build-storybook` as a compilation smoke check, not as an interaction, accessibility, or visual-regression test suite.
+- Do not add automated Storybook testing infrastructure unless growth in reusable components or story-only states creates a concrete maintenance need.
 
 ## Quality Gates
 

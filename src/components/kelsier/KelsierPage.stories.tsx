@@ -1,8 +1,6 @@
 import type { Meta, StoryObj } from "@storybook/react-vite";
 import { userEvent, within } from "storybook/test";
 import { KelsierStoryRouter } from "../../../.storybook/KelsierStoryRouter";
-import { KelsierFooter } from "./KelsierFooter";
-import { KelsierHeader } from "./KelsierHeader";
 import { KelsierPage } from "./KelsierPage";
 
 const meta = {
@@ -70,16 +68,4 @@ export const AssessmentComplete: Story = {
 			canvas.getByRole("button", { name: "Complete prototype" }),
 		);
 	},
-};
-
-export const Header: StoryObj = {
-	render: () => <KelsierHeader navRef={() => undefined} />,
-};
-
-export const Footer: StoryObj = {
-	render: () => (
-		<KelsierStoryRouter>
-			<KelsierFooter />
-		</KelsierStoryRouter>
-	),
 };
