@@ -7,7 +7,7 @@ const KELSIER_THEMES = [
 	{ id: "ember", label: "Ember gold" },
 	{ id: "phthalo", label: "Phthalo green" },
 	{ id: "coral", label: "Signal coral" },
-	{ id: "acid", label: "Acid ink" },
+	{ id: "volt", label: "Volt lime" },
 ] as const;
 
 type KelsierTheme = (typeof KELSIER_THEMES)[number]["id"];

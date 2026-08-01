@@ -8,7 +8,7 @@ This project follows semantic versioning while it moves toward MVP. Versions bel
 
 ### Added
 
-- Added four selectable dark Kelsier color themes—Ember Gold, Phthalo Green, Signal Coral, and Acid Ink—with locally persisted user selection.
+- Added four selectable dark Kelsier color themes—Ember Gold, Phthalo Green, Signal Coral, and Volt Lime—with locally persisted user selection.
 
 ### Changed
 
