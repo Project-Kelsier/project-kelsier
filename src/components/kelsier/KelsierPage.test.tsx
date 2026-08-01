@@ -37,6 +37,8 @@ describe("KelsierPage", () => {
 	);
 
 	beforeEach(() => {
+		window.localStorage.clear();
+		delete document.documentElement.dataset.kelsierTheme;
 		HTMLElement.prototype.scrollIntoView = vi.fn();
 		window.requestAnimationFrame = vi.fn((callback: FrameRequestCallback) => {
 			callback(0);
@@ -86,6 +88,46 @@ describe("KelsierPage", () => {
 		const githubLinks = screen.getAllByRole("link", { name: "GitHub" });
 		expect(githubLinks[0]?.getAttribute("href")).toBe(GITHUB_REPOSITORY_URL);
 		expect(githubLinks[0]?.getAttribute("target")).toBe("_blank");
+	});
+
+	it("switches and remembers the selected color theme", () => {
+		const { unmount } = render(<KelsierPage />);
+		const themePicker = screen.getByRole("combobox", { name: "Color theme" });
+
+		fireEvent.change(themePicker, { target: { value: "phthalo" } });
+
+		expect(document.documentElement.dataset.kelsierTheme).toBe("phthalo");
+		expect(window.localStorage.getItem("kelsier-color-theme")).toBe("phthalo");
+
+		unmount();
+		delete document.documentElement.dataset.kelsierTheme;
+		render(<KelsierPage />);
+
+		expect(document.documentElement.dataset.kelsierTheme).toBe("phthalo");
+		expect(
+			screen.getByRole("combobox", { name: "Color theme" }),
+		).toHaveProperty("value", "phthalo");
+	});
+
+	it("uses Volt Lime when no theme has been saved", () => {
+		render(<KelsierPage />);
+
+		expect(document.documentElement.dataset.kelsierTheme).toBe("volt");
+		expect(window.localStorage.getItem("kelsier-color-theme")).toBe("volt");
+		expect(
+			screen.getByRole("combobox", { name: "Color theme" }),
+		).toHaveProperty("value", "volt");
+	});
+
+	it("ignores unsupported theme values", () => {
+		render(<KelsierPage />);
+
+		fireEvent.change(screen.getByRole("combobox", { name: "Color theme" }), {
+			target: { value: "unsupported" },
+		});
+
+		expect(document.documentElement.dataset.kelsierTheme).toBe("volt");
+		expect(window.localStorage.getItem("kelsier-color-theme")).toBe("volt");
 	});
 
 	it("keeps lightweight scroll state active for reduced-motion users", async () => {

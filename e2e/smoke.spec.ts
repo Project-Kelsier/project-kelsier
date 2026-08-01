@@ -31,6 +31,31 @@ test("home page renders the Kelsier hero and interactive questionnaire", async (
 	).toBeVisible();
 });
 
+test("restores a saved theme before the client app hydrates", async ({
+	page,
+}) => {
+	let clientBundleWasBlocked = false;
+	await page.addInitScript(() => {
+		window.localStorage.setItem("kelsier-color-theme", "phthalo");
+	});
+	await page.route("**/*", (route) => {
+		if (route.request().resourceType() === "script") {
+			clientBundleWasBlocked = true;
+			return route.abort();
+		}
+
+		return route.continue();
+	});
+
+	await page.goto("/", { waitUntil: "domcontentloaded" });
+
+	expect(clientBundleWasBlocked).toBe(true);
+	await expect(page.locator("html")).toHaveAttribute(
+		"data-kelsier-theme",
+		"phthalo",
+	);
+});
+
 test("privacy route renders placeholder page", async ({ page }) => {
 	await page.goto("/privacy");
 	await expect(

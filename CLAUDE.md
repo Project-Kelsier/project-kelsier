@@ -80,7 +80,7 @@ Tailwind v4 (no config file — configured via CSS `@import`). Two CSS entry poi
 - `src/styles.css` — global base styles
 - `src/styles/kelsier.css` — all Kelsier-specific design tokens and component styles (`k-` prefixed classes)
 
-Kelsier design tokens use CSS custom properties (`--k-ember`, `--k-card`, etc.). New Kelsier UI should use these tokens rather than raw color values.
+Kelsier design tokens use semantic CSS custom properties (`--k-accent`, `--k-text`, `--k-card`, etc.). New Kelsier UI should use these tokens rather than raw color values. Theme metadata, validation, and pre-hydration restoration live in `src/lib/kelsierThemes.ts`; palette token values live in `src/styles/kelsier.css`.
 
 ### Path aliases
 

@@ -71,7 +71,7 @@ export function KelsierFooter({
 			<div className="max-w-[340px]">
 				<a
 					href={sectionHref("#hero")}
-					className="k-footer-logo mb-[18px] inline-flex text-[var(--k-text)] text-2xl tracking-[0.04em] no-underline hover:text-[rgba(220,200,160,0.88)] focus-visible:text-[rgba(220,200,160,0.88)]"
+					className="k-footer-logo mb-[18px] inline-flex text-[var(--k-text)] text-2xl tracking-[0.04em] no-underline hover:text-[var(--k-text-hover)] focus-visible:text-[var(--k-text-hover)]"
 				>
 					Kel<span>sier</span>
 				</a>
@@ -86,7 +86,7 @@ export function KelsierFooter({
 			>
 				{FOOTER_LINK_GROUPS.map((group) => (
 					<div key={group.title} className="k-footer-group">
-						<h2 className="mt-0 mb-3.5 font-[var(--font-mono-k)] font-normal text-[10px] text-[var(--k-ember)] tracking-[0.12em] uppercase">
+						<h2 className="mt-0 mb-3.5 font-[var(--font-mono-k)] font-normal text-[10px] text-[var(--k-accent)] tracking-[0.12em] uppercase">
 							{group.title}
 						</h2>
 						<ul className="m-0 flex list-none flex-col gap-2.5 p-0">
@@ -94,14 +94,14 @@ export function KelsierFooter({
 								<li key={link.label}>
 									{link.type === "route" ? (
 										<Link
-											className="text-[13px] text-[var(--k-text-soft)] no-underline transition-colors duration-200 hover:text-[rgba(220,200,160,0.88)] focus-visible:text-[rgba(220,200,160,0.88)]"
+											className="text-[13px] text-[var(--k-text-soft)] no-underline transition-colors duration-200 hover:text-[var(--k-text-hover)] focus-visible:text-[var(--k-text-hover)]"
 											to={link.href}
 										>
 											{link.label}
 										</Link>
 									) : (
 										<a
-											className="text-[13px] text-[var(--k-text-soft)] no-underline transition-colors duration-200 hover:text-[rgba(220,200,160,0.88)] focus-visible:text-[rgba(220,200,160,0.88)]"
+											className="text-[13px] text-[var(--k-text-soft)] no-underline transition-colors duration-200 hover:text-[var(--k-text-hover)] focus-visible:text-[var(--k-text-hover)]"
 											href={sectionHref(link.href)}
 											rel={link.isExternal ? "noreferrer" : undefined}
 											target={link.isExternal ? "_blank" : undefined}
@@ -119,7 +119,7 @@ export function KelsierFooter({
 				&copy; <span suppressHydrationWarning>{copyrightYear}</span> Kelsier.
 				All rights reserved. v{APP_VERSION}. Open source on{" "}
 				<a
-					className="text-[var(--k-text-soft)] underline decoration-[rgba(191,146,72,0.45)] underline-offset-4 transition-colors duration-200 hover:text-[rgba(220,200,160,0.88)] focus-visible:text-[rgba(220,200,160,0.88)]"
+					className="text-[var(--k-text-soft)] underline decoration-[var(--k-accent-dim)] underline-offset-4 transition-colors duration-200 hover:text-[var(--k-text-hover)] focus-visible:text-[var(--k-text-hover)]"
 					href={GITHUB_REPOSITORY_URL}
 					rel="noreferrer"
 					target="_blank"
