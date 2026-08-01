@@ -1,6 +1,6 @@
 import viteReact from "@vitejs/plugin-react";
 import { defineConfig } from "vitest/config";
-import { appVersionDefine } from "./config/app-version";
+import { appVersionDefine } from "./config/app-version.ts";
 
 export default defineConfig({
 	define: appVersionDefine,
