@@ -120,18 +120,6 @@ describe("KelsierPage", () => {
 		expect(window.localStorage.getItem("kelsier-color-theme")).toBe("ember");
 	});
 
-	it("migrates the former ocean theme selection to phthalo green", () => {
-		window.localStorage.setItem("kelsier-color-theme", "ocean");
-
-		render(<KelsierPage />);
-
-		expect(document.documentElement.dataset.kelsierTheme).toBe("phthalo");
-		expect(
-			screen.getByRole("combobox", { name: "Color theme" }),
-		).toHaveProperty("value", "phthalo");
-		expect(window.localStorage.getItem("kelsier-color-theme")).toBe("phthalo");
-	});
-
 	it("migrates the retired light theme selection to ember gold", () => {
 		window.localStorage.setItem("kelsier-color-theme", "mineral");
 

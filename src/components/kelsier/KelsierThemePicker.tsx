@@ -23,9 +23,6 @@ function applyTheme(theme: KelsierTheme) {
 function readStoredTheme() {
 	try {
 		const storedTheme = window.localStorage.getItem(THEME_STORAGE_KEY);
-		if (storedTheme === "ocean") {
-			return "phthalo";
-		}
 		if (storedTheme === "mineral") {
 			return DEFAULT_THEME;
 		}
