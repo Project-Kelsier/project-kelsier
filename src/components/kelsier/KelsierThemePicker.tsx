@@ -68,7 +68,12 @@ export function KelsierThemePicker() {
 				aria-label="Color theme"
 				className="k-theme-picker__select"
 				value={theme}
-				onChange={(event) => selectTheme(event.target.value as KelsierTheme)}
+				onChange={(event) => {
+					const nextTheme = event.target.value;
+					if (isKelsierTheme(nextTheme)) {
+						selectTheme(nextTheme);
+					}
+				}}
 			>
 				{KELSIER_THEMES.map((option) => (
 					<option key={option.id} value={option.id}>

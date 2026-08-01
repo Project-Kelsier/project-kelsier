@@ -100,11 +100,24 @@ describe("KelsierPage", () => {
 		expect(window.localStorage.getItem("kelsier-color-theme")).toBe("phthalo");
 
 		unmount();
+		delete document.documentElement.dataset.kelsierTheme;
 		render(<KelsierPage />);
 
+		expect(document.documentElement.dataset.kelsierTheme).toBe("phthalo");
 		expect(
 			screen.getByRole("combobox", { name: "Color theme" }),
 		).toHaveProperty("value", "phthalo");
+	});
+
+	it("ignores unsupported theme values", () => {
+		render(<KelsierPage />);
+
+		fireEvent.change(screen.getByRole("combobox", { name: "Color theme" }), {
+			target: { value: "unsupported" },
+		});
+
+		expect(document.documentElement.dataset.kelsierTheme).toBe("ember");
+		expect(window.localStorage.getItem("kelsier-color-theme")).toBe("ember");
 	});
 
 	it("migrates the former ocean theme selection to phthalo green", () => {
@@ -112,6 +125,7 @@ describe("KelsierPage", () => {
 
 		render(<KelsierPage />);
 
+		expect(document.documentElement.dataset.kelsierTheme).toBe("phthalo");
 		expect(
 			screen.getByRole("combobox", { name: "Color theme" }),
 		).toHaveProperty("value", "phthalo");
