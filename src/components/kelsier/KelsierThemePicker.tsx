@@ -23,9 +23,6 @@ function applyTheme(theme: KelsierTheme) {
 function readStoredTheme() {
 	try {
 		const storedTheme = window.localStorage.getItem(THEME_STORAGE_KEY);
-		if (storedTheme === "mineral") {
-			return DEFAULT_THEME;
-		}
 		return isKelsierTheme(storedTheme) ? storedTheme : DEFAULT_THEME;
 	} catch {
 		return DEFAULT_THEME;

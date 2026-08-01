@@ -120,18 +120,6 @@ describe("KelsierPage", () => {
 		expect(window.localStorage.getItem("kelsier-color-theme")).toBe("ember");
 	});
 
-	it("migrates the retired light theme selection to ember gold", () => {
-		window.localStorage.setItem("kelsier-color-theme", "mineral");
-
-		render(<KelsierPage />);
-
-		expect(
-			screen.getByRole("combobox", { name: "Color theme" }),
-		).toHaveProperty("value", "ember");
-		expect(document.documentElement.dataset.kelsierTheme).toBe("ember");
-		expect(window.localStorage.getItem("kelsier-color-theme")).toBe("ember");
-	});
-
 	it("keeps lightweight scroll state active for reduced-motion users", async () => {
 		window.matchMedia = vi.fn().mockImplementation((query: string) => ({
 			matches: query === "(prefers-reduced-motion: reduce)",
