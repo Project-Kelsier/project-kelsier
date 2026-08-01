@@ -1,0 +1,33 @@
+name: Sync theming experiment
+
+on:
+  push:
+    branches:
+      - main
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+concurrency:
+  group: sync-experiment-theming
+  cancel-in-progress: false
+
+jobs:
+  merge-main:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout theming experiment
+        uses: actions/checkout@34e114876b0b11c390a56381ad16ebd13914f8d5 # v4
+        with:
+          ref: experiment/theming
+          fetch-depth: 0
+
+      - name: Merge main into theming experiment
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git fetch --no-tags origin main
+          git merge --no-edit origin/main
+          git push origin HEAD:experiment/theming
