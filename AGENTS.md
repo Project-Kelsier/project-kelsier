@@ -130,6 +130,7 @@ The current styling approach is hybrid: Tailwind v4 is available, but much of th
 
 - Reuse the tokens and patterns in [`src/styles/kelsier.css`](src/styles/kelsier.css) before introducing new one-off values for the Kelsier page.
 - Prefer CSS custom properties for reusable colors, surfaces, shadows, and visual identity decisions.
+- Keep Kelsier color themes in the `data-kelsier-theme` token blocks in [`src/styles/kelsier.css`](src/styles/kelsier.css). Components and SVG data visuals should consume semantic `--k-*` tokens rather than embedding palette values; [`src/components/kelsier/KelsierThemePicker.tsx`](src/components/kelsier/KelsierThemePicker.tsx) owns the selectable theme IDs and local persistence.
 - Use utility classes for layout and simple spacing where they keep JSX readable.
 - Use authored CSS for multi-part components, layered backgrounds, animations, and repeated visual patterns.
 - Preserve the repo’s intentional art direction. Avoid replacing the current look with a default framework aesthetic.

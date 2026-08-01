@@ -37,6 +37,8 @@ describe("KelsierPage", () => {
 	);
 
 	beforeEach(() => {
+		window.localStorage.clear();
+		delete document.documentElement.dataset.kelsierTheme;
 		HTMLElement.prototype.scrollIntoView = vi.fn();
 		window.requestAnimationFrame = vi.fn((callback: FrameRequestCallback) => {
 			callback(0);
@@ -86,6 +88,46 @@ describe("KelsierPage", () => {
 		const githubLinks = screen.getAllByRole("link", { name: "GitHub" });
 		expect(githubLinks[0]?.getAttribute("href")).toBe(GITHUB_REPOSITORY_URL);
 		expect(githubLinks[0]?.getAttribute("target")).toBe("_blank");
+	});
+
+	it("switches and remembers the selected color theme", () => {
+		const { unmount } = render(<KelsierPage />);
+		const themePicker = screen.getByRole("combobox", { name: "Color theme" });
+
+		fireEvent.change(themePicker, { target: { value: "phthalo" } });
+
+		expect(document.documentElement.dataset.kelsierTheme).toBe("phthalo");
+		expect(window.localStorage.getItem("kelsier-color-theme")).toBe("phthalo");
+
+		unmount();
+		render(<KelsierPage />);
+
+		expect(
+			screen.getByRole("combobox", { name: "Color theme" }),
+		).toHaveProperty("value", "phthalo");
+	});
+
+	it("migrates the former ocean theme selection to phthalo green", () => {
+		window.localStorage.setItem("kelsier-color-theme", "ocean");
+
+		render(<KelsierPage />);
+
+		expect(
+			screen.getByRole("combobox", { name: "Color theme" }),
+		).toHaveProperty("value", "phthalo");
+		expect(window.localStorage.getItem("kelsier-color-theme")).toBe("phthalo");
+	});
+
+	it("migrates the retired light theme selection to ember gold", () => {
+		window.localStorage.setItem("kelsier-color-theme", "mineral");
+
+		render(<KelsierPage />);
+
+		expect(
+			screen.getByRole("combobox", { name: "Color theme" }),
+		).toHaveProperty("value", "ember");
+		expect(document.documentElement.dataset.kelsierTheme).toBe("ember");
+		expect(window.localStorage.getItem("kelsier-color-theme")).toBe("ember");
 	});
 
 	it("keeps lightweight scroll state active for reduced-motion users", async () => {

@@ -194,7 +194,7 @@ function AstroRing({ size = 320 }: { size?: number }) {
 				cy={radius}
 				r={radius - 4}
 				fill="none"
-				stroke="#BF9248"
+				stroke="var(--k-accent)"
 				strokeWidth="0.4"
 				strokeDasharray="2 10"
 				opacity="0.35"
@@ -204,7 +204,7 @@ function AstroRing({ size = 320 }: { size?: number }) {
 				cy={radius}
 				r={radius * 0.68}
 				fill="none"
-				stroke="#BF9248"
+				stroke="var(--k-accent)"
 				strokeWidth="0.3"
 				strokeDasharray="1 14"
 				opacity="0.2"
@@ -214,20 +214,32 @@ function AstroRing({ size = 320 }: { size?: number }) {
 				cy={radius}
 				r={radius * 0.38}
 				fill="none"
-				stroke="#BF9248"
+				stroke="var(--k-accent)"
 				strokeWidth="0.5"
 				opacity="0.15"
 			/>
-			<circle cx={radius} cy={4} r="3" fill="#BF9248" opacity="0.7" />
-			<circle cx={size - 4} cy={radius} r="3" fill="#BF9248" opacity="0.7" />
-			<circle cx={radius} cy={size - 4} r="3" fill="#BF9248" opacity="0.3" />
-			<circle cx={4} cy={radius} r="3" fill="#BF9248" opacity="0.3" />
+			<circle cx={radius} cy={4} r="3" fill="var(--k-accent)" opacity="0.7" />
+			<circle
+				cx={size - 4}
+				cy={radius}
+				r="3"
+				fill="var(--k-accent)"
+				opacity="0.7"
+			/>
+			<circle
+				cx={radius}
+				cy={size - 4}
+				r="3"
+				fill="var(--k-accent)"
+				opacity="0.3"
+			/>
+			<circle cx={4} cy={radius} r="3" fill="var(--k-accent)" opacity="0.3" />
 			<line
 				x1={radius}
 				y1={4}
 				x2={radius}
 				y2={size - 4}
-				stroke="#BF9248"
+				stroke="var(--k-accent)"
 				strokeWidth="0.2"
 				opacity="0.1"
 			/>
@@ -236,7 +248,7 @@ function AstroRing({ size = 320 }: { size?: number }) {
 				y1={radius}
 				x2={size - 4}
 				y2={radius}
-				stroke="#BF9248"
+				stroke="var(--k-accent)"
 				strokeWidth="0.2"
 				opacity="0.1"
 			/>
@@ -247,15 +259,15 @@ function AstroRing({ size = 320 }: { size?: number }) {
 const BUTTON_BASE =
 	"inline-flex min-h-11 items-center justify-center rounded-[26px] px-7 py-3 font-medium text-[13px] tracking-[0.04em] transition-[background,transform,border-color,color] duration-200 ease-in-out disabled:cursor-not-allowed disabled:opacity-45 disabled:transform-none";
 const BUTTON_STYLES = {
-	primary: `k-btn-primary ${BUTTON_BASE} border-0 bg-[var(--k-ember)] text-[#07090e] hover:-translate-y-px hover:bg-[var(--k-ember-bright)] focus-visible:-translate-y-px focus-visible:bg-[var(--k-ember-bright)]`,
-	secondary: `k-btn-secondary ${BUTTON_BASE} border border-[var(--k-ember-dim)] bg-transparent text-[var(--k-text)] hover:border-[rgba(191,146,72,0.6)] hover:bg-[var(--k-ember-glow)] focus-visible:border-[rgba(191,146,72,0.6)] focus-visible:bg-[var(--k-ember-glow)]`,
+	primary: `k-btn-primary ${BUTTON_BASE} border-0 bg-[var(--k-accent)] text-[var(--k-on-accent)] hover:-translate-y-px hover:bg-[var(--k-accent-hover)] focus-visible:-translate-y-px focus-visible:bg-[var(--k-accent-hover)]`,
+	secondary: `k-btn-secondary ${BUTTON_BASE} border border-[var(--k-accent-dim)] bg-transparent text-[var(--k-text)] hover:border-[var(--k-accent-medium)] hover:bg-[var(--k-accent-glow)] focus-visible:border-[var(--k-accent-medium)] focus-visible:bg-[var(--k-accent-glow)]`,
 } as const;
 const GHOST_LINK =
-	"k-btn-ghost inline-flex items-center gap-1.5 border-0 bg-transparent text-[13px] text-[var(--k-text-muted)] no-underline tracking-[0.03em] hover:text-[rgba(220,200,160,0.85)] focus-visible:text-[rgba(220,200,160,0.85)]";
+	"k-btn-ghost inline-flex items-center gap-1.5 border-0 bg-transparent text-[13px] text-[var(--k-text-muted)] no-underline tracking-[0.03em] hover:text-[var(--k-text-hover)] focus-visible:text-[var(--k-text-hover)]";
 const QUESTION_CARD =
 	"k-q-card w-[min(100%,540px)] rounded-[14px] border border-[var(--k-border)] bg-[var(--k-card)] px-6 py-[22px] shadow-[var(--k-shadow)]";
 const QUESTION_OPTION =
-	"k-q-opt w-full cursor-pointer rounded-2xl border border-[rgba(191,146,72,0.2)] bg-transparent px-3.5 py-[13px] text-left text-[13px] text-[rgba(191,146,72,0.65)] tracking-[0.02em] transition-[background,border-color,color,transform] duration-150 ease-in-out hover:-translate-y-px hover:border-[rgba(191,146,72,0.5)] hover:bg-[rgba(191,146,72,0.1)] hover:text-[var(--k-ember)] focus-visible:-translate-y-px focus-visible:border-[rgba(191,146,72,0.5)] focus-visible:bg-[rgba(191,146,72,0.1)] focus-visible:text-[var(--k-ember)]";
+	"k-q-opt w-full cursor-pointer rounded-2xl border border-[var(--k-border)] bg-transparent px-3.5 py-[13px] text-left text-[13px] text-[var(--k-text-muted)] tracking-[0.02em] transition-[background,border-color,color,transform] duration-150 ease-in-out hover:-translate-y-px hover:border-[var(--k-accent-medium)] hover:bg-[var(--k-accent-glow)] hover:text-[var(--k-accent)] focus-visible:-translate-y-px focus-visible:border-[var(--k-accent-medium)] focus-visible:bg-[var(--k-accent-glow)] focus-visible:text-[var(--k-accent)]";
 
 function cx(...classes: Array<string | false | undefined>) {
 	return classes.filter(Boolean).join(" ");
@@ -612,7 +624,7 @@ export function KelsierPage() {
 								cy="140"
 								r="136"
 								fill="none"
-								stroke="#BF9248"
+								stroke="var(--k-accent)"
 								strokeWidth="0.5"
 								opacity="0.4"
 							/>
@@ -621,7 +633,7 @@ export function KelsierPage() {
 								cy="140"
 								r="96"
 								fill="none"
-								stroke="#BF9248"
+								stroke="var(--k-accent)"
 								strokeWidth="0.3"
 								opacity="0.25"
 							/>
@@ -630,7 +642,7 @@ export function KelsierPage() {
 								cy="140"
 								r="56"
 								fill="none"
-								stroke="#BF9248"
+								stroke="var(--k-accent)"
 								strokeWidth="0.2"
 								opacity="0.15"
 							/>
@@ -762,7 +774,7 @@ export function KelsierPage() {
 							ref={ctaCardRef}
 						>
 							<h3 className="k-q-title">Start the behavioural cold start</h3>
-							<p className="m-0 text-[#d4c9b8] text-sm leading-[1.65]">
+							<p className="m-0 text-[var(--k-text-muted)] text-sm leading-[1.65]">
 								Answer three scenario-based questions to preview how the Kelsier
 								flow will feel. This prototype does not save data or generate
 								live results yet.
@@ -781,7 +793,7 @@ export function KelsierPage() {
 							<h3 className="k-q-title" tabIndex={-1} ref={questionHeadingRef}>
 								Prototype complete
 							</h3>
-							<p className="m-0 text-[#d4c9b8] text-sm leading-[1.65]">
+							<p className="m-0 text-[var(--k-text-muted)] text-sm leading-[1.65]">
 								You&apos;ve completed the front-end prototype flow. Next we can
 								turn this into a full assessment experience with saved answers,
 								team invites, and generated insight output.
@@ -797,7 +809,7 @@ export function KelsierPage() {
 									return (
 										<li
 											key={question.id}
-											className="grid gap-1 border-[rgba(191,146,72,0.15)] border-t pt-3"
+											className="grid gap-1 border-[var(--k-border)] border-t pt-3"
 										>
 											<span className="text-[var(--k-text-soft)] text-xs">
 												{question.prompt}

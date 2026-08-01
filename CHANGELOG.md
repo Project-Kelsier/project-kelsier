@@ -4,6 +4,16 @@ All notable changes to Project Kelsier will be documented in this file.
 
 This project follows semantic versioning while it moves toward MVP. Versions below `1.0.0` may still include breaking product or API changes when they are called out here.
 
+## [0.2.6] - 2026-08-01
+
+### Added
+
+- Added four selectable dark Kelsier color themes—Ember Gold, Phthalo Green, Signal Coral, and Acid Ink—with locally persisted user selection.
+
+### Changed
+
+- Replaced embedded Kelsier UI and data-visualization colors with semantic theme tokens so future palettes can be added without component rewrites.
+
 ## [0.2.5] - 2026-07-23
 
 ### Changed
