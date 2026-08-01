@@ -13,6 +13,8 @@ This project follows semantic versioning while it moves toward MVP. Versions bel
 ### Changed
 
 - Replaced embedded Kelsier UI and data-visualization colors with semantic theme tokens so future palettes can be added without component rewrites.
+- Made Volt Lime the default Kelsier color theme while preserving locally saved theme choices.
+- Centralized theme metadata and restored saved themes before first paint, with contract coverage keeping selectable themes aligned with their CSS token blocks.
 
 ## [0.2.5] - 2026-07-23
 

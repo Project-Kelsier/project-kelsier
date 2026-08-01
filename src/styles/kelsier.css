@@ -1,12 +1,12 @@
 :root {
-	--k-void: #07090e;
-	--k-bg-edge: #090d14;
-	--k-accent: #bf9248;
-	--k-accent-hover: #d4a85a;
-	--k-text: #e8d5a8;
-	--k-text-muted: #96896f;
-	--k-text-soft: #756b5b;
-	--k-text-hover: #dccda8;
+	--k-void: #090b10;
+	--k-bg-edge: #10141c;
+	--k-accent: #c7f36b;
+	--k-accent-hover: #d6ff83;
+	--k-text: #e9edf2;
+	--k-text-muted: #9aa4b2;
+	--k-text-soft: #717c8c;
+	--k-text-hover: #ffffff;
 	--k-text-ghost: color-mix(in srgb, var(--k-text) 15%, transparent);
 	--k-accent-dim: color-mix(in srgb, var(--k-accent) 35%, transparent);
 	--k-accent-medium: color-mix(in srgb, var(--k-accent) 60%, transparent);
@@ -18,16 +18,32 @@
 	--k-track: color-mix(in srgb, var(--k-text) 7%, transparent);
 	--k-nav-bg: color-mix(in srgb, var(--k-void) 90%, transparent);
 	--k-star: var(--k-text);
-	--k-on-accent: #07090e;
+	--k-on-accent: #111508;
 	--k-shadow: 0 18px 40px rgba(0, 0, 0, 0.26);
-	--k-data-1: #3b5fa0;
-	--k-data-2: #3a7a68;
-	--k-data-3: #8c5fa0;
+	--k-data-1: #6b8cff;
+	--k-data-2: #51d6b0;
+	--k-data-3: #bd7ff0;
 	--k-data-4: var(--k-accent);
-	--k-data-5: #c0544a;
+	--k-data-5: #ff6f61;
 	--font-display-k: "Cormorant Garamond", Georgia, serif;
 	--font-ui-k: "Geist", system-ui, sans-serif;
 	--font-mono-k: "Geist Mono", monospace;
+}
+
+:root[data-kelsier-theme="ember"] {
+	--k-void: #07090e;
+	--k-bg-edge: #090d14;
+	--k-accent: #bf9248;
+	--k-accent-hover: #d4a85a;
+	--k-text: #e8d5a8;
+	--k-text-muted: #96896f;
+	--k-text-soft: #756b5b;
+	--k-text-hover: #dccda8;
+	--k-on-accent: #07090e;
+	--k-data-1: #3b5fa0;
+	--k-data-2: #3a7a68;
+	--k-data-3: #8c5fa0;
+	--k-data-5: #c0544a;
 }
 
 :root[data-kelsier-theme="phthalo"] {
@@ -60,22 +76,6 @@
 	--k-data-2: #52d6c5;
 	--k-data-3: #c987ef;
 	--k-data-5: #ffc857;
-}
-
-:root[data-kelsier-theme="volt"] {
-	--k-void: #090b10;
-	--k-bg-edge: #10141c;
-	--k-accent: #c7f36b;
-	--k-accent-hover: #d6ff83;
-	--k-text: #e9edf2;
-	--k-text-muted: #9aa4b2;
-	--k-text-soft: #717c8c;
-	--k-text-hover: #ffffff;
-	--k-on-accent: #111508;
-	--k-data-1: #6b8cff;
-	--k-data-2: #51d6b0;
-	--k-data-3: #bd7ff0;
-	--k-data-5: #ff6f61;
 }
 
 body.kelsier-body {

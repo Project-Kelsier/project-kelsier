@@ -9,6 +9,7 @@ import { TanStackRouterDevtoolsPanel } from "@tanstack/react-router-devtools";
 import type { ReactNode } from "react";
 import { KelsierNotFoundPage } from "../components/kelsier/KelsierNotFoundPage";
 import { getBodyClassName } from "../lib/appShell";
+import { KELSIER_THEME_BOOTSTRAP_SCRIPT } from "../lib/kelsierThemes";
 import kelsierCss from "../styles/kelsier.css?url";
 import appCss from "../styles.css?url";
 
@@ -60,6 +61,7 @@ function RootDocument({ children }: { children: ReactNode }) {
 		<html lang="en">
 			<head>
 				<HeadContent />
+				<script>{KELSIER_THEME_BOOTSTRAP_SCRIPT}</script>
 			</head>
 			<body className={getBodyClassName(pathname)}>
 				{children}

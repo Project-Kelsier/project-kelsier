@@ -109,6 +109,16 @@ describe("KelsierPage", () => {
 		).toHaveProperty("value", "phthalo");
 	});
 
+	it("uses Volt Lime when no theme has been saved", () => {
+		render(<KelsierPage />);
+
+		expect(document.documentElement.dataset.kelsierTheme).toBe("volt");
+		expect(window.localStorage.getItem("kelsier-color-theme")).toBe("volt");
+		expect(
+			screen.getByRole("combobox", { name: "Color theme" }),
+		).toHaveProperty("value", "volt");
+	});
+
 	it("ignores unsupported theme values", () => {
 		render(<KelsierPage />);
 
@@ -116,8 +126,8 @@ describe("KelsierPage", () => {
 			target: { value: "unsupported" },
 		});
 
-		expect(document.documentElement.dataset.kelsierTheme).toBe("ember");
-		expect(window.localStorage.getItem("kelsier-color-theme")).toBe("ember");
+		expect(document.documentElement.dataset.kelsierTheme).toBe("volt");
+		expect(window.localStorage.getItem("kelsier-color-theme")).toBe("volt");
 	});
 
 	it("keeps lightweight scroll state active for reduced-motion users", async () => {

@@ -1,20 +1,11 @@
 import { useEffect, useState } from "react";
-
-const THEME_STORAGE_KEY = "kelsier-color-theme";
-const DEFAULT_THEME = "ember";
-
-const KELSIER_THEMES = [
-	{ id: "ember", label: "Ember gold" },
-	{ id: "phthalo", label: "Phthalo green" },
-	{ id: "coral", label: "Signal coral" },
-	{ id: "volt", label: "Volt lime" },
-] as const;
-
-type KelsierTheme = (typeof KELSIER_THEMES)[number]["id"];
-
-function isKelsierTheme(value: string | null): value is KelsierTheme {
-	return KELSIER_THEMES.some((theme) => theme.id === value);
-}
+import {
+	DEFAULT_KELSIER_THEME,
+	isKelsierTheme,
+	KELSIER_THEME_STORAGE_KEY,
+	KELSIER_THEMES,
+	type KelsierTheme,
+} from "#/lib/kelsierThemes";
 
 function applyTheme(theme: KelsierTheme) {
 	document.documentElement.dataset.kelsierTheme = theme;
@@ -22,23 +13,23 @@ function applyTheme(theme: KelsierTheme) {
 
 function readStoredTheme() {
 	try {
-		const storedTheme = window.localStorage.getItem(THEME_STORAGE_KEY);
-		return isKelsierTheme(storedTheme) ? storedTheme : DEFAULT_THEME;
+		const storedTheme = window.localStorage.getItem(KELSIER_THEME_STORAGE_KEY);
+		return isKelsierTheme(storedTheme) ? storedTheme : DEFAULT_KELSIER_THEME;
 	} catch {
-		return DEFAULT_THEME;
+		return DEFAULT_KELSIER_THEME;
 	}
 }
 
 function storeTheme(theme: KelsierTheme) {
 	try {
-		window.localStorage.setItem(THEME_STORAGE_KEY, theme);
+		window.localStorage.setItem(KELSIER_THEME_STORAGE_KEY, theme);
 	} catch {
 		// Theme switching still works when storage is unavailable.
 	}
 }
 
 export function KelsierThemePicker() {
-	const [theme, setTheme] = useState<KelsierTheme>(DEFAULT_THEME);
+	const [theme, setTheme] = useState<KelsierTheme>(DEFAULT_KELSIER_THEME);
 
 	useEffect(() => {
 		const initialTheme = readStoredTheme();
