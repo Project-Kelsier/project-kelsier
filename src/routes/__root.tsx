@@ -58,7 +58,7 @@ function RootDocument({ children }: { children: ReactNode }) {
 	});
 
 	return (
-		<html lang="en">
+		<html lang="en" suppressHydrationWarning>
 			<head>
 				<HeadContent />
 				<script>{KELSIER_THEME_BOOTSTRAP_SCRIPT}</script>

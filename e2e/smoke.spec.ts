@@ -34,13 +34,22 @@ test("home page renders the Kelsier hero and interactive questionnaire", async (
 test("restores a saved theme before the client app hydrates", async ({
 	page,
 }) => {
+	let clientBundleWasBlocked = false;
 	await page.addInitScript(() => {
 		window.localStorage.setItem("kelsier-color-theme", "phthalo");
 	});
-	await page.route("**/assets/index-*.js", (route) => route.abort());
+	await page.route("**/*", (route) => {
+		if (route.request().resourceType() === "script") {
+			clientBundleWasBlocked = true;
+			return route.abort();
+		}
+
+		return route.continue();
+	});
 
 	await page.goto("/", { waitUntil: "domcontentloaded" });
 
+	expect(clientBundleWasBlocked).toBe(true);
 	await expect(page.locator("html")).toHaveAttribute(
 		"data-kelsier-theme",
 		"phthalo",
