@@ -4,6 +4,17 @@ All notable changes to Project Kelsier will be documented in this file.
 
 This project follows semantic versioning while it moves toward MVP. Versions below `1.0.0` may still include breaking product or API changes when they are called out here.
 
+## [0.3.1] - 2026-08-01
+
+### Changed
+
+- Updated the pinned pnpm package manager from 11.11.0 to 11.18.0.
+- Upgraded compatible application and tooling dependencies, including React 19.2.8, Vite 8.2.0, Tailwind CSS 4.3.3, Storybook 10.5.5, Playwright 1.62.1, the TanStack packages, and the Cloudflare Vite plugin 1.50.0 with Wrangler 4.118.0.
+
+### Security
+
+- Resolved the high-severity PostCSS, Sharp, and `brace-expansion` advisories through patched dependency resolutions, with no release-age policy exceptions.
+
 ## [0.3.0] - 2026-08-01
 
 ### Added
