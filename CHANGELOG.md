@@ -10,6 +10,7 @@ This project follows semantic versioning while it moves toward MVP. Versions bel
 
 - Updated the pinned pnpm package manager from 11.11.0 to 11.18.0.
 - Upgraded compatible application and tooling dependencies, including React 19.2.8, Vite 8.2.0, Tailwind CSS 4.3.3, Storybook 10.5.5, Playwright 1.62.1, the TanStack packages, and the Cloudflare Vite plugin 1.50.0 with Wrangler 4.118.0.
+- Aligned generated-route handling with TanStack Router guidance by committing `src/routeTree.gen.ts` as runtime source while keeping it excluded from manual formatting and tests.
 
 ### Security
 
