@@ -4,6 +4,12 @@ All notable changes to Project Kelsier will be documented in this file.
 
 This project follows semantic versioning while it moves toward MVP. Versions below `1.0.0` may still include breaking product or API changes when they are called out here.
 
+## [0.3.2] - 2026-08-03
+
+### Changed
+
+- Aligned generated-route handling with TanStack Router guidance by committing `src/routeTree.gen.ts` as runtime source while keeping it excluded from manual formatting and tests.
+
 ## [0.3.1] - 2026-08-01
 
 ### Changed

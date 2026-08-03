@@ -69,7 +69,7 @@ Services always scope queries to `organisationId` and filter out soft-deleted ro
 
 ### Routing
 
-TanStack Router with file-based routes under `src/routes/`. `src/routeTree.gen.ts` is **auto-generated and git-ignored** — never edit it directly. The router plugin regenerates it on every dev server start and build.
+TanStack Router with file-based routes under `src/routes/`. `src/routeTree.gen.ts` is auto-generated and committed as runtime source — never edit it directly. The router plugin regenerates it on every dev server start and build.
 
 `src/lib/appShell.ts` drives body class selection: the `kelsier-body` class is applied on all routes except `/privacy` and `/terms`, which use the base legal layout.
 
