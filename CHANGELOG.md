@@ -4,13 +4,18 @@ All notable changes to Project Kelsier will be documented in this file.
 
 This project follows semantic versioning while it moves toward MVP. Versions below `1.0.0` may still include breaking product or API changes when they are called out here.
 
+## [0.3.2] - 2026-08-03
+
+### Changed
+
+- Aligned generated-route handling with TanStack Router guidance by committing `src/routeTree.gen.ts` as runtime source while keeping it excluded from manual formatting and tests.
+
 ## [0.3.1] - 2026-08-01
 
 ### Changed
 
 - Updated the pinned pnpm package manager from 11.11.0 to 11.18.0.
 - Upgraded compatible application and tooling dependencies, including React 19.2.8, Vite 8.2.0, Tailwind CSS 4.3.3, Storybook 10.5.5, Playwright 1.62.1, the TanStack packages, and the Cloudflare Vite plugin 1.50.0 with Wrangler 4.118.0.
-- Aligned generated-route handling with TanStack Router guidance by committing `src/routeTree.gen.ts` as runtime source while keeping it excluded from manual formatting and tests.
 
 ### Security
 
