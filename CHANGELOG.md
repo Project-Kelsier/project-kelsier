@@ -18,6 +18,8 @@ This project follows semantic versioning while it moves toward MVP. Versions bel
 - Normalized assessment answers and results to derive authorization through their owning attempt, and updated service helpers to enforce user ownership through that boundary.
 - Added explicit question requiredness, fixed guest-session expiry metadata, and result scoring provenance with database-enforced assessment-version consistency.
 - Routed the Cloudflare Worker database client through a cache-disabled Hyperdrive binding while preserving direct local PostgreSQL access for Node tooling.
+- Replaced the landing-page questionnaire constant with the active PostgreSQL-backed assessment version, ordered questions, and ordered options through a TanStack Start server function.
+- Added database-backed browser-test infrastructure and explicit optional-question progression behavior.
 
 ### Security
 

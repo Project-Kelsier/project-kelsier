@@ -12,6 +12,10 @@ import {
 	useRef,
 	useState,
 } from "react";
+import type {
+	AssessmentQuestionnaire,
+	AssessmentQuestionnaireQuestion,
+} from "#/lib/assessmentQuestionnaire";
 import { KelsierFooter } from "./KelsierFooter";
 import { KelsierHeader } from "./KelsierHeader";
 import {
@@ -21,17 +25,6 @@ import {
 	usePrefersReducedMotion,
 } from "./useKelsierScrollAnimation";
 import { InsightBarsVisual, RadarVisual, TeamMapVisual } from "./Visuals";
-
-type QuestionOption = {
-	id: string;
-	label: string;
-};
-
-type Question = {
-	id: string;
-	prompt: string;
-	options: QuestionOption[];
-};
 
 const WORDS = [
 	{ id: "the", text: "The", ember: false },
@@ -96,36 +89,6 @@ const FEATURES = [
 		reverse: false,
 	},
 ] as const;
-
-const QUESTIONS: Question[] = [
-	{
-		id: "deadline-response",
-		prompt: "When a deadline moves unexpectedly, you tend to…",
-		options: [
-			{ id: "restructure", label: "Restructure immediately" },
-			{ id: "flag-team", label: "Flag it to the team" },
-			{ id: "absorb", label: "Absorb and adapt" },
-		],
-	},
-	{
-		id: "conflict-style",
-		prompt: "Your preferred way to resolve conflict is…",
-		options: [
-			{ id: "direct", label: "Direct conversation" },
-			{ id: "common-ground", label: "Find common ground first" },
-			{ id: "space", label: "Give space, then talk" },
-		],
-	},
-	{
-		id: "new-joiner",
-		prompt: "A new team member joins mid-sprint. You…",
-		options: [
-			{ id: "brief", label: "Brief them fully on day one" },
-			{ id: "shadow", label: "Let them shadow first" },
-			{ id: "pair", label: "Pair them with the strongest collaborator" },
-		],
-	},
-];
 
 type FeatureAnimationRefs = {
 	row?: HTMLDivElement | null;
@@ -330,7 +293,24 @@ function QuestionOptionRadio({
 	);
 }
 
-export function KelsierPage() {
+function getQuestionAt(
+	questions: AssessmentQuestionnaireQuestion[],
+	index: number,
+) {
+	const question = questions[index];
+
+	if (!question) {
+		throw new Error("The assessment questionnaire must contain questions.");
+	}
+
+	return question;
+}
+
+export function KelsierPage({
+	questionnaire,
+}: {
+	questionnaire: AssessmentQuestionnaire;
+}) {
 	const [isHydrated, setIsHydrated] = useState(false);
 	const [isAssessmentStarted, setIsAssessmentStarted] = useState(false);
 	const [isAssessmentComplete, setIsAssessmentComplete] = useState(false);
@@ -358,10 +338,11 @@ export function KelsierPage() {
 	const questionHeadingRef = useRef<HTMLHeadingElement>(null);
 
 	const prefersReducedMotion = usePrefersReducedMotion();
-	const currentQuestion = QUESTIONS[currentQuestionIndex];
+	const { questions } = questionnaire;
+	const currentQuestion = getQuestionAt(questions, currentQuestionIndex);
 	const selectedOptionId = answers[currentQuestion.id];
 	const answeredCount = Object.keys(answers).length;
-	const progressPercent = Math.round((answeredCount / QUESTIONS.length) * 100);
+	const progressPercent = Math.round((answeredCount / questions.length) * 100);
 	const assessmentFocusStep =
 		isAssessmentStarted && !isAssessmentComplete ? currentQuestionIndex : null;
 
@@ -549,17 +530,22 @@ export function KelsierPage() {
 	);
 
 	const handleNext = useCallback(() => {
-		if (!selectedOptionId) {
+		if (currentQuestion.required && !selectedOptionId) {
 			return;
 		}
 
-		if (currentQuestionIndex === QUESTIONS.length - 1) {
+		if (currentQuestionIndex === questions.length - 1) {
 			setIsAssessmentComplete(true);
 			return;
 		}
 
 		setCurrentQuestionIndex((index) => index + 1);
-	}, [currentQuestionIndex, selectedOptionId]);
+	}, [
+		currentQuestion.required,
+		currentQuestionIndex,
+		questions.length,
+		selectedOptionId,
+	]);
 
 	const handleBack = useCallback(() => {
 		setCurrentQuestionIndex((index) => Math.max(0, index - 1));
@@ -775,9 +761,9 @@ export function KelsierPage() {
 						>
 							<h3 className="k-q-title">Start the behavioural cold start</h3>
 							<p className="m-0 text-[var(--k-text-muted)] text-sm leading-[1.65]">
-								Answer three scenario-based questions to preview how the Kelsier
-								flow will feel. This prototype does not save data or generate
-								live results yet.
+								Answer {questions.length} demonstration questions to preview how
+								the Kelsier flow will feel. This prototype does not save data or
+								generate live results yet.
 							</p>
 							<div className="k-cta-action" ref={ctaActionRef}>
 								<KelsierButton onClick={startAssessment}>
@@ -802,7 +788,7 @@ export function KelsierPage() {
 								className="flex list-none flex-col gap-3 p-0 m-0"
 								aria-label="Answered prototype questions"
 							>
-								{QUESTIONS.map((question) => {
+								{questions.map((question) => {
 									const selectedOption = question.options.find(
 										(option) => option.id === answers[question.id],
 									);
@@ -815,7 +801,7 @@ export function KelsierPage() {
 												{question.prompt}
 											</span>
 											<strong className="font-medium text-[var(--k-text)] text-sm">
-												{selectedOption?.label ?? "Not answered"}
+												{selectedOption?.label ?? "Skipped"}
 											</strong>
 										</li>
 									);
@@ -834,7 +820,8 @@ export function KelsierPage() {
 						<QuestionCard ref={ctaCardRef}>
 							<div className="k-q-step mb-3.5 flex justify-between text-[10px] text-[var(--k-text-soft)]">
 								<span>
-									Question {currentQuestionIndex + 1} of {QUESTIONS.length}
+									Question {currentQuestionIndex + 1} of {questions.length}
+									{currentQuestion.required ? "" : " · Optional"}
 								</span>
 								<span>{answeredCount} answered</span>
 							</div>
@@ -875,9 +862,9 @@ export function KelsierPage() {
 								</KelsierButton>
 								<KelsierButton
 									onClick={handleNext}
-									disabled={!selectedOptionId}
+									disabled={currentQuestion.required && !selectedOptionId}
 								>
-									{currentQuestionIndex === QUESTIONS.length - 1
+									{currentQuestionIndex === questions.length - 1
 										? "Complete prototype"
 										: "Next question"}
 								</KelsierButton>

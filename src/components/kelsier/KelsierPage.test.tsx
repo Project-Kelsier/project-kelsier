@@ -2,7 +2,14 @@ import { fireEvent, render, screen, waitFor } from "@testing-library/react";
 import type { AnchorHTMLAttributes, ReactNode } from "react";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import { GITHUB_REPOSITORY_URL } from "#/lib/projectLinks";
-import { KelsierPage } from "./KelsierPage";
+import { KelsierPage as KelsierPageComponent } from "./KelsierPage";
+import { assessmentQuestionnaireFixture } from "./KelsierPage.fixture";
+
+function KelsierPage() {
+	return (
+		<KelsierPageComponent questionnaire={assessmentQuestionnaireFixture} />
+	);
+}
 
 vi.mock("@tanstack/react-router", async (importOriginal) => {
 	const actual =
@@ -318,6 +325,31 @@ describe("KelsierPage", () => {
 
 		expect(restructureOption).toHaveProperty("checked", true);
 		expect(nextButton).toHaveProperty("disabled", false);
+	});
+
+	it("allows an optional question to be skipped", () => {
+		const optionalQuestionnaire = {
+			...assessmentQuestionnaireFixture,
+			questions: [
+				{
+					...assessmentQuestionnaireFixture.questions[0],
+					required: false,
+				},
+			],
+		};
+
+		render(<KelsierPageComponent questionnaire={optionalQuestionnaire} />);
+		fireEvent.click(screen.getByRole("button", { name: "Start assessment" }));
+
+		expect(screen.getByText(/Question 1 of 1 · Optional/)).toBeTruthy();
+		const completeButton = screen.getByRole("button", {
+			name: "Complete prototype",
+		});
+		expect(completeButton).toHaveProperty("disabled", false);
+
+		fireEvent.click(completeButton);
+
+		expect(screen.getByText("Skipped")).toBeTruthy();
 	});
 
 	it("keeps an in-progress questionnaire when the hero call to action is clicked", () => {

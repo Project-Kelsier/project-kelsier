@@ -1,7 +1,9 @@
 import { createFileRoute } from "@tanstack/react-router";
 import { KelsierPage } from "../components/kelsier/KelsierPage";
+import { getActiveAssessmentQuestionnaire } from "../server/assessmentQuestionnaire.functions";
 
 export const Route = createFileRoute("/")({
+	loader: () => getActiveAssessmentQuestionnaire(),
 	head: () => ({
 		meta: [
 			{
@@ -14,5 +16,11 @@ export const Route = createFileRoute("/")({
 			},
 		],
 	}),
-	component: KelsierPage,
+	component: HomeRoute,
 });
+
+function HomeRoute() {
+	const questionnaire = Route.useLoaderData();
+
+	return <KelsierPage questionnaire={questionnaire} />;
+}

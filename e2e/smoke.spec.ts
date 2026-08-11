@@ -18,15 +18,16 @@ test("home page renders the Kelsier hero and interactive questionnaire", async (
 	).toBeVisible();
 
 	await page.getByRole("button", { name: "Discover your team" }).click();
-	await page.getByText("Restructure immediately", { exact: true }).click();
+	await expect(page.getByText("Question 1 of 10")).toBeVisible();
+	await page.getByText("Strongly disagree", { exact: true }).click();
 	await expect(
-		page.getByRole("radio", { name: "Restructure immediately" }),
+		page.getByRole("radio", { name: "Strongly disagree" }),
 	).toBeChecked();
 	await page.getByRole("button", { name: "Next question" }).click();
 
 	await expect(
 		page.getByRole("heading", {
-			name: /Your preferred way to resolve conflict is/,
+			name: "Important concerns are raised directly and respectfully.",
 		}),
 	).toBeVisible();
 });
