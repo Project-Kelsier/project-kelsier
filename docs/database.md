@@ -66,7 +66,7 @@ pnpm db:seed
 
 Review generated SQL before applying it to any hosted database. Initial/fresh database setup must be reproducible from committed migrations, including required extensions such as `pgcrypto`.
 
-CI runs migrations and the seed against a fresh PostgreSQL 17 service in a dedicated database job. It runs the seed twice so loss of idempotency fails before feature tests begin relying on fixture identities.
+CI runs migrations and the seed against a fresh PostgreSQL 17 service in a dedicated database job. It runs the seed twice so loss of idempotency fails before feature tests begin relying on fixture identities. The validation job owns a separate fresh PostgreSQL service for browser tests and overrides the Hyperdrive local connection string to CI's PostgreSQL port.
 
 ## Development Fixtures
 
