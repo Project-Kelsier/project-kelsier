@@ -19,3 +19,13 @@ export type AssessmentQuestionnaire = {
 	description: string | null;
 	questions: AssessmentQuestionnaireQuestion[];
 };
+
+export type GuestAssessmentAttempt = {
+	attemptId: string;
+	expiresAt: string;
+};
+
+export type AssessmentPersistenceActions = {
+	startAttempt: () => Promise<GuestAssessmentAttempt>;
+	deleteAttempt: (attemptId: string) => Promise<{ deleted: boolean }>;
+};

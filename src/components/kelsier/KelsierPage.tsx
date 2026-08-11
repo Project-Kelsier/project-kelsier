@@ -13,8 +13,10 @@ import {
 	useState,
 } from "react";
 import type {
+	AssessmentPersistenceActions,
 	AssessmentQuestionnaire,
 	AssessmentQuestionnaireQuestion,
+	GuestAssessmentAttempt,
 } from "#/lib/assessmentQuestionnaire";
 import { KelsierFooter } from "./KelsierFooter";
 import { KelsierHeader } from "./KelsierHeader";
@@ -308,14 +310,22 @@ function getQuestionAt(
 
 export function KelsierPage({
 	questionnaire,
+	persistenceActions,
 }: {
 	questionnaire: AssessmentQuestionnaire;
+	persistenceActions: AssessmentPersistenceActions;
 }) {
 	const [isHydrated, setIsHydrated] = useState(false);
 	const [isAssessmentStarted, setIsAssessmentStarted] = useState(false);
 	const [isAssessmentComplete, setIsAssessmentComplete] = useState(false);
 	const [currentQuestionIndex, setCurrentQuestionIndex] = useState(0);
 	const [answers, setAnswers] = useState<Record<string, string>>({});
+	const [attempt, setAttempt] = useState<GuestAssessmentAttempt | null>(null);
+	const [isStarting, setIsStarting] = useState(false);
+	const [isDeleting, setIsDeleting] = useState(false);
+	const [isDeleteConfirmationVisible, setIsDeleteConfirmationVisible] =
+		useState(false);
+	const [persistenceMessage, setPersistenceMessage] = useState("");
 
 	const navRef = useRef<HTMLElement>(null);
 	const starsRef = useRef<HTMLDivElement>(null);
@@ -353,23 +363,76 @@ export function KelsierPage({
 		});
 	}, [prefersReducedMotion]);
 
-	const startAssessment = useCallback(() => {
-		if (isAssessmentComplete) {
+	const startAssessment = useCallback(async () => {
+		if (isStarting) {
+			return;
+		}
+
+		setIsStarting(true);
+		setPersistenceMessage("Creating your private guest attempt…");
+
+		try {
+			const createdAttempt = await persistenceActions.startAttempt();
+			setAttempt(createdAttempt);
 			setAnswers({});
 			setCurrentQuestionIndex(0);
+			setIsAssessmentStarted(true);
+			setIsAssessmentComplete(false);
+			setPersistenceMessage(
+				"Your guest attempt is saved. Answers will be saved in the next phase.",
+			);
+			scrollToAssessment();
+		} catch {
+			setPersistenceMessage(
+				"We couldn’t start a saved attempt. Please try again shortly.",
+			);
+		} finally {
+			setIsStarting(false);
 		}
-		setIsAssessmentStarted(true);
-		setIsAssessmentComplete(false);
-		scrollToAssessment();
-	}, [isAssessmentComplete, scrollToAssessment]);
+	}, [isStarting, persistenceActions, scrollToAssessment]);
 
 	const resetAssessment = useCallback(() => {
 		setAnswers({});
 		setCurrentQuestionIndex(0);
-		setIsAssessmentStarted(false);
+		setIsAssessmentStarted(true);
 		setIsAssessmentComplete(false);
 		scrollToAssessment();
 	}, [scrollToAssessment]);
+
+	const handleDeleteAttempt = useCallback(async () => {
+		if (!attempt || isDeleting) {
+			return;
+		}
+
+		setIsDeleting(true);
+		setPersistenceMessage("Deleting your saved guest attempt…");
+
+		try {
+			const result = await persistenceActions.deleteAttempt(attempt.attemptId);
+
+			if (!result.deleted) {
+				setPersistenceMessage(
+					"This attempt could not be deleted with this browser session.",
+				);
+				return;
+			}
+
+			setAttempt(null);
+			setAnswers({});
+			setCurrentQuestionIndex(0);
+			setIsAssessmentStarted(false);
+			setIsAssessmentComplete(false);
+			setIsDeleteConfirmationVisible(false);
+			setPersistenceMessage("Your saved guest attempt has been deleted.");
+			scrollToAssessment();
+		} catch {
+			setPersistenceMessage(
+				"We couldn’t delete the saved attempt. Please try again.",
+			);
+		} finally {
+			setIsDeleting(false);
+		}
+	}, [attempt, isDeleting, persistenceActions, scrollToAssessment]);
 
 	const onScroll = useCallback(
 		(scrollY: number) => {
@@ -579,7 +642,7 @@ export function KelsierPage({
 							and breakthrough.
 						</p>
 						<div className="k-hero-actions">
-							<KelsierButton onClick={startAssessment}>
+							<KelsierButton onClick={scrollToAssessment}>
 								Discover your team
 							</KelsierButton>
 							<KelsierGhostLink href="#method">
@@ -753,6 +816,9 @@ export function KelsierPage({
 						</span>
 						<span>{progressPercent}% answered</span>
 					</div>
+					<p className="sr-only" role="status" aria-live="polite">
+						{persistenceMessage}
+					</p>
 
 					{!isAssessmentStarted ? (
 						<QuestionCard
@@ -762,14 +828,28 @@ export function KelsierPage({
 							<h3 className="k-q-title">Start the behavioural cold start</h3>
 							<p className="m-0 text-[var(--k-text-muted)] text-sm leading-[1.65]">
 								Answer {questions.length} demonstration questions to preview how
-								the Kelsier flow will feel. This prototype does not save data or
-								generate live results yet.
+								the Kelsier flow will feel. Starting creates a pseudonymous
+								guest attempt that expires seven days after creation.
 							</p>
+							<div className="rounded-xl border border-[var(--k-border)] bg-[var(--k-accent-glow)] p-4 text-[var(--k-text-muted)] text-xs leading-[1.65]">
+								<p className="m-0">
+									We do not ask for your name or email, and we do not attach
+									analytics identifiers to this attempt. An HttpOnly browser
+									cookie lets you return to or delete it. If that cookie is
+									lost, we cannot identify or delete the attempt directly;
+									automatic expiry is the remaining deletion mechanism.
+								</p>
+							</div>
 							<div className="k-cta-action" ref={ctaActionRef}>
-								<KelsierButton onClick={startAssessment}>
-									Start assessment
+								<KelsierButton onClick={startAssessment} disabled={isStarting}>
+									{isStarting ? "Starting…" : "Start and save progress"}
 								</KelsierButton>
 							</div>
+							{persistenceMessage ? (
+								<p className="m-0 text-[var(--k-text-soft)] text-xs">
+									{persistenceMessage}
+								</p>
+							) : null}
 						</QuestionCard>
 					) : isAssessmentComplete ? (
 						<QuestionCard
@@ -812,9 +892,37 @@ export function KelsierPage({
 								ref={ctaActionRef}
 							>
 								<KelsierButton onClick={resetAssessment}>
-									Restart prototype
+									Restart questions
+								</KelsierButton>
+								<KelsierButton
+									variant="secondary"
+									onClick={() => setIsDeleteConfirmationVisible(true)}
+								>
+									Delete saved attempt
 								</KelsierButton>
 							</div>
+							{isDeleteConfirmationVisible ? (
+								<div className="rounded-xl border border-[var(--k-border)] p-4 text-sm">
+									<p className="mt-0 text-[var(--k-text-muted)]">
+										Delete this attempt and any data saved under it? This cannot
+										be undone.
+									</p>
+									<div className="flex flex-wrap gap-3">
+										<KelsierButton
+											variant="secondary"
+											onClick={() => setIsDeleteConfirmationVisible(false)}
+										>
+											Keep attempt
+										</KelsierButton>
+										<KelsierButton
+											onClick={handleDeleteAttempt}
+											disabled={isDeleting}
+										>
+											{isDeleting ? "Deleting…" : "Confirm deletion"}
+										</KelsierButton>
+									</div>
+								</div>
+							) : null}
 						</QuestionCard>
 					) : (
 						<QuestionCard ref={ctaCardRef}>
@@ -868,6 +976,37 @@ export function KelsierPage({
 										? "Complete prototype"
 										: "Next question"}
 								</KelsierButton>
+							</div>
+							<div className="mt-4 border-[var(--k-border)] border-t pt-4">
+								{isDeleteConfirmationVisible ? (
+									<div className="grid gap-3 text-sm">
+										<p className="m-0 text-[var(--k-text-muted)]">
+											Delete this attempt and any data saved under it? This
+											cannot be undone.
+										</p>
+										<div className="flex flex-wrap gap-3">
+											<KelsierButton
+												variant="secondary"
+												onClick={() => setIsDeleteConfirmationVisible(false)}
+											>
+												Keep attempt
+											</KelsierButton>
+											<KelsierButton
+												onClick={handleDeleteAttempt}
+												disabled={isDeleting}
+											>
+												{isDeleting ? "Deleting…" : "Confirm deletion"}
+											</KelsierButton>
+										</div>
+									</div>
+								) : (
+									<KelsierButton
+										variant="secondary"
+										onClick={() => setIsDeleteConfirmationVisible(true)}
+									>
+										Delete saved attempt
+									</KelsierButton>
+								)}
 							</div>
 						</QuestionCard>
 					)}

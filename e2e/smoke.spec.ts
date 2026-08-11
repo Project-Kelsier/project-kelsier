@@ -1,6 +1,7 @@
 import { expect, test } from "@playwright/test";
 
 test("home page renders the Kelsier hero and interactive questionnaire", async ({
+	context,
 	page,
 }) => {
 	await page.goto("/");
@@ -18,7 +19,29 @@ test("home page renders the Kelsier hero and interactive questionnaire", async (
 	).toBeVisible();
 
 	await page.getByRole("button", { name: "Discover your team" }).click();
+	await expect(
+		page.getByText("If that cookie is lost", { exact: false }),
+	).toBeVisible();
+	const guestCookieResponse = page.waitForResponse(async (response) =>
+		((await response.allHeaders())["set-cookie"] ?? "").includes(
+			"kelsier_guest=",
+		),
+	);
+	await page.getByRole("button", { name: "Start and save progress" }).click();
 	await expect(page.getByText("Question 1 of 10")).toBeVisible();
+	const setCookieHeader = (
+		(await (await guestCookieResponse).allHeaders())["set-cookie"] ?? ""
+	).toLowerCase();
+	expect(setCookieHeader).toContain("httponly");
+	expect(setCookieHeader).toContain("samesite=lax");
+	expect(setCookieHeader).not.toContain("; secure");
+	const guestCookie = (await context.cookies()).find(
+		(cookie) => cookie.name === "kelsier_guest",
+	);
+	expect(guestCookie).toMatchObject({
+		httpOnly: true,
+		secure: false,
+	});
 	await page.getByText("Strongly disagree", { exact: true }).click();
 	await expect(
 		page.getByRole("radio", { name: "Strongly disagree" }),
@@ -29,6 +52,15 @@ test("home page renders the Kelsier hero and interactive questionnaire", async (
 		page.getByRole("heading", {
 			name: "Important concerns are raised directly and respectfully.",
 		}),
+	).toBeVisible();
+
+	await page.getByRole("button", { name: "Delete saved attempt" }).click();
+	await page.getByRole("button", { name: "Confirm deletion" }).click();
+	await expect(
+		page.getByText("Your saved guest attempt has been deleted.").first(),
+	).toBeVisible();
+	await expect(
+		page.getByRole("button", { name: "Start and save progress" }),
 	).toBeVisible();
 });
 

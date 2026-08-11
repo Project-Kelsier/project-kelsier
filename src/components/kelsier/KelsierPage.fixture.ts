@@ -1,4 +1,16 @@
-import type { AssessmentQuestionnaire } from "#/lib/assessmentQuestionnaire";
+import type {
+	AssessmentPersistenceActions,
+	AssessmentQuestionnaire,
+} from "#/lib/assessmentQuestionnaire";
+
+export const assessmentPersistenceActionsFixture: AssessmentPersistenceActions =
+	{
+		startAttempt: async () => ({
+			attemptId: "10000000-0000-4000-8000-000000000001",
+			expiresAt: "2026-08-18T00:00:00.000Z",
+		}),
+		deleteAttempt: async () => ({ deleted: true }),
+	};
 
 export const assessmentQuestionnaireFixture: AssessmentQuestionnaire = {
 	id: "questionnaire-fixture",

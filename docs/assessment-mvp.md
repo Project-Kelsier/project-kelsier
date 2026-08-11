@@ -108,6 +108,8 @@ Do not expose the writable guest assessment publicly until all of these conditio
 
 Each numbered item may be split into smaller pull requests. Tooling changes, schema changes, and feature work should remain independently reviewable where practical.
 
+Implementation status as of 2026-08-11: phases 1 through 5 are implemented on the assessment MVP branch. Questionnaire answers intentionally remain client-only until phase 6.
+
 ## Deferred Decisions
 
 These decisions are intentionally postponed until evidence or a later phase makes them necessary:

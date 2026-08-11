@@ -16,5 +16,15 @@
 			"id": "280a2e296ce34b2796b63a6ed11f568a",
 			"localConnectionString": "postgres://kelsier:kelsier@localhost:55432/kelsier_dev"
 		}
+	],
+	"ratelimits": [
+		{
+			"name": "ASSESSMENT_ATTEMPT_RATE_LIMITER",
+			"namespace_id": "1001",
+			"simple": {
+				"limit": 10,
+				"period": 60
+			}
+		}
 	]
 }

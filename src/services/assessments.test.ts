@@ -1,4 +1,4 @@
-import { eq } from "drizzle-orm";
+import { eq, gt } from "drizzle-orm";
 import { describe, expect, it, vi } from "vitest";
 import type { DbClient } from "#/db/client";
 import {
@@ -6,9 +6,13 @@ import {
 	assessmentOptions,
 	assessmentQuestions,
 	assessmentVersions,
+	guestSessions,
 } from "#/db/schema";
 import {
+	createGuestAssessmentAttempt,
+	deleteGuestAssessmentAttempt,
 	getActiveAssessmentQuestionnaireBySlug,
+	getActiveGuestSessionByTokenHash,
 	getAssessmentResultForUserAttempt,
 	listAssessmentAttemptsForUser,
 } from "./assessments";
@@ -20,6 +24,7 @@ vi.mock("drizzle-orm", async (importOriginal) => {
 		...actual,
 		and: vi.fn((...conditions: unknown[]) => ({ conditions })),
 		eq: vi.fn((left: unknown, right: unknown) => ({ left, right })),
+		gt: vi.fn((left: unknown, right: unknown) => ({ left, right })),
 	};
 });
 
@@ -156,5 +161,124 @@ describe("active assessment questionnaire", () => {
 			await getActiveAssessmentQuestionnaireBySlug(db, "missing-version"),
 		).toBeNull();
 		expect(db.select).toHaveBeenCalledOnce();
+	});
+});
+
+describe("guest assessment ownership", () => {
+	it("loads a guest session only by its token hash and unexpired lifetime", async () => {
+		const now = new Date("2026-08-11T12:00:00.000Z");
+		const limit = vi.fn().mockResolvedValue([
+			{
+				id: "session-1",
+				expiresAt: new Date("2026-08-18T12:00:00.000Z"),
+			},
+		]);
+		const where = vi.fn(() => ({ limit }));
+		const from = vi.fn(() => ({ where }));
+		const db = { select: vi.fn(() => ({ from })) } as unknown as DbClient;
+
+		await getActiveGuestSessionByTokenHash(db, "token-hash", now);
+
+		expect(eq).toHaveBeenCalledWith(guestSessions.tokenHash, "token-hash");
+		expect(gt).toHaveBeenCalledWith(guestSessions.expiresAt, now);
+	});
+
+	it("creates a new session and its attempt in one transaction", async () => {
+		const expiresAt = new Date("2026-08-18T12:00:00.000Z");
+		const sessionReturning = vi.fn().mockResolvedValue([{ id: "session-1" }]);
+		const attemptReturning = vi.fn().mockResolvedValue([
+			{
+				id: "attempt-1",
+				startedAt: new Date("2026-08-11T12:00:00.000Z"),
+			},
+		]);
+		const sessionValues = vi.fn(() => ({ returning: sessionReturning }));
+		const attemptValues = vi.fn(() => ({ returning: attemptReturning }));
+		const transaction = {
+			insert: vi
+				.fn()
+				.mockReturnValueOnce({ values: sessionValues })
+				.mockReturnValueOnce({ values: attemptValues }),
+		};
+		const db = {
+			transaction: vi.fn((callback) => callback(transaction)),
+		} as unknown as DbClient;
+
+		const attempt = await createGuestAssessmentAttempt(db, {
+			assessmentVersionId: "version-1",
+			tokenHash: "token-hash",
+			expiresAt,
+		});
+
+		expect(transaction.insert).toHaveBeenNthCalledWith(1, guestSessions);
+		expect(transaction.insert).toHaveBeenNthCalledWith(2, assessmentAttempts);
+		expect(sessionValues).toHaveBeenCalledWith({
+			tokenHash: "token-hash",
+			expiresAt,
+		});
+		expect(attemptValues).toHaveBeenCalledWith({
+			guestSessionId: "session-1",
+			assessmentVersionId: "version-1",
+		});
+		expect(attempt).toMatchObject({ id: "attempt-1", expiresAt });
+	});
+
+	it("does not delete an attempt that the guest credential does not own", async () => {
+		const limit = vi.fn().mockResolvedValue([]);
+		const where = vi.fn(() => ({ limit }));
+		const innerJoin = vi.fn(() => ({ where }));
+		const from = vi.fn(() => ({ innerJoin }));
+		const db = {
+			select: vi.fn(() => ({ from })),
+			delete: vi.fn(),
+		} as unknown as DbClient;
+		const now = new Date("2026-08-11T12:00:00.000Z");
+
+		const deleted = await deleteGuestAssessmentAttempt(db, {
+			attemptId: "attempt-owned-by-another-session",
+			tokenHash: "requesting-session-hash",
+			now,
+		});
+
+		expect(deleted).toBe(false);
+		expect(innerJoin).toHaveBeenCalledWith(guestSessions, expect.anything());
+		expect(eq).toHaveBeenCalledWith(
+			assessmentAttempts.id,
+			"attempt-owned-by-another-session",
+		);
+		expect(eq).toHaveBeenCalledWith(
+			guestSessions.tokenHash,
+			"requesting-session-hash",
+		);
+		expect(gt).toHaveBeenCalledWith(guestSessions.expiresAt, now);
+		expect(db.delete).not.toHaveBeenCalled();
+	});
+
+	it("deletes an owned attempt with the owner predicate repeated on the write", async () => {
+		const limit = vi
+			.fn()
+			.mockResolvedValue([{ id: "attempt-1", guestSessionId: "session-1" }]);
+		const selectWhere = vi.fn(() => ({ limit }));
+		const innerJoin = vi.fn(() => ({ where: selectWhere }));
+		const from = vi.fn(() => ({ innerJoin }));
+		const returning = vi.fn().mockResolvedValue([{ id: "attempt-1" }]);
+		const deleteWhere = vi.fn(() => ({ returning }));
+		const db = {
+			select: vi.fn(() => ({ from })),
+			delete: vi.fn(() => ({ where: deleteWhere })),
+		} as unknown as DbClient;
+
+		expect(
+			await deleteGuestAssessmentAttempt(db, {
+				attemptId: "attempt-1",
+				tokenHash: "token-hash",
+				now: new Date("2026-08-11T12:00:00.000Z"),
+			}),
+		).toBe(true);
+		expect(db.delete).toHaveBeenCalledWith(assessmentAttempts);
+		expect(eq).toHaveBeenCalledWith(
+			assessmentAttempts.guestSessionId,
+			"session-1",
+		);
 	});
 });

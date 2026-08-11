@@ -11,6 +11,8 @@ This project follows semantic versioning while it moves toward MVP. Versions bel
 - Documented the approved guest-first assessment MVP boundaries, dependency policy, phased delivery, and public-launch gate.
 - Added a dedicated PostgreSQL CI job that applies migrations and verifies the development seed is idempotent.
 - Added stable same-organisation and cross-organisation development fixtures for future ownership-isolation tests.
+- Added pseudonymous guest-session issuance, persisted assessment-attempt creation, and cookie-authorized deletion.
+- Added a pre-persistence privacy notice and explicit deletion confirmation to the questionnaire flow.
 
 ### Changed
 
@@ -24,6 +26,8 @@ This project follows semantic versioning while it moves toward MVP. Versions bel
 ### Security
 
 - Pinned patched transitive Undici, Nano ID, and JS-YAML releases for newly disclosed high-severity advisories.
+- Protected guest attempt creation with a native Cloudflare Workers rate limiter keyed by a transient hash rather than stored request metadata.
+- Store only a SHA-256 hash of each high-entropy guest token while keeping the raw credential in an HttpOnly, SameSite cookie that is Secure outside local development.
 
 ## [0.3.3] - 2026-08-17
 

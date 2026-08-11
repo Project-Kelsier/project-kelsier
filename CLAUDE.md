@@ -168,4 +168,4 @@ The `users` table is a thin domain anchor — it stores only `authUserId` linkin
 
 ### Assessment data model
 
-Assessment content is versioned: `assessmentVersions` → `assessmentQuestions` → `assessmentOptions`. A user's response is an `assessmentAttempt` containing `assessmentAnswers`, which produces an `assessmentResult` with `traitScores` (JSONB keyed by dimension). The landing page loads the active questionnaire version and its ordered options from PostgreSQL through a TanStack Start server function. Answers remain client-only and are not written to the database yet.
+Assessment content is versioned: `assessmentVersions` → `assessmentQuestions` → `assessmentOptions`. A user's response is an `assessmentAttempt` containing `assessmentAnswers`, which produces an `assessmentResult` with `traitScores` (JSONB keyed by dimension). The landing page loads the active questionnaire version and its ordered options from PostgreSQL through a TanStack Start server function. Starting creates a cookie-authorized guest attempt, while answers remain client-only until the persistence phase.

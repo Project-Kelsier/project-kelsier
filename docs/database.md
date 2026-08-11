@@ -22,6 +22,7 @@ The app deploys to Cloudflare Workers, so runtime database access must be Worker
 - `src/db/client-boundary.test.ts` statically checks that concrete drivers and the Node client do not escape their runtime client modules.
 - `src/db/schema/*` contains Drizzle schema definitions.
 - `drizzle/migrations/*` contains reviewed SQL migrations.
+- Guest assessment creation stores only a hash of the browser credential in `guest_sessions`; the raw credential remains in an HttpOnly cookie.
 
 ## Why This Split Exists
 
@@ -88,6 +89,8 @@ Use this pattern when practical:
 3. Keep service-layer `organisationId` predicates, but do not rely on them as the only protection against cross-tenant rows.
 
 Personal assessments deliberately use a different boundary. `assessment_attempts` must have exactly one owner: either a guest session or a domain user. Answers and results reference the attempt and do not duplicate user or organisation ownership. Service helpers authorize those child records by joining through the attempt. Organisation or team access will require a separate explicit sharing artefact rather than changing ownership of the personal attempt.
+
+Guest attempt creation is protected by the `ASSESSMENT_ATTEMPT_RATE_LIMITER` Workers binding. Its key is a one-way hash derived from the request IP and exists only in Cloudflare's short-lived rate-limit state; neither the raw IP nor its hash is stored with guest sessions or attempts.
 
 For source-scoped lookup helpers, include all columns that define the source identity. For AI insights, source lookups must filter by both `sourceEntityType` and `sourceEntityId`.
 

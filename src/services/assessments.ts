@@ -1,4 +1,4 @@
-import { and, eq } from "drizzle-orm";
+import { and, eq, gt } from "drizzle-orm";
 import type { DbClient } from "#/db/client";
 import {
 	assessmentAttempts,
@@ -6,6 +6,7 @@ import {
 	assessmentQuestions,
 	assessmentResults,
 	assessmentVersions,
+	guestSessions,
 } from "#/db/schema";
 import type { AssessmentQuestionnaire } from "#/lib/assessmentQuestionnaire";
 
@@ -154,4 +155,117 @@ export async function getAssessmentResultForUserAttempt(
 		.limit(1);
 
 	return result ?? null;
+}
+
+export async function getActiveGuestSessionByTokenHash(
+	db: DbClient,
+	tokenHash: string,
+	now: Date,
+) {
+	const [session] = await db
+		.select({
+			id: guestSessions.id,
+			expiresAt: guestSessions.expiresAt,
+		})
+		.from(guestSessions)
+		.where(
+			and(
+				eq(guestSessions.tokenHash, tokenHash),
+				gt(guestSessions.expiresAt, now),
+			),
+		)
+		.limit(1);
+
+	return session ?? null;
+}
+
+export async function createGuestAssessmentAttempt(
+	db: DbClient,
+	input: {
+		assessmentVersionId: string;
+		guestSessionId?: string;
+		tokenHash?: string;
+		expiresAt?: Date;
+	},
+) {
+	return db.transaction(async (transaction) => {
+		let guestSessionId = input.guestSessionId;
+		const expiresAt = input.expiresAt;
+
+		if (!guestSessionId) {
+			if (!input.tokenHash || !expiresAt) {
+				throw new Error(
+					"A new guest session requires a token hash and expiry.",
+				);
+			}
+
+			const [session] = await transaction
+				.insert(guestSessions)
+				.values({ tokenHash: input.tokenHash, expiresAt })
+				.returning({ id: guestSessions.id });
+
+			if (!session) {
+				throw new Error("The guest session could not be created.");
+			}
+
+			guestSessionId = session.id;
+		}
+
+		const [attempt] = await transaction
+			.insert(assessmentAttempts)
+			.values({
+				guestSessionId,
+				assessmentVersionId: input.assessmentVersionId,
+			})
+			.returning({
+				id: assessmentAttempts.id,
+				startedAt: assessmentAttempts.startedAt,
+			});
+
+		if (!attempt || !expiresAt) {
+			throw new Error("The assessment attempt could not be created.");
+		}
+
+		return { ...attempt, expiresAt };
+	});
+}
+
+export async function deleteGuestAssessmentAttempt(
+	db: DbClient,
+	input: { attemptId: string; tokenHash: string; now: Date },
+) {
+	const [ownedAttempt] = await db
+		.select({
+			id: assessmentAttempts.id,
+			guestSessionId: assessmentAttempts.guestSessionId,
+		})
+		.from(assessmentAttempts)
+		.innerJoin(
+			guestSessions,
+			eq(guestSessions.id, assessmentAttempts.guestSessionId),
+		)
+		.where(
+			and(
+				eq(assessmentAttempts.id, input.attemptId),
+				eq(guestSessions.tokenHash, input.tokenHash),
+				gt(guestSessions.expiresAt, input.now),
+			),
+		)
+		.limit(1);
+
+	if (!ownedAttempt?.guestSessionId) {
+		return false;
+	}
+
+	const deleted = await db
+		.delete(assessmentAttempts)
+		.where(
+			and(
+				eq(assessmentAttempts.id, ownedAttempt.id),
+				eq(assessmentAttempts.guestSessionId, ownedAttempt.guestSessionId),
+			),
+		)
+		.returning({ id: assessmentAttempts.id });
+
+	return deleted.length === 1;
 }

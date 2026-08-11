@@ -3,11 +3,17 @@ import type { AnchorHTMLAttributes, ReactNode } from "react";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import { GITHUB_REPOSITORY_URL } from "#/lib/projectLinks";
 import { KelsierPage as KelsierPageComponent } from "./KelsierPage";
-import { assessmentQuestionnaireFixture } from "./KelsierPage.fixture";
+import {
+	assessmentPersistenceActionsFixture,
+	assessmentQuestionnaireFixture,
+} from "./KelsierPage.fixture";
 
 function KelsierPage() {
 	return (
-		<KelsierPageComponent questionnaire={assessmentQuestionnaireFixture} />
+		<KelsierPageComponent
+			questionnaire={assessmentQuestionnaireFixture}
+			persistenceActions={assessmentPersistenceActionsFixture}
+		/>
 	);
 }
 
@@ -187,7 +193,7 @@ describe("KelsierPage", () => {
 		expect(removeListener).toHaveBeenCalledOnce();
 	});
 
-	it("does not smooth scroll assessment controls for reduced-motion users", () => {
+	it("does not smooth scroll assessment controls for reduced-motion users", async () => {
 		window.matchMedia = vi.fn().mockImplementation((query: string) => ({
 			matches: query === "(prefers-reduced-motion: reduce)",
 			media: query,
@@ -201,11 +207,15 @@ describe("KelsierPage", () => {
 
 		render(<KelsierPage />);
 
-		fireEvent.click(screen.getByRole("button", { name: "Start assessment" }));
+		fireEvent.click(
+			screen.getByRole("button", { name: "Start and save progress" }),
+		);
 
-		expect(HTMLElement.prototype.scrollIntoView).toHaveBeenCalledWith({
-			behavior: "auto",
-			block: "start",
+		await waitFor(() => {
+			expect(HTMLElement.prototype.scrollIntoView).toHaveBeenCalledWith({
+				behavior: "auto",
+				block: "start",
+			});
 		});
 	});
 
@@ -284,10 +294,13 @@ describe("KelsierPage", () => {
 		);
 	});
 
-	it("starts and progresses through the questionnaire", () => {
+	it("starts and progresses through the questionnaire", async () => {
 		render(<KelsierPage />);
 
-		fireEvent.click(screen.getByRole("button", { name: "Start assessment" }));
+		fireEvent.click(
+			screen.getByRole("button", { name: "Start and save progress" }),
+		);
+		await screen.findByRole("radio", { name: "Restructure immediately" });
 		fireEvent.click(
 			screen.getByRole("radio", { name: "Restructure immediately" }),
 		);
@@ -300,10 +313,15 @@ describe("KelsierPage", () => {
 		).toBeTruthy();
 	});
 
-	it("keeps questionnaire progression disabled until an option is selected", () => {
+	it("keeps questionnaire progression disabled until an option is selected", async () => {
 		render(<KelsierPage />);
 
-		fireEvent.click(screen.getByRole("button", { name: "Start assessment" }));
+		fireEvent.click(
+			screen.getByRole("button", { name: "Start and save progress" }),
+		);
+		await screen.findByRole("group", {
+			name: "When a deadline moves unexpectedly, you tend to…",
+		});
 
 		expect(
 			screen.getByRole("group", {
@@ -327,7 +345,7 @@ describe("KelsierPage", () => {
 		expect(nextButton).toHaveProperty("disabled", false);
 	});
 
-	it("allows an optional question to be skipped", () => {
+	it("allows an optional question to be skipped", async () => {
 		const optionalQuestionnaire = {
 			...assessmentQuestionnaireFixture,
 			questions: [
@@ -338,8 +356,16 @@ describe("KelsierPage", () => {
 			],
 		};
 
-		render(<KelsierPageComponent questionnaire={optionalQuestionnaire} />);
-		fireEvent.click(screen.getByRole("button", { name: "Start assessment" }));
+		render(
+			<KelsierPageComponent
+				questionnaire={optionalQuestionnaire}
+				persistenceActions={assessmentPersistenceActionsFixture}
+			/>,
+		);
+		fireEvent.click(
+			screen.getByRole("button", { name: "Start and save progress" }),
+		);
+		await screen.findByText(/Question 1 of 1 · Optional/);
 
 		expect(screen.getByText(/Question 1 of 1 · Optional/)).toBeTruthy();
 		const completeButton = screen.getByRole("button", {
@@ -352,10 +378,13 @@ describe("KelsierPage", () => {
 		expect(screen.getByText("Skipped")).toBeTruthy();
 	});
 
-	it("keeps an in-progress questionnaire when the hero call to action is clicked", () => {
+	it("keeps an in-progress questionnaire when the hero call to action is clicked", async () => {
 		render(<KelsierPage />);
 
-		fireEvent.click(screen.getByRole("button", { name: "Start assessment" }));
+		fireEvent.click(
+			screen.getByRole("button", { name: "Start and save progress" }),
+		);
+		await screen.findByRole("radio", { name: "Restructure immediately" });
 		fireEvent.click(
 			screen.getByRole("radio", { name: "Restructure immediately" }),
 		);
@@ -373,7 +402,10 @@ describe("KelsierPage", () => {
 	it("shows and focuses the completion state after the last question", async () => {
 		render(<KelsierPage />);
 
-		fireEvent.click(screen.getByRole("button", { name: "Start assessment" }));
+		fireEvent.click(
+			screen.getByRole("button", { name: "Start and save progress" }),
+		);
+		await screen.findByRole("radio", { name: "Restructure immediately" });
 		fireEvent.click(
 			screen.getByRole("radio", { name: "Restructure immediately" }),
 		);
@@ -393,7 +425,7 @@ describe("KelsierPage", () => {
 			screen.getByRole("heading", { name: "Prototype complete" }),
 		).toBeTruthy();
 		expect(
-			screen.getByRole("button", { name: "Restart prototype" }),
+			screen.getByRole("button", { name: "Restart questions" }),
 		).toBeTruthy();
 		await waitFor(() => {
 			expect(screen.getByRole("heading", { name: "Prototype complete" })).toBe(
@@ -402,10 +434,13 @@ describe("KelsierPage", () => {
 		});
 	});
 
-	it("starts a fresh questionnaire when the hero call to action is clicked after completion", () => {
+	it("returns to the questionnaire when the hero call to action is clicked after completion", async () => {
 		render(<KelsierPage />);
 
-		fireEvent.click(screen.getByRole("button", { name: "Start assessment" }));
+		fireEvent.click(
+			screen.getByRole("button", { name: "Start and save progress" }),
+		);
+		await screen.findByRole("radio", { name: "Restructure immediately" });
 		fireEvent.click(
 			screen.getByRole("radio", { name: "Restructure immediately" }),
 		);
@@ -429,12 +464,41 @@ describe("KelsierPage", () => {
 
 		expect(
 			screen.getByRole("heading", {
-				name: "When a deadline moves unexpectedly, you tend to…",
+				name: "Prototype complete",
 			}),
 		).toBeTruthy();
-		expect(screen.getByText("0% answered")).toBeTruthy();
+	});
+
+	it("shows the privacy notice before persistence and deletes with confirmation", async () => {
+		const deleteAttempt = vi.fn().mockResolvedValue({ deleted: true });
+		render(
+			<KelsierPageComponent
+				questionnaire={assessmentQuestionnaireFixture}
+				persistenceActions={{
+					...assessmentPersistenceActionsFixture,
+					deleteAttempt,
+				}}
+			/>,
+		);
+
+		expect(screen.getByText(/If that cookie is lost/)).toBeTruthy();
+		fireEvent.click(
+			screen.getByRole("button", { name: "Start and save progress" }),
+		);
+		await screen.findByRole("radio", { name: "Restructure immediately" });
+		fireEvent.click(
+			screen.getByRole("button", { name: "Delete saved attempt" }),
+		);
+		fireEvent.click(screen.getByRole("button", { name: "Confirm deletion" }));
+
 		expect(
-			screen.getByRole("button", { name: "Next question" }),
-		).toHaveProperty("disabled", true);
+			await screen.findAllByText("Your saved guest attempt has been deleted."),
+		).toHaveLength(2);
+		expect(deleteAttempt).toHaveBeenCalledWith(
+			"10000000-0000-4000-8000-000000000001",
+		);
+		expect(
+			screen.getByRole("button", { name: "Start and save progress" }),
+		).toBeTruthy();
 	});
 });
