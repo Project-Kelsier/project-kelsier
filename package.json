@@ -33,7 +33,6 @@
 		"ci": "pnpm check && pnpm typecheck && pnpm test && pnpm build && pnpm build-storybook"
 	},
 	"dependencies": {
-		"@neondatabase/serverless": "^1.1.0",
 		"@tailwindcss/vite": "^4.3.3",
 		"@tanstack/react-devtools": "0.10.9",
 		"@tanstack/react-router": "1.170.18",

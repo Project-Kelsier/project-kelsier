@@ -25,51 +25,61 @@ const SECOND_ORG_OWNER_AUTH_USER_ID = "00000000-0000-4000-8000-000000000003";
 const questions = [
 	{
 		dimension: "clarity",
+		required: true,
 		sortOrder: 1,
 		prompt: "I understand what my team needs from me this week.",
 	},
 	{
 		dimension: "candour",
+		required: true,
 		sortOrder: 2,
 		prompt: "Important concerns are raised directly and respectfully.",
 	},
 	{
 		dimension: "listening",
+		required: true,
 		sortOrder: 3,
 		prompt: "People adjust their views when they hear useful new information.",
 	},
 	{
 		dimension: "trust",
+		required: true,
 		sortOrder: 4,
 		prompt: "I can rely on teammates to follow through on commitments.",
 	},
 	{
 		dimension: "conflict",
+		required: true,
 		sortOrder: 5,
 		prompt: "Disagreements help the team make better decisions.",
 	},
 	{
 		dimension: "decision_making",
+		required: true,
 		sortOrder: 6,
 		prompt: "Decision owners and next steps are clear after discussions.",
 	},
 	{
 		dimension: "energy",
+		required: true,
 		sortOrder: 7,
 		prompt: "The team's communication leaves me with energy to do good work.",
 	},
 	{
 		dimension: "support",
+		required: true,
 		sortOrder: 8,
 		prompt: "When someone is blocked, help arrives early enough to matter.",
 	},
 	{
 		dimension: "accountability",
+		required: true,
 		sortOrder: 9,
 		prompt: "The team notices and resolves missed commitments constructively.",
 	},
 	{
 		dimension: "adaptability",
+		required: false,
 		sortOrder: 10,
 		prompt:
 			"The team changes how it communicates when the current pattern fails.",
@@ -317,6 +327,7 @@ async function seed() {
 			.values({
 				versionId: assessmentVersion.id,
 				dimension: question.dimension,
+				required: question.required,
 				sortOrder: question.sortOrder,
 				prompt: question.prompt,
 			})
@@ -325,6 +336,7 @@ async function seed() {
 				set: {
 					dimension: question.dimension,
 					prompt: question.prompt,
+					required: question.required,
 					updatedAt,
 				},
 			})

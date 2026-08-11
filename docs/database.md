@@ -10,27 +10,24 @@ The app deploys to Cloudflare Workers, so runtime database access must be Worker
 
 | Runtime | Driver | Purpose |
 | --- | --- | --- |
-| Cloudflare Worker | Neon HTTP / serverless Drizzle driver | App runtime |
+| Cloudflare Worker | Postgres.js through Cloudflare Hyperdrive | App runtime |
 | Node.js | postgres-js | Local scripts, seed, migration tooling |
-| Future Worker optimization | Cloudflare Hyperdrive | Connection pooling and routing |
 
 ## Current Implementation
 
 - `src/db/client.worker.ts` is the Worker-safe database client.
 - `src/db/client.node.ts` is Node-only.
 - `src/db/client.ts` is a runtime-safe shared surface for environment parsing and `DbClient` typing.
-- Worker-facing routes and services must not import `client.node.ts`, `postgres`, or `drizzle-orm/postgres-js`.
-- `src/db/client-boundary.test.ts` statically checks that postgres-js and the Node client do not enter Worker-facing modules.
+- Worker-facing routes and services must not import `client.node.ts` or concrete database drivers. The Worker client is the only Worker-facing module that owns Postgres.js setup.
+- `src/db/client-boundary.test.ts` statically checks that concrete drivers and the Node client do not escape their runtime client modules.
 - `src/db/schema/*` contains Drizzle schema definitions.
 - `drizzle/migrations/*` contains reviewed SQL migrations.
 
 ## Why This Split Exists
 
-Cloudflare Workers do not provide normal Node TCP sockets by default. A plain `postgres-js` client is appropriate for Node scripts but can fail in Workers unless explicitly wired through Cloudflare sockets or Hyperdrive.
+Cloudflare Workers do not provide normal Node TCP sockets by default. Kelsier's Worker client connects through the `HYPERDRIVE` binding, while Node-only scripts connect directly with `DATABASE_URL`.
 
-For the Worker runtime, Kelsier uses a serverless/edge-compatible database path. Drizzle supports Neon HTTP/WebSocket drivers, and Cloudflare documents Neon and Hyperdrive as Workers-compatible PostgreSQL options.
-
-Hyperdrive is not wired yet because this repo does not currently define a Hyperdrive binding in `wrangler.jsonc`. Add Hyperdrive only with the corresponding Cloudflare binding and refreshed generated Worker types.
+The Worker creates its lightweight Postgres.js client per request instead of storing request-scoped connection state globally. Hyperdrive owns the underlying connection pool. Query caching is disabled on the Hyperdrive configuration because assessments require predictable authorization checks and read-after-write behavior.
 
 ## Local Development
 
@@ -43,6 +40,8 @@ DATABASE_URL=postgres://kelsier:kelsier@localhost:55432/kelsier_dev
 ```
 
 Do not run destructive development commands against Neon. Hosted Neon connection strings are secrets and must stay out of committed files, logs, screenshots, and PR descriptions.
+
+`wrangler.jsonc` supplies the non-secret Docker URL as the Hyperdrive binding's `localConnectionString`. Local Worker requests therefore connect directly to Docker; they do not use the deployed Hyperdrive service or hosted Neon. An environment-specific `CLOUDFLARE_HYPERDRIVE_LOCAL_CONNECTION_STRING_HYPERDRIVE` value can override it when needed.
 
 ## Migration Workflow
 
@@ -88,20 +87,13 @@ Use this pattern when practical:
 2. Add a composite foreign key from the child table, such as `(parent_id, organisation_id)`.
 3. Keep service-layer `organisationId` predicates, but do not rely on them as the only protection against cross-tenant rows.
 
-Current assessment examples:
-
-- `assessment_attempts` has a unique key on `(id, organisation_id)`.
-- `assessment_attempts` references teams through `(team_id, organisation_id)`.
-- `assessment_answers` references attempts through `(attempt_id, organisation_id)`.
-- `assessment_results` references attempts through `(attempt_id, organisation_id)`.
-
-This prevents assessment rows from referencing a team or attempt that belongs to a different organisation while still allowing tenant-scoped query helpers to filter by local `organisation_id`.
+Personal assessments deliberately use a different boundary. `assessment_attempts` must have exactly one owner: either a guest session or a domain user. Answers and results reference the attempt and do not duplicate user or organisation ownership. Service helpers authorize those child records by joining through the attempt. Organisation or team access will require a separate explicit sharing artefact rather than changing ownership of the personal attempt.
 
 For source-scoped lookup helpers, include all columns that define the source identity. For AI insights, source lookups must filter by both `sourceEntityType` and `sourceEntityId`.
 
 ## Runtime Import Rules
 
-- App runtime code should use `src/db/client.worker.ts` when it needs a concrete database client.
+- App runtime code should use `src/db/client.worker.ts` when it needs a concrete database client and pass the generated `Env` binding object.
 - Shared services should depend on the `DbClient` type from `src/db/client.ts`, not the Node client.
 - Scripts and Node-only test setup may import `src/db/client.node.ts`.
 - Do not import `src/db/client.node.ts` from `src/routes`, Worker route handlers, or service modules used by the app runtime.
@@ -115,6 +107,6 @@ For soft-delete and tenant visibility tests, assert specific schema columns are 
 
 ## Sources
 
-- Drizzle Neon driver docs: <https://orm.drizzle.team/docs/connect-neon>
-- Cloudflare Workers Neon docs: <https://developers.cloudflare.com/workers/databases/third-party-integrations/neon/>
+- Drizzle Postgres.js driver docs: <https://orm.drizzle.team/docs/get-started-postgresql#postgresjs>
 - Cloudflare Hyperdrive docs: <https://developers.cloudflare.com/hyperdrive/>
+- Cloudflare Hyperdrive local development: <https://developers.cloudflare.com/hyperdrive/configuration/local-development/>

@@ -13,7 +13,11 @@ strictDepBuilds: true
 # Temporary overrides for transitive CVEs.
 # Remove each entry once the dependency graph resolves a patched version without it:
 #   @esbuild-kit/core-utils>esbuild 0.25.12 — GHSA-67mh-4wv8-2f99; parent: drizzle-kit → @esbuild-kit/esm-loader
-#   xmlbuilder2>js-yaml 4.3.0 — GHSA-52cp-r559-cp3m; parent: TanStack Start → xmlbuilder2
+#   miniflare>undici 7.29.0 — GHSA-4cwx-7wf7-3272; parent: Wrangler / Cloudflare Vite plugin → Miniflare
+#   postcss>nanoid 3.3.17 — GHSA-2v37-7h3g-55p8; parent: Vite → PostCSS
+#   xmlbuilder2>js-yaml 4.3.1 — GHSA-5p4m-2wfm-xmqj; parent: TanStack Start → xmlbuilder2
 overrides:
   "@esbuild-kit/core-utils>esbuild": "0.25.12"
-  "xmlbuilder2>js-yaml": "4.3.0"
+  "miniflare>undici": "7.29.0"
+  "postcss>nanoid": "3.3.17"
+  "xmlbuilder2>js-yaml": "4.3.1"

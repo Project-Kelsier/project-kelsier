@@ -48,9 +48,9 @@ The app deploys as a Cloudflare Worker via TanStack Start's server entry (`@tans
 
 ### Dual database clients
 
-There are two Drizzle client implementations because the Workers runtime cannot use the `postgres` (node-postgres) driver:
+There are two Drizzle client implementations because the Worker connects through Cloudflare Hyperdrive while Node tooling connects directly to PostgreSQL:
 
-- **`src/db/client.worker.ts`** — uses `drizzle-orm/neon-http` (HTTP-based, Workers-compatible). This is what runs in production.
+- **`src/db/client.worker.ts`** — uses `drizzle-orm/postgres-js` through the generated Cloudflare Hyperdrive binding. This is what runs in production.
 - **`src/db/client.node.ts`** — uses `drizzle-orm/postgres-js` with the `postgres` npm package. Used by local scripts (`seed.ts`, Drizzle Kit migrations).
 - **`src/db/client.ts`** — shared types and connection string helpers that both clients import. Must stay runtime-safe — never import Node-only modules here.
 

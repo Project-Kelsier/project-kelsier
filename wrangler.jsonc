@@ -9,5 +9,12 @@
 	},
 	"observability": {
 		"enabled": true
-	}
+	},
+	"hyperdrive": [
+		{
+			"binding": "HYPERDRIVE",
+			"id": "280a2e296ce34b2796b63a6ed11f568a",
+			"localConnectionString": "postgres://kelsier:kelsier@localhost:55432/kelsier_dev"
+		}
+	]
 }

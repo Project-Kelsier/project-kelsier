@@ -12,6 +12,17 @@ This project follows semantic versioning while it moves toward MVP. Versions bel
 - Added a dedicated PostgreSQL CI job that applies migrations and verifies the development seed is idempotent.
 - Added stable same-organisation and cross-organisation development fixtures for future ownership-isolation tests.
 
+### Changed
+
+- Replaced organisation-owned assessment attempts with personal guest-session or user ownership enforced by an exactly-one-owner database constraint.
+- Normalized assessment answers and results to derive authorization through their owning attempt, and updated service helpers to enforce user ownership through that boundary.
+- Added explicit question requiredness, fixed guest-session expiry metadata, and result scoring provenance with database-enforced assessment-version consistency.
+- Routed the Cloudflare Worker database client through a cache-disabled Hyperdrive binding while preserving direct local PostgreSQL access for Node tooling.
+
+### Security
+
+- Pinned patched transitive Undici, Nano ID, and JS-YAML releases for newly disclosed high-severity advisories.
+
 ## [0.3.3] - 2026-08-17
 
 ### Added

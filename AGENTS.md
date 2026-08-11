@@ -172,12 +172,10 @@ The current UI is mostly static, but the repository now includes a production-sh
 The approved guest-first assessment boundaries and phased delivery plan live in [`docs/assessment-mvp.md`](docs/assessment-mvp.md). Treat that document as the product and data-design source of truth for assessment MVP work while its decisions are implemented incrementally.
 
 - Guest and claimed attempts are personal records; account creation must not implicitly expose them to an organisation or team.
-- The attempt is the authorization boundary for its answers and result. The planned assessment migration deliberately derives child ownership through the attempt instead of duplicating organisation or user ownership on those child rows.
+- The attempt is the authorization boundary for its answers and result. Assessment child rows deliberately derive ownership through the attempt instead of duplicating organisation or user ownership.
 - The initial response engine is explicitly single-select with required and optional questions. Ranking, multi-select, branching, and free text require later design and may require migrations.
 - The seeded questionnaire and weighted-average output are demonstration content. Do not describe them as validated, predictive, clinical, diagnostic, or suitable for hiring decisions.
 - Do not expose writable guest assessment routes publicly until the launch gate in the decision document is satisfied.
-
-Until the planned ownership migrations land, the current schema remains the working implementation. Do not create new code that treats its required organisation ownership as the intended guest-assessment model.
 
 Default bias: start local, then extract when reuse or complexity justifies it.
 
@@ -322,12 +320,11 @@ If you cannot run a check locally, say so explicitly in your handoff and explain
 
 - [`docker-compose.yml`](docker-compose.yml) defines the local PostgreSQL 17 service. It publishes container port `5432` on host port `55432` to avoid common Windows reservations around `5432`.
 - [`drizzle.config.ts`](drizzle.config.ts) reads database credentials from `.env`.
-- Keep runtime database clients explicit. [`src/db/client.worker.ts`](src/db/client.worker.ts) is the Cloudflare Worker runtime client and uses Drizzle's Neon HTTP driver; [`src/db/client.node.ts`](src/db/client.node.ts) is Node-only for scripts, seed work, migration support, and tests that need postgres-js; [`src/db/client.ts`](src/db/client.ts) must remain a runtime-safe shared type/env helper and must not import Node-only database modules.
-- Do not import [`src/db/client.node.ts`](src/db/client.node.ts), `postgres`, or `drizzle-orm/postgres-js` from routes, services, or other Worker-facing modules. [`src/db/client-boundary.test.ts`](src/db/client-boundary.test.ts) enforces this boundary.
-- Do not wire Hyperdrive into the Worker client until `wrangler.jsonc` has a Hyperdrive binding and generated Worker types are updated.
+- Keep runtime database clients explicit. [`src/db/client.worker.ts`](src/db/client.worker.ts) is the Cloudflare Worker runtime client and uses Drizzle's Postgres.js driver through the generated `HYPERDRIVE` binding; [`src/db/client.node.ts`](src/db/client.node.ts) is Node-only for scripts, seed work, migration support, and tests that need postgres-js; [`src/db/client.ts`](src/db/client.ts) must remain a runtime-safe shared type/env helper and must not import concrete database drivers.
+- Do not import [`src/db/client.node.ts`](src/db/client.node.ts) or concrete database drivers from routes, services, or other Worker-facing modules. [`src/db/client-boundary.test.ts`](src/db/client-boundary.test.ts) enforces this boundary while allowing driver setup inside the two runtime clients.
 - [`src/db/schema/index.ts`](src/db/schema/index.ts) is the schema export surface used by Drizzle.
 - Keep relation definitions in [`src/db/schema/relations.ts`](src/db/schema/relations.ts) unless a future refactor proves colocated relations are safe and clearer.
-- Preserve tenant integrity in schema design. If child rows duplicate `organisation_id` while referencing a parent row, add a composite unique key on the parent and a composite foreign key from the child so mismatched tenant rows are impossible. Current examples include `assessment_attempts(team_id, organisation_id)` referencing `teams(id, organisation_id)`, and `assessment_answers(attempt_id, organisation_id)` plus `assessment_results(attempt_id, organisation_id)` referencing `assessment_attempts(id, organisation_id)`.
+- Preserve tenant integrity in schema design. If child rows duplicate `organisation_id` while referencing a parent row, add a composite unique key on the parent and a composite foreign key from the child so mismatched tenant rows are impossible. Personal assessment attempts are a deliberate exception: they have exactly one guest-session or user owner, and answers/results derive authorization through their attempt rather than carrying tenant ownership columns.
 - Generate migrations with `pnpm db:generate`; do not hand-write or casually edit generated migration metadata.
 - Apply and seed locally with `pnpm db:migrate` and `pnpm db:seed` after confirming `.env` points at `localhost:55432`.
 - Keep seed data idempotent and useful for frontend/API development. Avoid seed records that imply product behavior not yet supported.
