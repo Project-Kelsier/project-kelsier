@@ -17,8 +17,10 @@ assertSeedTargetIsAllowed(databaseUrl, process.env);
 
 const { db, queryClient } = createDbConnection(databaseUrl);
 
-// Dev-only fake Neon Auth user ID. Neon Auth owns real identity records.
-const DEMO_AUTH_USER_ID = "00000000-0000-4000-8000-000000000001";
+// Dev-only fake Neon Auth user IDs. Neon Auth owns real identity records.
+const DEMO_OWNER_AUTH_USER_ID = "00000000-0000-4000-8000-000000000001";
+const DEMO_COLLEAGUE_AUTH_USER_ID = "00000000-0000-4000-8000-000000000002";
+const SECOND_ORG_OWNER_AUTH_USER_ID = "00000000-0000-4000-8000-000000000003";
 
 const questions = [
 	{
@@ -88,7 +90,7 @@ async function seed() {
 	const [demoUser] = await db
 		.insert(users)
 		.values({
-			authUserId: DEMO_AUTH_USER_ID,
+			authUserId: DEMO_OWNER_AUTH_USER_ID,
 		})
 		.onConflictDoUpdate({
 			target: users.authUserId,
@@ -100,6 +102,40 @@ async function seed() {
 
 	if (!demoUser) {
 		throw new Error("Failed to seed demo user.");
+	}
+
+	const [demoColleague] = await db
+		.insert(users)
+		.values({
+			authUserId: DEMO_COLLEAGUE_AUTH_USER_ID,
+		})
+		.onConflictDoUpdate({
+			target: users.authUserId,
+			set: {
+				updatedAt,
+			},
+		})
+		.returning({ id: users.id });
+
+	if (!demoColleague) {
+		throw new Error("Failed to seed demo colleague.");
+	}
+
+	const [secondOrganisationOwner] = await db
+		.insert(users)
+		.values({
+			authUserId: SECOND_ORG_OWNER_AUTH_USER_ID,
+		})
+		.onConflictDoUpdate({
+			target: users.authUserId,
+			set: {
+				updatedAt,
+			},
+		})
+		.returning({ id: users.id });
+
+	if (!secondOrganisationOwner) {
+		throw new Error("Failed to seed second organisation owner.");
 	}
 
 	const [demoOrganisation] = await db
@@ -128,6 +164,59 @@ async function seed() {
 		.values({
 			organisationId: demoOrganisation.id,
 			userId: demoUser.id,
+			role: "owner",
+		})
+		.onConflictDoUpdate({
+			target: [organisationMembers.organisationId, organisationMembers.userId],
+			set: {
+				role: "owner",
+				deletedAt: null,
+				updatedAt,
+			},
+		});
+
+	await db
+		.insert(organisationMembers)
+		.values({
+			organisationId: demoOrganisation.id,
+			userId: demoColleague.id,
+			role: "member",
+		})
+		.onConflictDoUpdate({
+			target: [organisationMembers.organisationId, organisationMembers.userId],
+			set: {
+				role: "member",
+				deletedAt: null,
+				updatedAt,
+			},
+		});
+
+	const [secondOrganisation] = await db
+		.insert(organisations)
+		.values({
+			slug: "second-organisation",
+			name: "Second Organisation",
+		})
+		.onConflictDoUpdate({
+			target: organisations.slug,
+			set: {
+				name: "Second Organisation",
+				status: "active",
+				deletedAt: null,
+				updatedAt,
+			},
+		})
+		.returning({ id: organisations.id });
+
+	if (!secondOrganisation) {
+		throw new Error("Failed to seed second organisation.");
+	}
+
+	await db
+		.insert(organisationMembers)
+		.values({
+			organisationId: secondOrganisation.id,
+			userId: secondOrganisationOwner.id,
 			role: "owner",
 		})
 		.onConflictDoUpdate({
@@ -174,6 +263,24 @@ async function seed() {
 			set: {
 				organisationId: demoOrganisation.id,
 				role: "lead",
+				deletedAt: null,
+				updatedAt,
+			},
+		});
+
+	await db
+		.insert(teamMembers)
+		.values({
+			organisationId: demoOrganisation.id,
+			teamId: demoTeam.id,
+			userId: demoColleague.id,
+			role: "member",
+		})
+		.onConflictDoUpdate({
+			target: [teamMembers.teamId, teamMembers.userId],
+			set: {
+				organisationId: demoOrganisation.id,
+				role: "member",
 				deletedAt: null,
 				updatedAt,
 			},

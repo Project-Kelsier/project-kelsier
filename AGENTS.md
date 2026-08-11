@@ -167,6 +167,18 @@ The current UI is mostly static, but the repository now includes a production-sh
 - Keep external auth decoupled from domain users. `users.authUserId` is the bridge to managed auth identity; do not add foreign keys to provider-owned auth tables.
 - Local database work should use Docker PostgreSQL through `DATABASE_URL=postgres://kelsier:kelsier@localhost:55432/kelsier_dev`. Do not run destructive development commands against Neon.
 
+### Assessment MVP Direction
+
+The approved guest-first assessment boundaries and phased delivery plan live in [`docs/assessment-mvp.md`](docs/assessment-mvp.md). Treat that document as the product and data-design source of truth for assessment MVP work while its decisions are implemented incrementally.
+
+- Guest and claimed attempts are personal records; account creation must not implicitly expose them to an organisation or team.
+- The attempt is the authorization boundary for its answers and result. The planned assessment migration deliberately derives child ownership through the attempt instead of duplicating organisation or user ownership on those child rows.
+- The initial response engine is explicitly single-select with required and optional questions. Ranking, multi-select, branching, and free text require later design and may require migrations.
+- The seeded questionnaire and weighted-average output are demonstration content. Do not describe them as validated, predictive, clinical, diagnostic, or suitable for hiring decisions.
+- Do not expose writable guest assessment routes publicly until the launch gate in the decision document is satisfied.
+
+Until the planned ownership migrations land, the current schema remains the working implementation. Do not create new code that treats its required organisation ownership as the intended guest-assessment model.
+
 Default bias: start local, then extract when reuse or complexity justifies it.
 
 ## Testing Strategy

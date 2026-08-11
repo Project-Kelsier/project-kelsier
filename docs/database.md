@@ -67,6 +67,17 @@ pnpm db:seed
 
 Review generated SQL before applying it to any hosted database. Initial/fresh database setup must be reproducible from committed migrations, including required extensions such as `pgcrypto`.
 
+CI runs migrations and the seed against a fresh PostgreSQL 17 service in a dedicated database job. It runs the seed twice so loss of idempotency fails before feature tests begin relying on fixture identities.
+
+## Development Fixtures
+
+The local seed includes three domain users across two organisations so ownership checks can prove both important boundaries:
+
+- An owner and a colleague belong to `demo-organisation` and `leadership-circle`. This makes same-organisation, different-user isolation testable.
+- A separate owner belongs to `second-organisation`. This makes cross-organisation isolation testable.
+
+The fake auth IDs are stable lookup keys for development and tests. They do not represent real auth-provider records, and the seed remains development-only.
+
 ## Tenant Integrity
 
 Tables that duplicate `organisation_id` for tenant-scoped lookup speed must still enforce that duplicated tenant key at the database level when they also reference a parent row.

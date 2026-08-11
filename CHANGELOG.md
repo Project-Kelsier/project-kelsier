@@ -4,6 +4,14 @@ All notable changes to Project Kelsier will be documented in this file.
 
 This project follows semantic versioning while it moves toward MVP. Versions below `1.0.0` may still include breaking product or API changes when they are called out here.
 
+## [0.3.4] - 2026-08-11
+
+### Added
+
+- Documented the approved guest-first assessment MVP boundaries, dependency policy, phased delivery, and public-launch gate.
+- Added a dedicated PostgreSQL CI job that applies migrations and verifies the development seed is idempotent.
+- Added stable same-organisation and cross-organisation development fixtures for future ownership-isolation tests.
+
 ## [0.3.3] - 2026-08-17
 
 ### Added

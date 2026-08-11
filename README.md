@@ -2,7 +2,7 @@
 
 Open-source exploration of cognition, communication patterns, and human-centered collaboration.
 
-[Live Demo](https://project-kelsier.mindphreak.workers.dev/) | [Security Notes](./docs/security-hardening.md) | [Versioning](./VERSIONING.md)
+[Live Demo](https://project-kelsier.mindphreak.workers.dev/) | [Assessment MVP](./docs/assessment-mvp.md) | [Security Notes](./docs/security-hardening.md) | [Versioning](./VERSIONING.md)
 
 Built with TanStack Start, React, Vite, Storybook, Biome, Vitest, Playwright, GitHub Actions CI, and Cloudflare Workers-ready deployment.
 
