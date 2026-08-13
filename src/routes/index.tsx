@@ -3,8 +3,10 @@ import { KelsierAssessmentUnavailablePage } from "../components/kelsier/KelsierA
 import { KelsierPage } from "../components/kelsier/KelsierPage";
 import { getActiveAssessmentQuestionnaire } from "../server/assessmentQuestionnaire.functions";
 import {
+	completeGuestAssessment,
 	deleteGuestAttempt,
 	getGuestAssessmentEntry,
+	getGuestAssessmentResult,
 	resumeGuestAssessment,
 	saveGuestAnswer,
 	startFreshGuestAssessment,
@@ -17,8 +19,13 @@ export const Route = createFileRoute("/")({
 		const guestAssessmentEntry = await getGuestAssessmentEntry({
 			data: { assessmentVersionId: questionnaire.id },
 		});
+		const guestAssessmentResult = guestAssessmentEntry
+			? null
+			: await getGuestAssessmentResult({
+					data: { assessmentVersionId: questionnaire.id },
+				});
 
-		return { questionnaire, guestAssessmentEntry };
+		return { questionnaire, guestAssessmentEntry, guestAssessmentResult };
 	},
 	head: () => ({
 		meta: [
@@ -39,12 +46,14 @@ export const Route = createFileRoute("/")({
 });
 
 function HomeRoute() {
-	const { questionnaire, guestAssessmentEntry } = Route.useLoaderData();
+	const { questionnaire, guestAssessmentEntry, guestAssessmentResult } =
+		Route.useLoaderData();
 
 	return (
 		<KelsierPage
 			questionnaire={questionnaire}
 			initialGuestAssessmentEntry={guestAssessmentEntry}
+			initialGuestAssessmentResult={guestAssessmentResult}
 			persistenceActions={{
 				startAttempt: () => startGuestAssessment(),
 				resumeAttempt: (attemptId, continuationToken) =>
@@ -56,6 +65,7 @@ function HomeRoute() {
 						data: { attemptId, continuationToken },
 					}),
 				saveAnswer: (input) => saveGuestAnswer({ data: input }),
+				completeAttempt: (input) => completeGuestAssessment({ data: input }),
 				deleteAttempt: (attemptId) =>
 					deleteGuestAttempt({ data: { attemptId } }),
 			}}

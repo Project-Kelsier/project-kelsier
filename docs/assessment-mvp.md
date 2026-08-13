@@ -83,8 +83,8 @@ The disposable part is the questionnaire content. The single-select response mod
 
 ### Demonstration scoring and results
 
-- Use a deterministic weighted-average demonstration algorithm.
-- Store the stable algorithm identifier `weighted-average-v1` independently from the application release version.
+- Use a deterministic per-dimension arithmetic-mean demonstration algorithm.
+- Store the stable algorithm identifier `dimension-mean-v1` independently from the application release version.
 - Store the assessment version, per-dimension numeric values, and contributing-question counts needed to explain provenance.
 - Keep confidence `null` until there is a defensible method for calculating it.
 - Present results as a plain accessible table, not a radar chart or diagnostic personality profile.
@@ -120,9 +120,9 @@ Do not expose the writable guest assessment publicly until all of these conditio
 
 Each numbered item may be split into smaller pull requests. Tooling changes, schema changes, and feature work should remain independently reviewable where practical.
 
-Implementation status as of 2026-08-13: phases 1 through 6 are implemented on the assessment MVP branch. Guest answers persist before navigation, and an interrupted attempt offers one explicit resume or a fresh replacement snapshot. Atomic completion and scoring remain phase 7 work.
+Implementation status as of 2026-08-13: phases 1 through 7 are implemented on the assessment MVP branch. Guest answers persist before navigation, and an interrupted attempt offers one explicit resume or a fresh replacement snapshot. The final answer, `completedAt` transition, deterministic `dimension-mean-v1` calculation, and immutable raw result are now created in one database transaction. Refresh restores the completed result through the owning guest credential, and the UI presents ordered dimension scores and contributing-question counts in an accessible table.
 
-Until phase 7 creates the result atomically, final-step submission is represented by `currentQuestionIndex` advancing one position beyond the questionnaire. On reload, the server combines that sentinel with required-answer validation to reconstruct the submitted response as complete. It must not offer another resume or permit later answer writes. `completedAt` remains reserved for the phase 7 completion-and-result transaction.
+The active assessment version, questions, options, dimensions, and score weights are treated as immutable scoring inputs once responses exist. Future editing tools must create a new assessment version rather than mutate an active version in place. A changed arithmetic or interpretation contract requires a new scoring algorithm identifier. The database enforces one result per attempt; the service layer exposes creation and owner-scoped reads but no result update path.
 
 ## Deferred Decisions
 

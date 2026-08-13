@@ -23,6 +23,20 @@ export const assessmentPersistenceActionsFixture: AssessmentPersistenceActions =
 			continuationToken,
 		}),
 		saveAnswer: async () => ({ currentQuestionIndex: 1 }),
+		completeAttempt: async () => ({
+			attemptId: "10000000-0000-4000-8000-000000000001",
+			completedAt: "2026-08-13T12:00:00.000Z",
+			scoringAlgorithmVersion: "dimension-mean-v1",
+			confidence: null,
+			rows: [
+				{
+					dimension: "adaptability",
+					label: "Adaptability",
+					score: 4,
+					contributingQuestionCount: 2,
+				},
+			],
+		}),
 		deleteAttempt: async () => ({ deleted: true }),
 	};
 

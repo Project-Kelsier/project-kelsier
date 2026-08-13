@@ -48,6 +48,21 @@ export type SaveGuestAssessmentAnswerInput = {
 	optionId: string | null;
 };
 
+export type GuestAssessmentResultRow = {
+	dimension: string;
+	label: string;
+	score: number | null;
+	contributingQuestionCount: number;
+};
+
+export type GuestAssessmentResult = {
+	attemptId: string;
+	completedAt: string;
+	scoringAlgorithmVersion: string;
+	confidence: number | null;
+	rows: GuestAssessmentResultRow[];
+};
+
 export type AssessmentPersistenceActions = {
 	startAttempt: () => Promise<GuestAssessmentAttempt>;
 	resumeAttempt: (
@@ -61,6 +76,9 @@ export type AssessmentPersistenceActions = {
 	saveAnswer: (
 		input: SaveGuestAssessmentAnswerInput,
 	) => Promise<{ currentQuestionIndex: number }>;
+	completeAttempt: (
+		input: SaveGuestAssessmentAnswerInput,
+	) => Promise<GuestAssessmentResult>;
 	deleteAttempt: (attemptId: string) => Promise<{ deleted: boolean }>;
 };
 

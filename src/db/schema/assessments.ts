@@ -225,7 +225,7 @@ export const assessmentResults = pgTable(
 			.default({}),
 		scoringAlgorithmVersion: text("scoring_algorithm_version")
 			.notNull()
-			.default("weighted-average-v1"),
+			.default("dimension-mean-v1"),
 		confidence: doublePrecision("confidence"),
 		createdAt: timestamp("created_at", { mode: "date", withTimezone: true })
 			.notNull()

@@ -359,7 +359,23 @@ describe("KelsierPage", () => {
 		render(
 			<KelsierPageComponent
 				questionnaire={optionalQuestionnaire}
-				persistenceActions={assessmentPersistenceActionsFixture}
+				persistenceActions={{
+					...assessmentPersistenceActionsFixture,
+					completeAttempt: async () => ({
+						attemptId: "10000000-0000-4000-8000-000000000001",
+						completedAt: "2026-08-13T12:00:00.000Z",
+						scoringAlgorithmVersion: "dimension-mean-v1",
+						confidence: null,
+						rows: [
+							{
+								dimension: "adaptability",
+								label: "Adaptability",
+								score: null,
+								contributingQuestionCount: 0,
+							},
+						],
+					}),
+				}}
 			/>,
 		);
 		fireEvent.click(
@@ -375,7 +391,8 @@ describe("KelsierPage", () => {
 
 		fireEvent.click(completeButton);
 
-		expect(await screen.findByText("Skipped")).toBeTruthy();
+		expect(await screen.findByText("No response")).toBeTruthy();
+		expect(screen.getByText("0")).toBeTruthy();
 	});
 
 	it("keeps an in-progress questionnaire when the hero call to action is clicked", async () => {
@@ -429,12 +446,12 @@ describe("KelsierPage", () => {
 		fireEvent.click(screen.getByRole("button", { name: "Complete prototype" }));
 
 		expect(
-			await screen.findByRole("heading", { name: "Prototype complete" }),
+			await screen.findByRole("heading", { name: "Demonstration result" }),
 		).toBeTruthy();
 		await waitFor(() => {
-			expect(screen.getByRole("heading", { name: "Prototype complete" })).toBe(
-				document.activeElement,
-			);
+			expect(
+				screen.getByRole("heading", { name: "Demonstration result" }),
+			).toBe(document.activeElement);
 		});
 	});
 
@@ -465,14 +482,14 @@ describe("KelsierPage", () => {
 		fireEvent.click(screen.getByRole("button", { name: "Complete prototype" }));
 
 		expect(
-			await screen.findByRole("heading", { name: "Prototype complete" }),
+			await screen.findByRole("heading", { name: "Demonstration result" }),
 		).toBeTruthy();
 
 		fireEvent.click(screen.getByRole("button", { name: "Discover your team" }));
 
 		expect(
 			screen.getByRole("heading", {
-				name: "Prototype complete",
+				name: "Demonstration result",
 			}),
 		).toBeTruthy();
 	});
@@ -544,7 +561,7 @@ describe("KelsierPage", () => {
 		);
 
 		expect(
-			screen.getByRole("heading", { name: "Prototype complete" }),
+			screen.getByRole("heading", { name: "Demonstration result" }),
 		).toBeTruthy();
 		expect(
 			screen.queryByRole("button", { name: "Continue this snapshot" }),

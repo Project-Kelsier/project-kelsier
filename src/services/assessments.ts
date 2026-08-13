@@ -1,4 +1,4 @@
-import { and, desc, eq, gt, isNull, sql } from "drizzle-orm";
+import { and, desc, eq, gt, isNotNull, isNull, sql } from "drizzle-orm";
 import type { DbClient } from "#/db/client";
 import {
 	assessmentAnswers,
@@ -9,7 +9,14 @@ import {
 	assessmentVersions,
 	guestSessions,
 } from "#/db/schema";
-import type { AssessmentQuestionnaire } from "#/lib/assessmentQuestionnaire";
+import type {
+	AssessmentQuestionnaire,
+	GuestAssessmentResult,
+} from "#/lib/assessmentQuestionnaire";
+import {
+	formatAssessmentDimension,
+	scoreDimensionMeanAssessment,
+} from "#/lib/assessmentScoring";
 
 const assessmentAttemptColumns = {
 	id: assessmentAttempts.id,
@@ -29,10 +36,62 @@ const assessmentResultColumns = {
 	attemptId: assessmentResults.attemptId,
 	assessmentVersionId: assessmentResults.assessmentVersionId,
 	traitScores: assessmentResults.traitScores,
+	contributingQuestionCounts: assessmentResults.contributingQuestionCounts,
+	scoringAlgorithmVersion: assessmentResults.scoringAlgorithmVersion,
 	confidence: assessmentResults.confidence,
 	createdAt: assessmentResults.createdAt,
 	updatedAt: assessmentResults.updatedAt,
 };
+
+function requireNumberRecord(value: unknown, fieldName: string) {
+	if (typeof value !== "object" || value === null || Array.isArray(value)) {
+		throw new Error(`The stored assessment ${fieldName} is invalid.`);
+	}
+
+	const entries = Object.entries(value);
+
+	if (
+		entries.some(
+			([key, item]) =>
+				!key || typeof item !== "number" || !Number.isFinite(item),
+		)
+	) {
+		throw new Error(`The stored assessment ${fieldName} is invalid.`);
+	}
+
+	return Object.fromEntries(entries) as Record<string, number>;
+}
+
+function toGuestAssessmentResult(
+	result: {
+		attemptId: string;
+		traitScores: unknown;
+		contributingQuestionCounts: unknown;
+		scoringAlgorithmVersion: string;
+		confidence: number | null;
+	},
+	completedAt: Date,
+	dimensions: string[],
+): GuestAssessmentResult {
+	const traitScores = requireNumberRecord(result.traitScores, "trait scores");
+	const counts = requireNumberRecord(
+		result.contributingQuestionCounts,
+		"contributing question counts",
+	);
+
+	return {
+		attemptId: result.attemptId,
+		completedAt: completedAt.toISOString(),
+		scoringAlgorithmVersion: result.scoringAlgorithmVersion,
+		confidence: result.confidence,
+		rows: dimensions.map((dimension) => ({
+			dimension,
+			label: formatAssessmentDimension(dimension),
+			score: traitScores[dimension] ?? null,
+			contributingQuestionCount: counts[dimension] ?? 0,
+		})),
+	};
+}
 
 export async function getAssessmentVersionBySlug(db: DbClient, slug: string) {
 	const [version] = await db
@@ -593,6 +652,10 @@ export async function saveGuestAssessmentAnswer(
 			}
 		}
 
+		if (questionIndex === questions.length - 1) {
+			return { status: "completion-required" as const };
+		}
+
 		const currentQuestionIndex = questionIndex + 1;
 		const advanced = await transaction
 			.update(assessmentAttempts)
@@ -648,6 +711,284 @@ export async function saveGuestAssessmentAnswer(
 				advanced[0]?.currentQuestionIndex ?? currentQuestionIndex,
 		};
 	});
+}
+
+export async function completeGuestAssessmentAttempt(
+	db: DbClient,
+	input: {
+		attemptId: string;
+		tokenHash: string;
+		continuationTokenHash: string;
+		questionId: string;
+		optionId: string | null;
+		now: Date;
+	},
+) {
+	return db.transaction(async (transaction) => {
+		const [attempt] = await transaction
+			.select({
+				id: assessmentAttempts.id,
+				guestSessionId: assessmentAttempts.guestSessionId,
+				assessmentVersionId: assessmentAttempts.assessmentVersionId,
+				completedAt: assessmentAttempts.completedAt,
+			})
+			.from(assessmentAttempts)
+			.innerJoin(
+				guestSessions,
+				eq(guestSessions.id, assessmentAttempts.guestSessionId),
+			)
+			.where(
+				and(
+					eq(assessmentAttempts.id, input.attemptId),
+					eq(guestSessions.tokenHash, input.tokenHash),
+					eq(
+						assessmentAttempts.continuationTokenHash,
+						input.continuationTokenHash,
+					),
+					gt(guestSessions.expiresAt, input.now),
+				),
+			)
+			.limit(1);
+
+		if (!attempt?.guestSessionId) {
+			return { status: "not-found" as const };
+		}
+
+		const questions = await transaction
+			.select({
+				id: assessmentQuestions.id,
+				dimension: assessmentQuestions.dimension,
+				required: assessmentQuestions.required,
+			})
+			.from(assessmentQuestions)
+			.where(eq(assessmentQuestions.versionId, attempt.assessmentVersionId))
+			.orderBy(assessmentQuestions.sortOrder);
+		const dimensions = [
+			...new Set(questions.map((question) => question.dimension)),
+		];
+
+		if (attempt.completedAt) {
+			const [storedResult] = await transaction
+				.select(assessmentResultColumns)
+				.from(assessmentResults)
+				.where(eq(assessmentResults.attemptId, attempt.id))
+				.limit(1);
+
+			return storedResult
+				? {
+						status: "completed" as const,
+						result: toGuestAssessmentResult(
+							storedResult,
+							attempt.completedAt,
+							dimensions,
+						),
+					}
+				: { status: "not-found" as const };
+		}
+
+		const finalQuestion = questions.at(-1);
+
+		if (
+			!finalQuestion ||
+			finalQuestion.id !== input.questionId ||
+			(finalQuestion.required && !input.optionId)
+		) {
+			return { status: "invalid-answer" as const };
+		}
+
+		let finalScoreWeights: unknown = null;
+
+		if (input.optionId) {
+			const [option] = await transaction
+				.select({ scoreWeights: assessmentOptions.scoreWeights })
+				.from(assessmentOptions)
+				.where(
+					and(
+						eq(assessmentOptions.id, input.optionId),
+						eq(assessmentOptions.questionId, finalQuestion.id),
+					),
+				)
+				.limit(1);
+
+			if (!option) {
+				return { status: "invalid-answer" as const };
+			}
+
+			finalScoreWeights = option.scoreWeights;
+		}
+
+		const existingAnswers = await transaction
+			.select({
+				questionId: assessmentAnswers.questionId,
+				scoreWeights: assessmentOptions.scoreWeights,
+			})
+			.from(assessmentAnswers)
+			.innerJoin(
+				assessmentOptions,
+				eq(assessmentOptions.id, assessmentAnswers.optionId),
+			)
+			.where(eq(assessmentAnswers.attemptId, attempt.id));
+		const answeredQuestionIds = new Set(
+			existingAnswers.map((answer) => answer.questionId),
+		);
+
+		if (
+			questions.some(
+				(question) =>
+					question.id !== finalQuestion.id &&
+					question.required &&
+					!answeredQuestionIds.has(question.id),
+			)
+		) {
+			return { status: "missing-required" as const };
+		}
+
+		const completed = await transaction
+			.update(assessmentAttempts)
+			.set({
+				completedAt: input.now,
+				currentQuestionIndex: questions.length,
+			})
+			.where(
+				and(
+					eq(assessmentAttempts.id, attempt.id),
+					eq(assessmentAttempts.guestSessionId, attempt.guestSessionId),
+					eq(
+						assessmentAttempts.continuationTokenHash,
+						input.continuationTokenHash,
+					),
+					isNull(assessmentAttempts.completedAt),
+				),
+			)
+			.returning({ id: assessmentAttempts.id });
+
+		if (completed.length !== 1) {
+			const [concurrentResult] = await transaction
+				.select({
+					...assessmentResultColumns,
+					completedAt: assessmentAttempts.completedAt,
+				})
+				.from(assessmentResults)
+				.innerJoin(
+					assessmentAttempts,
+					eq(assessmentAttempts.id, assessmentResults.attemptId),
+				)
+				.where(eq(assessmentResults.attemptId, attempt.id))
+				.limit(1);
+
+			return concurrentResult?.completedAt
+				? {
+						status: "completed" as const,
+						result: toGuestAssessmentResult(
+							concurrentResult,
+							concurrentResult.completedAt,
+							dimensions,
+						),
+					}
+				: { status: "not-found" as const };
+		}
+
+		if (input.optionId) {
+			await transaction
+				.insert(assessmentAnswers)
+				.values({
+					attemptId: attempt.id,
+					questionId: finalQuestion.id,
+					optionId: input.optionId,
+				})
+				.onConflictDoUpdate({
+					target: [assessmentAnswers.attemptId, assessmentAnswers.questionId],
+					set: { optionId: input.optionId },
+				});
+		} else {
+			await transaction
+				.delete(assessmentAnswers)
+				.where(
+					and(
+						eq(assessmentAnswers.attemptId, attempt.id),
+						eq(assessmentAnswers.questionId, finalQuestion.id),
+					),
+				);
+		}
+
+		const score = scoreDimensionMeanAssessment(questions, [
+			...existingAnswers.filter(
+				(answer) => answer.questionId !== finalQuestion.id,
+			),
+			...(input.optionId
+				? [{ questionId: finalQuestion.id, scoreWeights: finalScoreWeights }]
+				: []),
+		]);
+		const [storedResult] = await transaction
+			.insert(assessmentResults)
+			.values({
+				attemptId: attempt.id,
+				assessmentVersionId: attempt.assessmentVersionId,
+				traitScores: score.traitScores,
+				contributingQuestionCounts: score.contributingQuestionCounts,
+				scoringAlgorithmVersion: score.scoringAlgorithmVersion,
+				confidence: null,
+			})
+			.returning(assessmentResultColumns);
+
+		if (!storedResult) {
+			throw new Error("The assessment result could not be created.");
+		}
+
+		return {
+			status: "completed" as const,
+			result: toGuestAssessmentResult(storedResult, input.now, dimensions),
+		};
+	});
+}
+
+export async function getLatestGuestAssessmentResult(
+	db: DbClient,
+	input: {
+		tokenHash: string;
+		assessmentVersionId: string;
+		now: Date;
+	},
+) {
+	const [result] = await db
+		.select({
+			...assessmentResultColumns,
+			completedAt: assessmentAttempts.completedAt,
+		})
+		.from(assessmentResults)
+		.innerJoin(
+			assessmentAttempts,
+			eq(assessmentAttempts.id, assessmentResults.attemptId),
+		)
+		.innerJoin(
+			guestSessions,
+			eq(guestSessions.id, assessmentAttempts.guestSessionId),
+		)
+		.where(
+			and(
+				eq(guestSessions.tokenHash, input.tokenHash),
+				gt(guestSessions.expiresAt, input.now),
+				eq(assessmentResults.assessmentVersionId, input.assessmentVersionId),
+				isNotNull(assessmentAttempts.completedAt),
+			),
+		)
+		.orderBy(desc(assessmentAttempts.completedAt))
+		.limit(1);
+
+	if (!result?.completedAt) {
+		return null;
+	}
+
+	const questions = await db
+		.select({ dimension: assessmentQuestions.dimension })
+		.from(assessmentQuestions)
+		.where(eq(assessmentQuestions.versionId, input.assessmentVersionId))
+		.orderBy(assessmentQuestions.sortOrder);
+	const dimensions = [
+		...new Set(questions.map((question) => question.dimension)),
+	];
+
+	return toGuestAssessmentResult(result, result.completedAt, dimensions);
 }
 
 export async function deleteGuestAssessmentAttempt(

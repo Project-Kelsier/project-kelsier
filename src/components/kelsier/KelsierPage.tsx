@@ -18,6 +18,7 @@ import {
 	type AssessmentQuestionnaireQuestion,
 	type GuestAssessmentAttempt,
 	type GuestAssessmentEntry,
+	type GuestAssessmentResult,
 	generateAssessmentContinuationToken,
 } from "#/lib/assessmentQuestionnaire";
 import { KelsierFooter } from "./KelsierFooter";
@@ -352,18 +353,26 @@ function getQuestionAt(
 export function KelsierPage({
 	questionnaire,
 	initialGuestAssessmentEntry = null,
+	initialGuestAssessmentResult = null,
 	persistenceActions,
 }: {
 	questionnaire: AssessmentQuestionnaire;
 	initialGuestAssessmentEntry?: GuestAssessmentEntry | null;
+	initialGuestAssessmentResult?: GuestAssessmentResult | null;
 	persistenceActions: AssessmentPersistenceActions;
 }) {
 	const [isHydrated, setIsHydrated] = useState(false);
 	const [isAssessmentStarted, setIsAssessmentStarted] = useState(
-		initialGuestAssessmentEntry?.answersComplete ?? false,
+		Boolean(
+			initialGuestAssessmentResult ||
+				initialGuestAssessmentEntry?.answersComplete,
+		),
 	);
 	const [isAssessmentComplete, setIsAssessmentComplete] = useState(
-		initialGuestAssessmentEntry?.answersComplete ?? false,
+		Boolean(
+			initialGuestAssessmentResult ||
+				initialGuestAssessmentEntry?.answersComplete,
+		),
 	);
 	const [currentQuestionIndex, setCurrentQuestionIndex] = useState(0);
 	const [answers, setAnswers] = useState<Record<string, string>>(
@@ -372,6 +381,8 @@ export function KelsierPage({
 	const [attempt, setAttempt] = useState<GuestAssessmentAttempt | null>(null);
 	const [guestAssessmentEntry, setGuestAssessmentEntry] =
 		useState<GuestAssessmentEntry | null>(initialGuestAssessmentEntry);
+	const [assessmentResult, setAssessmentResult] =
+		useState<GuestAssessmentResult | null>(initialGuestAssessmentResult);
 	const [isStarting, setIsStarting] = useState(false);
 	const [isResuming, setIsResuming] = useState(false);
 	const [isStartingFresh, setIsStartingFresh] = useState(false);
@@ -408,7 +419,9 @@ export function KelsierPage({
 	const currentQuestion = getQuestionAt(questions, currentQuestionIndex);
 	const selectedOptionId = answers[currentQuestion.id];
 	const answeredCount = Object.keys(answers).length;
-	const progressPercent = Math.round((answeredCount / questions.length) * 100);
+	const progressPercent = isAssessmentComplete
+		? 100
+		: Math.round((answeredCount / questions.length) * 100);
 	const assessmentFocusStep =
 		isAssessmentStarted && !isAssessmentComplete ? currentQuestionIndex : null;
 
@@ -431,6 +444,7 @@ export function KelsierPage({
 			const createdAttempt = await persistenceActions.startAttempt();
 			setAttempt(createdAttempt);
 			setGuestAssessmentEntry(null);
+			setAssessmentResult(null);
 			setAnswers({});
 			setCurrentQuestionIndex(0);
 			setIsAssessmentStarted(true);
@@ -467,6 +481,7 @@ export function KelsierPage({
 				Math.min(progress.currentQuestionIndex, questions.length - 1),
 			);
 			setGuestAssessmentEntry(null);
+			setAssessmentResult(null);
 			setIsAssessmentStarted(true);
 			setIsAssessmentComplete(false);
 			setPersistenceMessage(
@@ -504,6 +519,7 @@ export function KelsierPage({
 			);
 			setAttempt(createdAttempt);
 			setGuestAssessmentEntry(null);
+			setAssessmentResult(null);
 			setAnswers({});
 			setCurrentQuestionIndex(0);
 			setIsAssessmentStarted(true);
@@ -525,7 +541,10 @@ export function KelsierPage({
 	]);
 
 	const handleDeleteAttempt = useCallback(async () => {
-		const attemptId = attempt?.attemptId ?? guestAssessmentEntry?.attemptId;
+		const attemptId =
+			attempt?.attemptId ??
+			guestAssessmentEntry?.attemptId ??
+			assessmentResult?.attemptId;
 
 		if (!attemptId || isDeleting) {
 			return;
@@ -546,6 +565,7 @@ export function KelsierPage({
 
 			setAttempt(null);
 			setGuestAssessmentEntry(null);
+			setAssessmentResult(null);
 			setAnswers({});
 			setCurrentQuestionIndex(0);
 			setIsAssessmentStarted(false);
@@ -562,6 +582,7 @@ export function KelsierPage({
 		}
 	}, [
 		attempt,
+		assessmentResult,
 		guestAssessmentEntry,
 		isDeleting,
 		persistenceActions,
@@ -739,18 +760,22 @@ export function KelsierPage({
 		setPersistenceMessage("Saving your answer…");
 
 		try {
-			await persistenceActions.saveAnswer({
+			const answerInput = {
 				attemptId: attempt.attemptId,
 				continuationToken: attempt.continuationToken,
 				questionId: currentQuestion.id,
 				optionId: selectedOptionId ?? null,
-			});
+			};
 
 			if (currentQuestionIndex === questions.length - 1) {
+				const result = await persistenceActions.completeAttempt(answerInput);
+				setAssessmentResult(result);
 				setIsAssessmentComplete(true);
-				setPersistenceMessage("Your demonstration answers are saved.");
+				setPersistenceMessage("Your demonstration result is ready.");
 				return;
 			}
+
+			await persistenceActions.saveAnswer(answerInput);
 
 			setCurrentQuestionIndex((index) => index + 1);
 			setPersistenceMessage("Answer saved.");
@@ -1093,36 +1118,64 @@ export function KelsierPage({
 							ref={ctaCardRef}
 						>
 							<h3 className="k-q-title" tabIndex={-1} ref={questionHeadingRef}>
-								Prototype complete
+								Demonstration result
 							</h3>
 							<p className="m-0 text-[var(--k-text-muted)] text-sm leading-[1.65]">
-								Your demonstration answers are saved. Scoring and the accessible
-								result table arrive in the next phase; this is not yet a
-								personality result or validated interpretation.
+								This provisional 1–5 score table proves the assessment
+								machinery. It is not a validated personality interpretation and
+								must not be used for clinical, diagnostic, or hiring decisions.
 							</p>
-							<ul
-								className="flex list-none flex-col gap-3 p-0 m-0"
-								aria-label="Answered prototype questions"
-							>
-								{questions.map((question) => {
-									const selectedOption = question.options.find(
-										(option) => option.id === answers[question.id],
-									);
-									return (
-										<li
-											key={question.id}
-											className="grid gap-1 border-[var(--k-border)] border-t pt-3"
-										>
-											<span className="text-[var(--k-text-soft)] text-xs">
-												{question.prompt}
-											</span>
-											<strong className="font-medium text-[var(--k-text)] text-sm">
-												{selectedOption?.label ?? "Skipped"}
-											</strong>
-										</li>
-									);
-								})}
-							</ul>
+							{assessmentResult ? (
+								<div className="overflow-x-auto">
+									<table className="w-full border-collapse text-left text-sm">
+										<caption className="sr-only">
+											Demonstration dimension scores on a scale from 1 to 5
+										</caption>
+										<thead>
+											<tr className="border-[var(--k-border)] border-b text-[var(--k-text-soft)]">
+												<th className="py-3 pr-4 font-medium" scope="col">
+													Dimension
+												</th>
+												<th className="px-4 py-3 font-medium" scope="col">
+													Score
+												</th>
+												<th className="py-3 pl-4 font-medium" scope="col">
+													Contributing questions
+												</th>
+											</tr>
+										</thead>
+										<tbody>
+											{assessmentResult.rows.map((row) => (
+												<tr
+													className="border-[var(--k-border)] border-b"
+													key={row.dimension}
+												>
+													<th className="py-3 pr-4 font-medium" scope="row">
+														{row.label}
+													</th>
+													<td className="px-4 py-3 tabular-nums">
+														{row.score === null
+															? "No response"
+															: row.score.toFixed(2)}
+													</td>
+													<td className="py-3 pl-4 tabular-nums">
+														{row.contributingQuestionCount}
+													</td>
+												</tr>
+											))}
+										</tbody>
+									</table>
+									<p className="mb-0 text-[var(--k-text-soft)] text-xs">
+										Scored with {assessmentResult.scoringAlgorithmVersion}.
+										Confidence is not calculated for this demonstration.
+									</p>
+								</div>
+							) : (
+								<p className="m-0 text-[var(--k-text-soft)] text-xs">
+									This pre-scoring prototype response is saved. Delete it to
+									begin again with the current result engine.
+								</p>
+							)}
 							<div
 								className="k-q-actions mt-[22px] flex justify-between gap-3 max-md:flex-col"
 								ref={ctaActionRef}

@@ -71,14 +71,23 @@ test("home page renders the Kelsier hero and interactive questionnaire", async (
 	}
 
 	await expect(
-		page.getByRole("heading", { name: "Prototype complete" }),
+		page.getByRole("heading", { name: "Demonstration result" }),
 	).toBeVisible();
+	await expect(
+		page.getByRole("table", {
+			name: "Demonstration dimension scores on a scale from 1 to 5",
+		}),
+	).toBeVisible();
+	await expect(page.getByRole("columnheader", { name: "Score" })).toBeVisible();
 	await page.reload();
 	await expect(
 		page.locator(".kelsier-page[data-hydrated='true']"),
 	).toBeVisible();
 	await expect(
-		page.getByRole("heading", { name: "Prototype complete" }),
+		page.getByRole("heading", { name: "Demonstration result" }),
+	).toBeVisible();
+	await expect(
+		page.getByRole("rowheader", { name: "Adaptability" }),
 	).toBeVisible();
 	await expect(
 		page.getByRole("button", { name: "Continue this snapshot" }),

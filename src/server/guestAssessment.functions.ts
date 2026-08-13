@@ -10,12 +10,14 @@ import {
 import { getDb } from "#/db/client.worker";
 import { ACTIVE_ASSESSMENT_SLUG } from "#/lib/assessmentQuestionnaire";
 import {
+	completeGuestAssessmentAttempt,
 	createGuestAssessmentAttempt,
 	deleteGuestAssessmentAttempt,
 	getActiveAssessmentQuestionnaireBySlug,
 	getActiveGuestSessionByTokenHash,
 	getGuestAssessmentProgress,
 	getGuestIncompleteAssessmentEntry,
+	getLatestGuestAssessmentResult,
 	replaceGuestAssessmentAttempt,
 	resumeGuestAssessmentAttempt,
 	saveGuestAssessmentAnswer,
@@ -218,6 +220,22 @@ export const getGuestAssessmentEntry = createServerFn({ method: "GET" })
 			: null;
 	});
 
+export const getGuestAssessmentResult = createServerFn({ method: "GET" })
+	.validator(validateAssessmentVersionInput)
+	.handler(async ({ data }) => {
+		const guestToken = getCookie(GUEST_COOKIE_NAME);
+
+		if (!guestToken) {
+			return null;
+		}
+
+		return getLatestGuestAssessmentResult(getDb(env), {
+			tokenHash: await hashGuestCredential(guestToken),
+			assessmentVersionId: data.assessmentVersionId,
+			now: new Date(),
+		});
+	});
+
 export const resumeGuestAssessment = createServerFn({ method: "POST" })
 	.validator(validateContinuationInput)
 	.handler(async ({ data }) => {
@@ -349,12 +367,54 @@ export const saveGuestAnswer = createServerFn({ method: "POST" })
 			throw new Error("This assessment response is already complete.");
 		}
 
+		if (result.status === "completion-required") {
+			setResponseStatus(409);
+			throw new Error("The final answer must complete the assessment.");
+		}
+
 		if (result.status === "not-found") {
 			setResponseStatus(404);
 			throw new Error("The assessment attempt is unavailable.");
 		}
 
 		return { currentQuestionIndex: result.currentQuestionIndex };
+	});
+
+export const completeGuestAssessment = createServerFn({ method: "POST" })
+	.validator(validateAnswerInput)
+	.handler(async ({ data }) => {
+		const guestToken = getCookie(GUEST_COOKIE_NAME);
+
+		if (!guestToken) {
+			setResponseStatus(404);
+			throw new Error("The assessment attempt is unavailable.");
+		}
+
+		const outcome = await completeGuestAssessmentAttempt(getDb(env), {
+			attemptId: data.attemptId,
+			tokenHash: await hashGuestCredential(guestToken),
+			continuationTokenHash: await hashGuestCredential(data.continuationToken),
+			questionId: data.questionId,
+			optionId: data.optionId,
+			now: new Date(),
+		});
+
+		if (outcome.status === "invalid-answer") {
+			setResponseStatus(400);
+			throw new Error("The selected final answer is not valid.");
+		}
+
+		if (outcome.status === "missing-required") {
+			setResponseStatus(409);
+			throw new Error("Answer every required question before completing.");
+		}
+
+		if (outcome.status === "not-found") {
+			setResponseStatus(404);
+			throw new Error("The assessment attempt is unavailable.");
+		}
+
+		return outcome.result;
 	});
 
 export const deleteGuestAttempt = createServerFn({ method: "POST" })

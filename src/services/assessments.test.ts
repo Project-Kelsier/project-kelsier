@@ -1,20 +1,23 @@
-import { eq, gt, isNull } from "drizzle-orm";
+import { eq, gt, isNotNull, isNull } from "drizzle-orm";
 import { describe, expect, it, vi } from "vitest";
 import type { DbClient } from "#/db/client";
 import {
 	assessmentAttempts,
 	assessmentOptions,
 	assessmentQuestions,
+	assessmentResults,
 	assessmentVersions,
 	guestSessions,
 } from "#/db/schema";
 import {
+	completeGuestAssessmentAttempt,
 	createGuestAssessmentAttempt,
 	deleteGuestAssessmentAttempt,
 	getActiveAssessmentQuestionnaireBySlug,
 	getActiveGuestSessionByTokenHash,
 	getAssessmentResultForUserAttempt,
 	getGuestIncompleteAssessmentEntry,
+	getLatestGuestAssessmentResult,
 	listAssessmentAttemptsForUser,
 	resumeGuestAssessmentAttempt,
 	saveGuestAssessmentAnswer,
@@ -28,6 +31,7 @@ vi.mock("drizzle-orm", async (importOriginal) => {
 		and: vi.fn((...conditions: unknown[]) => ({ conditions })),
 		eq: vi.fn((left: unknown, right: unknown) => ({ left, right })),
 		gt: vi.fn((left: unknown, right: unknown) => ({ left, right })),
+		isNotNull: vi.fn((column: unknown) => ({ column })),
 		isNull: vi.fn((column: unknown) => ({ column })),
 	};
 });
@@ -64,6 +68,35 @@ describe("assessment service owner visibility", () => {
 		expect(innerJoin.mock.calls.at(-1)?.at(0)).toBe(assessmentAttempts);
 		expect(eq).toHaveBeenCalledWith(assessmentAttempts.id, attemptId);
 		expect(eq).toHaveBeenCalledWith(assessmentAttempts.userId, userId);
+	});
+
+	it("loads a guest result only through its unexpired guest credential", async () => {
+		const limit = vi.fn().mockResolvedValue([]);
+		const orderBy = vi.fn(() => ({ limit }));
+		const where = vi.fn(() => ({ orderBy }));
+		const secondInnerJoin = vi.fn(() => ({ where }));
+		const firstInnerJoin = vi.fn(() => ({ innerJoin: secondInnerJoin }));
+		const from = vi.fn(() => ({ innerJoin: firstInnerJoin }));
+		const db = { select: vi.fn(() => ({ from })) } as unknown as DbClient;
+		const now = new Date("2026-08-13T12:00:00.000Z");
+
+		expect(
+			await getLatestGuestAssessmentResult(db, {
+				tokenHash: "guest-token-hash",
+				assessmentVersionId: "version-1",
+				now,
+			}),
+		).toBeNull();
+		expect(eq).toHaveBeenCalledWith(
+			guestSessions.tokenHash,
+			"guest-token-hash",
+		);
+		expect(gt).toHaveBeenCalledWith(guestSessions.expiresAt, now);
+		expect(eq).toHaveBeenCalledWith(
+			assessmentResults.assessmentVersionId,
+			"version-1",
+		);
+		expect(isNotNull).toHaveBeenCalledWith(assessmentAttempts.completedAt);
 	});
 });
 
@@ -169,6 +202,43 @@ describe("active assessment questionnaire", () => {
 });
 
 describe("guest assessment ownership", () => {
+	it("does not complete an attempt owned by another guest credential", async () => {
+		const limit = vi.fn().mockResolvedValue([]);
+		const where = vi.fn(() => ({ limit }));
+		const innerJoin = vi.fn(() => ({ where }));
+		const from = vi.fn(() => ({ innerJoin }));
+		const transaction = {
+			select: vi.fn(() => ({ from })),
+			update: vi.fn(),
+			insert: vi.fn(),
+		};
+		const db = {
+			transaction: vi.fn((callback) => callback(transaction)),
+		} as unknown as DbClient;
+
+		expect(
+			await completeGuestAssessmentAttempt(db, {
+				attemptId: "attempt-1",
+				tokenHash: "guest-token-hash",
+				continuationTokenHash: "continuation-token-hash",
+				questionId: "question-10",
+				optionId: "option-1",
+				now: new Date("2026-08-13T12:00:00.000Z"),
+			}),
+		).toEqual({ status: "not-found" });
+		expect(eq).toHaveBeenCalledWith(assessmentAttempts.id, "attempt-1");
+		expect(eq).toHaveBeenCalledWith(
+			guestSessions.tokenHash,
+			"guest-token-hash",
+		);
+		expect(eq).toHaveBeenCalledWith(
+			assessmentAttempts.continuationTokenHash,
+			"continuation-token-hash",
+		);
+		expect(transaction.update).not.toHaveBeenCalled();
+		expect(transaction.insert).not.toHaveBeenCalled();
+	});
+
 	it("loads a guest session only by its token hash and unexpired lifetime", async () => {
 		const now = new Date("2026-08-11T12:00:00.000Z");
 		const limit = vi.fn().mockResolvedValue([
