@@ -1,6 +1,7 @@
-import { and, eq, gt } from "drizzle-orm";
+import { and, desc, eq, gt, isNull, sql } from "drizzle-orm";
 import type { DbClient } from "#/db/client";
 import {
+	assessmentAnswers,
 	assessmentAttempts,
 	assessmentOptions,
 	assessmentQuestions,
@@ -17,6 +18,8 @@ const assessmentAttemptColumns = {
 	assessmentVersionId: assessmentAttempts.assessmentVersionId,
 	startedAt: assessmentAttempts.startedAt,
 	completedAt: assessmentAttempts.completedAt,
+	resumedAt: assessmentAttempts.resumedAt,
+	currentQuestionIndex: assessmentAttempts.currentQuestionIndex,
 	createdAt: assessmentAttempts.createdAt,
 	updatedAt: assessmentAttempts.updatedAt,
 };
@@ -179,10 +182,223 @@ export async function getActiveGuestSessionByTokenHash(
 	return session ?? null;
 }
 
+export async function getGuestIncompleteAssessmentEntry(
+	db: DbClient,
+	input: {
+		tokenHash: string;
+		assessmentVersionId: string;
+		now: Date;
+	},
+) {
+	const [attempt] = await db
+		.select({
+			id: assessmentAttempts.id,
+			startedAt: assessmentAttempts.startedAt,
+			resumedAt: assessmentAttempts.resumedAt,
+			currentQuestionIndex: assessmentAttempts.currentQuestionIndex,
+			expiresAt: guestSessions.expiresAt,
+		})
+		.from(assessmentAttempts)
+		.innerJoin(
+			guestSessions,
+			eq(guestSessions.id, assessmentAttempts.guestSessionId),
+		)
+		.where(
+			and(
+				eq(guestSessions.tokenHash, input.tokenHash),
+				gt(guestSessions.expiresAt, input.now),
+				eq(assessmentAttempts.assessmentVersionId, input.assessmentVersionId),
+				isNull(assessmentAttempts.completedAt),
+			),
+		)
+		.orderBy(desc(assessmentAttempts.startedAt))
+		.limit(1);
+
+	if (!attempt) {
+		return null;
+	}
+
+	const [questions, answers] = await Promise.all([
+		db
+			.select({
+				id: assessmentQuestions.id,
+				required: assessmentQuestions.required,
+			})
+			.from(assessmentQuestions)
+			.where(eq(assessmentQuestions.versionId, input.assessmentVersionId)),
+		db
+			.select({
+				questionId: assessmentAnswers.questionId,
+				optionId: assessmentAnswers.optionId,
+			})
+			.from(assessmentAnswers)
+			.where(eq(assessmentAnswers.attemptId, attempt.id)),
+	]);
+	const answeredQuestionIds = new Set(
+		answers.map((answer) => answer.questionId),
+	);
+	const answersComplete =
+		questions.length > 0 &&
+		attempt.currentQuestionIndex >= questions.length &&
+		questions.every(
+			(question) => !question.required || answeredQuestionIds.has(question.id),
+		);
+
+	return {
+		...attempt,
+		answeredCount: answers.length,
+		answersComplete,
+		answers,
+	};
+}
+
+export async function getGuestAssessmentProgress(
+	db: DbClient,
+	input: {
+		attemptId: string;
+		tokenHash: string;
+		continuationTokenHash: string;
+		now: Date;
+	},
+) {
+	const [attempt] = await db
+		.select({
+			id: assessmentAttempts.id,
+			currentQuestionIndex: assessmentAttempts.currentQuestionIndex,
+			expiresAt: guestSessions.expiresAt,
+		})
+		.from(assessmentAttempts)
+		.innerJoin(
+			guestSessions,
+			eq(guestSessions.id, assessmentAttempts.guestSessionId),
+		)
+		.where(
+			and(
+				eq(assessmentAttempts.id, input.attemptId),
+				eq(guestSessions.tokenHash, input.tokenHash),
+				eq(
+					assessmentAttempts.continuationTokenHash,
+					input.continuationTokenHash,
+				),
+				gt(guestSessions.expiresAt, input.now),
+				isNull(assessmentAttempts.completedAt),
+			),
+		)
+		.limit(1);
+
+	if (!attempt) {
+		return null;
+	}
+
+	const answers = await db
+		.select({
+			questionId: assessmentAnswers.questionId,
+			optionId: assessmentAnswers.optionId,
+		})
+		.from(assessmentAnswers)
+		.where(eq(assessmentAnswers.attemptId, attempt.id));
+
+	return { ...attempt, answers };
+}
+
+export async function resumeGuestAssessmentAttempt(
+	db: DbClient,
+	input: {
+		attemptId: string;
+		tokenHash: string;
+		continuationTokenHash: string;
+		now: Date;
+	},
+) {
+	return db.transaction(async (transaction) => {
+		const [ownedAttempt] = await transaction
+			.select({
+				id: assessmentAttempts.id,
+				guestSessionId: assessmentAttempts.guestSessionId,
+				assessmentVersionId: assessmentAttempts.assessmentVersionId,
+				currentQuestionIndex: assessmentAttempts.currentQuestionIndex,
+				resumedAt: assessmentAttempts.resumedAt,
+				continuationTokenHash: assessmentAttempts.continuationTokenHash,
+			})
+			.from(assessmentAttempts)
+			.innerJoin(
+				guestSessions,
+				eq(guestSessions.id, assessmentAttempts.guestSessionId),
+			)
+			.where(
+				and(
+					eq(assessmentAttempts.id, input.attemptId),
+					eq(guestSessions.tokenHash, input.tokenHash),
+					gt(guestSessions.expiresAt, input.now),
+					isNull(assessmentAttempts.completedAt),
+				),
+			)
+			.limit(1);
+
+		if (!ownedAttempt?.guestSessionId) {
+			return "not-found" as const;
+		}
+
+		const questions = await transaction
+			.select({ id: assessmentQuestions.id })
+			.from(assessmentQuestions)
+			.where(
+				eq(assessmentQuestions.versionId, ownedAttempt.assessmentVersionId),
+			);
+
+		if (ownedAttempt.currentQuestionIndex >= questions.length) {
+			return "response-complete" as const;
+		}
+
+		if (ownedAttempt.resumedAt) {
+			return ownedAttempt.continuationTokenHash === input.continuationTokenHash
+				? ("resumed" as const)
+				: ("resume-unavailable" as const);
+		}
+
+		const resumed = await transaction
+			.update(assessmentAttempts)
+			.set({
+				resumedAt: input.now,
+				continuationTokenHash: input.continuationTokenHash,
+			})
+			.where(
+				and(
+					eq(assessmentAttempts.id, ownedAttempt.id),
+					eq(assessmentAttempts.guestSessionId, ownedAttempt.guestSessionId),
+					isNull(assessmentAttempts.resumedAt),
+					isNull(assessmentAttempts.completedAt),
+				),
+			)
+			.returning({ id: assessmentAttempts.id });
+
+		if (resumed.length === 1) {
+			return "resumed" as const;
+		}
+
+		const [retry] = await transaction
+			.select({ id: assessmentAttempts.id })
+			.from(assessmentAttempts)
+			.where(
+				and(
+					eq(assessmentAttempts.id, ownedAttempt.id),
+					eq(
+						assessmentAttempts.continuationTokenHash,
+						input.continuationTokenHash,
+					),
+				),
+			)
+			.limit(1);
+
+		return retry ? ("resumed" as const) : ("resume-unavailable" as const);
+	});
+}
+
 export async function createGuestAssessmentAttempt(
 	db: DbClient,
 	input: {
 		assessmentVersionId: string;
+		continuationTokenHash: string;
 		guestSessionId?: string;
 		tokenHash?: string;
 		expiresAt?: Date;
@@ -216,6 +432,7 @@ export async function createGuestAssessmentAttempt(
 			.values({
 				guestSessionId,
 				assessmentVersionId: input.assessmentVersionId,
+				continuationTokenHash: input.continuationTokenHash,
 			})
 			.returning({
 				id: assessmentAttempts.id,
@@ -227,6 +444,209 @@ export async function createGuestAssessmentAttempt(
 		}
 
 		return { ...attempt, expiresAt };
+	});
+}
+
+export async function replaceGuestAssessmentAttempt(
+	db: DbClient,
+	input: {
+		attemptId: string;
+		tokenHash: string;
+		assessmentVersionId: string;
+		continuationTokenHash: string;
+		now: Date;
+	},
+) {
+	return db.transaction(async (transaction) => {
+		const [ownedAttempt] = await transaction
+			.select({
+				id: assessmentAttempts.id,
+				guestSessionId: assessmentAttempts.guestSessionId,
+				expiresAt: guestSessions.expiresAt,
+			})
+			.from(assessmentAttempts)
+			.innerJoin(
+				guestSessions,
+				eq(guestSessions.id, assessmentAttempts.guestSessionId),
+			)
+			.where(
+				and(
+					eq(assessmentAttempts.id, input.attemptId),
+					eq(guestSessions.tokenHash, input.tokenHash),
+					gt(guestSessions.expiresAt, input.now),
+					isNull(assessmentAttempts.completedAt),
+				),
+			)
+			.limit(1);
+
+		if (!ownedAttempt?.guestSessionId) {
+			return null;
+		}
+
+		const deleted = await transaction
+			.delete(assessmentAttempts)
+			.where(
+				and(
+					eq(assessmentAttempts.id, ownedAttempt.id),
+					eq(assessmentAttempts.guestSessionId, ownedAttempt.guestSessionId),
+				),
+			)
+			.returning({ id: assessmentAttempts.id });
+
+		if (deleted.length !== 1) {
+			return null;
+		}
+
+		const [attempt] = await transaction
+			.insert(assessmentAttempts)
+			.values({
+				guestSessionId: ownedAttempt.guestSessionId,
+				assessmentVersionId: input.assessmentVersionId,
+				continuationTokenHash: input.continuationTokenHash,
+			})
+			.returning({
+				id: assessmentAttempts.id,
+				startedAt: assessmentAttempts.startedAt,
+			});
+
+		return attempt ? { ...attempt, expiresAt: ownedAttempt.expiresAt } : null;
+	});
+}
+
+export async function saveGuestAssessmentAnswer(
+	db: DbClient,
+	input: {
+		attemptId: string;
+		tokenHash: string;
+		continuationTokenHash: string;
+		questionId: string;
+		optionId: string | null;
+		now: Date;
+	},
+) {
+	return db.transaction(async (transaction) => {
+		const [attempt] = await transaction
+			.select({
+				id: assessmentAttempts.id,
+				guestSessionId: assessmentAttempts.guestSessionId,
+				assessmentVersionId: assessmentAttempts.assessmentVersionId,
+				currentQuestionIndex: assessmentAttempts.currentQuestionIndex,
+			})
+			.from(assessmentAttempts)
+			.innerJoin(
+				guestSessions,
+				eq(guestSessions.id, assessmentAttempts.guestSessionId),
+			)
+			.where(
+				and(
+					eq(assessmentAttempts.id, input.attemptId),
+					eq(guestSessions.tokenHash, input.tokenHash),
+					eq(
+						assessmentAttempts.continuationTokenHash,
+						input.continuationTokenHash,
+					),
+					gt(guestSessions.expiresAt, input.now),
+					isNull(assessmentAttempts.completedAt),
+				),
+			)
+			.limit(1);
+
+		if (!attempt?.guestSessionId) {
+			return { status: "not-found" as const };
+		}
+
+		const questions = await transaction
+			.select({
+				id: assessmentQuestions.id,
+				required: assessmentQuestions.required,
+			})
+			.from(assessmentQuestions)
+			.where(eq(assessmentQuestions.versionId, attempt.assessmentVersionId))
+			.orderBy(assessmentQuestions.sortOrder);
+		const questionIndex = questions.findIndex(
+			(question) => question.id === input.questionId,
+		);
+		const question = questions[questionIndex];
+
+		if (attempt.currentQuestionIndex >= questions.length) {
+			return { status: "response-complete" as const };
+		}
+
+		if (!question || (question.required && !input.optionId)) {
+			return { status: "invalid-answer" as const };
+		}
+
+		if (input.optionId) {
+			const [option] = await transaction
+				.select({ id: assessmentOptions.id })
+				.from(assessmentOptions)
+				.where(
+					and(
+						eq(assessmentOptions.id, input.optionId),
+						eq(assessmentOptions.questionId, question.id),
+					),
+				)
+				.limit(1);
+
+			if (!option) {
+				return { status: "invalid-answer" as const };
+			}
+		}
+
+		const currentQuestionIndex = questionIndex + 1;
+		const advanced = await transaction
+			.update(assessmentAttempts)
+			.set({
+				currentQuestionIndex: sql`greatest(${assessmentAttempts.currentQuestionIndex}, ${currentQuestionIndex})`,
+			})
+			.where(
+				and(
+					eq(assessmentAttempts.id, attempt.id),
+					eq(assessmentAttempts.guestSessionId, attempt.guestSessionId),
+					eq(
+						assessmentAttempts.continuationTokenHash,
+						input.continuationTokenHash,
+					),
+					isNull(assessmentAttempts.completedAt),
+				),
+			)
+			.returning({
+				id: assessmentAttempts.id,
+				currentQuestionIndex: assessmentAttempts.currentQuestionIndex,
+			});
+
+		if (advanced.length !== 1) {
+			return { status: "not-found" as const };
+		}
+
+		if (input.optionId) {
+			await transaction
+				.insert(assessmentAnswers)
+				.values({
+					attemptId: attempt.id,
+					questionId: question.id,
+					optionId: input.optionId,
+				})
+				.onConflictDoUpdate({
+					target: [assessmentAnswers.attemptId, assessmentAnswers.questionId],
+					set: { optionId: input.optionId },
+				});
+		} else {
+			await transaction
+				.delete(assessmentAnswers)
+				.where(
+					and(
+						eq(assessmentAnswers.attemptId, attempt.id),
+						eq(assessmentAnswers.questionId, question.id),
+					),
+				);
+		}
+
+		return {
+			status: "saved" as const,
+			currentQuestionIndex:
+				advanced[0]?.currentQuestionIndex ?? currentQuestionIndex,
+		};
 	});
 }
 

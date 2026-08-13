@@ -307,7 +307,7 @@ describe("KelsierPage", () => {
 		fireEvent.click(screen.getByRole("button", { name: "Next question" }));
 
 		expect(
-			screen.getByRole("heading", {
+			await screen.findByRole("heading", {
 				name: "Your preferred way to resolve conflict is…",
 			}),
 		).toBeTruthy();
@@ -375,7 +375,7 @@ describe("KelsierPage", () => {
 
 		fireEvent.click(completeButton);
 
-		expect(screen.getByText("Skipped")).toBeTruthy();
+		expect(await screen.findByText("Skipped")).toBeTruthy();
 	});
 
 	it("keeps an in-progress questionnaire when the hero call to action is clicked", async () => {
@@ -389,6 +389,9 @@ describe("KelsierPage", () => {
 			screen.getByRole("radio", { name: "Restructure immediately" }),
 		);
 		fireEvent.click(screen.getByRole("button", { name: "Next question" }));
+		await screen.findByRole("heading", {
+			name: "Your preferred way to resolve conflict is…",
+		});
 		fireEvent.click(screen.getByRole("button", { name: "Discover your team" }));
 
 		expect(
@@ -410,10 +413,14 @@ describe("KelsierPage", () => {
 			screen.getByRole("radio", { name: "Restructure immediately" }),
 		);
 		fireEvent.click(screen.getByRole("button", { name: "Next question" }));
+		await screen.findByRole("radio", { name: "Find common ground first" });
 		fireEvent.click(
 			screen.getByRole("radio", { name: "Find common ground first" }),
 		);
 		fireEvent.click(screen.getByRole("button", { name: "Next question" }));
+		await screen.findByRole("radio", {
+			name: "Pair them with the strongest collaborator",
+		});
 		fireEvent.click(
 			screen.getByRole("radio", {
 				name: "Pair them with the strongest collaborator",
@@ -422,10 +429,7 @@ describe("KelsierPage", () => {
 		fireEvent.click(screen.getByRole("button", { name: "Complete prototype" }));
 
 		expect(
-			screen.getByRole("heading", { name: "Prototype complete" }),
-		).toBeTruthy();
-		expect(
-			screen.getByRole("button", { name: "Restart questions" }),
+			await screen.findByRole("heading", { name: "Prototype complete" }),
 		).toBeTruthy();
 		await waitFor(() => {
 			expect(screen.getByRole("heading", { name: "Prototype complete" })).toBe(
@@ -445,10 +449,14 @@ describe("KelsierPage", () => {
 			screen.getByRole("radio", { name: "Restructure immediately" }),
 		);
 		fireEvent.click(screen.getByRole("button", { name: "Next question" }));
+		await screen.findByRole("radio", { name: "Find common ground first" });
 		fireEvent.click(
 			screen.getByRole("radio", { name: "Find common ground first" }),
 		);
 		fireEvent.click(screen.getByRole("button", { name: "Next question" }));
+		await screen.findByRole("radio", {
+			name: "Pair them with the strongest collaborator",
+		});
 		fireEvent.click(
 			screen.getByRole("radio", {
 				name: "Pair them with the strongest collaborator",
@@ -457,7 +465,7 @@ describe("KelsierPage", () => {
 		fireEvent.click(screen.getByRole("button", { name: "Complete prototype" }));
 
 		expect(
-			screen.getByRole("heading", { name: "Prototype complete" }),
+			await screen.findByRole("heading", { name: "Prototype complete" }),
 		).toBeTruthy();
 
 		fireEvent.click(screen.getByRole("button", { name: "Discover your team" }));
@@ -466,6 +474,151 @@ describe("KelsierPage", () => {
 			screen.getByRole("heading", {
 				name: "Prototype complete",
 			}),
+		).toBeTruthy();
+	});
+
+	it("offers explicit advice before consuming the single resume", async () => {
+		const resumeAttempt = vi
+			.fn()
+			.mockImplementation((_attemptId: string, continuationToken: string) =>
+				Promise.resolve({
+					attemptId: "10000000-0000-4000-8000-000000000001",
+					expiresAt: "2026-08-18T00:00:00.000Z",
+					continuationToken,
+					currentQuestionIndex: 1,
+					answers: { "deadline-response": "restructure" },
+				}),
+			);
+
+		render(
+			<KelsierPageComponent
+				questionnaire={assessmentQuestionnaireFixture}
+				initialGuestAssessmentEntry={{
+					attemptId: "10000000-0000-4000-8000-000000000001",
+					startedAt: "2026-08-11T00:00:00.000Z",
+					expiresAt: "2026-08-18T00:00:00.000Z",
+					answeredCount: 1,
+					answersComplete: false,
+					resumeAvailable: true,
+				}}
+				persistenceActions={{
+					...assessmentPersistenceActionsFixture,
+					resumeAttempt,
+				}}
+			/>,
+		);
+
+		expect(screen.getByText(/mood, circumstances, or context/)).toBeTruthy();
+		fireEvent.click(
+			screen.getByRole("button", { name: "Continue this snapshot" }),
+		);
+
+		expect(
+			await screen.findByRole("heading", {
+				name: "Your preferred way to resolve conflict is…",
+			}),
+		).toBeTruthy();
+		expect(resumeAttempt).toHaveBeenCalledOnce();
+		expect(screen.getAllByText(/This is its single resume/)).toHaveLength(2);
+	});
+
+	it("restores a submitted response as complete without offering a resume", () => {
+		render(
+			<KelsierPageComponent
+				questionnaire={assessmentQuestionnaireFixture}
+				initialGuestAssessmentEntry={{
+					attemptId: "10000000-0000-4000-8000-000000000001",
+					startedAt: "2026-08-11T00:00:00.000Z",
+					expiresAt: "2026-08-18T00:00:00.000Z",
+					answeredCount: 3,
+					answersComplete: true,
+					answers: {
+						"deadline-response": "restructure",
+						"conflict-style": "common-ground",
+						"support-response": "pair-collaborator",
+					},
+					resumeAvailable: true,
+				}}
+				persistenceActions={assessmentPersistenceActionsFixture}
+			/>,
+		);
+
+		expect(
+			screen.getByRole("heading", { name: "Prototype complete" }),
+		).toBeTruthy();
+		expect(
+			screen.queryByRole("button", { name: "Continue this snapshot" }),
+		).toBeNull();
+		expect(screen.getByText("100% answered")).toBeTruthy();
+	});
+
+	it("keeps the current question available when saving fails", async () => {
+		const saveAnswer = vi.fn().mockRejectedValue(new Error("offline"));
+		render(
+			<KelsierPageComponent
+				questionnaire={assessmentQuestionnaireFixture}
+				persistenceActions={{
+					...assessmentPersistenceActionsFixture,
+					saveAnswer,
+				}}
+			/>,
+		);
+
+		fireEvent.click(
+			screen.getByRole("button", { name: "Start and save progress" }),
+		);
+		await screen.findByRole("radio", { name: "Restructure immediately" });
+		fireEvent.click(
+			screen.getByRole("radio", { name: "Restructure immediately" }),
+		);
+		fireEvent.click(screen.getByRole("button", { name: "Next question" }));
+
+		expect(await screen.findAllByText(/Your answer wasn’t saved/)).toHaveLength(
+			2,
+		);
+		expect(
+			screen.getByRole("heading", {
+				name: "When a deadline moves unexpectedly, you tend to…",
+			}),
+		).toBeTruthy();
+		expect(
+			screen.getByRole("radio", { name: "Restructure immediately" }),
+		).toHaveProperty("checked", true);
+	});
+
+	it("allows a returned guest to delete without consuming the resume", async () => {
+		const deleteAttempt = vi.fn().mockResolvedValue({ deleted: true });
+		render(
+			<KelsierPageComponent
+				questionnaire={assessmentQuestionnaireFixture}
+				initialGuestAssessmentEntry={{
+					attemptId: "10000000-0000-4000-8000-000000000001",
+					startedAt: "2026-08-11T00:00:00.000Z",
+					expiresAt: "2026-08-18T00:00:00.000Z",
+					answeredCount: 1,
+					answersComplete: false,
+					resumeAvailable: true,
+				}}
+				persistenceActions={{
+					...assessmentPersistenceActionsFixture,
+					deleteAttempt,
+				}}
+			/>,
+		);
+
+		fireEvent.click(
+			screen.getByRole("button", { name: "Delete saved attempt" }),
+		);
+		fireEvent.click(screen.getByRole("button", { name: "Confirm deletion" }));
+
+		expect(
+			await screen.findAllByText("Your saved guest attempt has been deleted."),
+		).toHaveLength(2);
+		expect(deleteAttempt).toHaveBeenCalledWith(
+			"10000000-0000-4000-8000-000000000001",
+		);
+		expect(
+			screen.getByRole("button", { name: "Start and save progress" }),
 		).toBeTruthy();
 	});
 

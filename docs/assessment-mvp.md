@@ -38,6 +38,18 @@ Guest attempts are persisted on the server so progress can survive page reloads.
 - Transient abuse-control state may use a request-derived key such as a hashed IP address, provided it is not linked to attempt data and has its own short time-to-live.
 - Do not add third-party analytics to the assessment flow during the MVP.
 
+### One-sitting intent and single resume
+
+The assessment should ideally be completed in one sitting so its demonstration output represents one reasonably continuous snapshot of the person’s current patterns and context. Persistence exists for resilience, not to encourage a questionnaire to span multiple states or occasions.
+
+- Before starting, explicitly advise the guest to reserve enough uninterrupted time to complete the assessment.
+- When an owned incomplete attempt is found, offer a clear choice to continue it or start a fresh snapshot. Advise starting fresh if the person’s circumstances, mood, or context have materially changed.
+- An attempt may be explicitly resumed only once. Record the successful resume atomically with a nullable `resumedAt` timestamp; merely viewing the choice or retrying a failed request must not consume the allowance.
+- Each live questionnaire instance uses an opaque continuation capability. Keep the raw value only in client memory, store only its hash on the attempt, and rotate it when the single resume succeeds so a stale page cannot continue writing.
+- After the single resume has been consumed, a later interruption cannot resume that attempt. Starting fresh deletes the old incomplete attempt before creating its replacement so unfinished records do not accumulate.
+- Retention remains fixed from creation and is separate from resume eligibility.
+- Describe the output as a current snapshot. Do not imply that a changed response means the person has a different personality or that the demonstration instrument measures stable traits.
+
 ### Guest credential and deletion
 
 - Generate an opaque, high-entropy guest token on the server.
@@ -99,7 +111,7 @@ Do not expose the writable guest assessment publicly until all of these conditio
 3. Migrate attempt ownership and normalize answer/result ownership, then add requiredness, expiry, and scoring provenance in a separate additive migration.
 4. Replace hardcoded questionnaire data with the active database version and its ordered questions and options.
 5. Add guest sessions, attempt creation, cookie-authorized deletion, native rate limiting, privacy copy, and cross-session authorization tests.
-6. Add answer persistence, reload/resume behavior, accessible step transitions, and end-to-end coverage.
+6. Add answer persistence, the explicit single-resume or fresh-snapshot choice, accessible step transitions, and end-to-end coverage. This includes additive `resumedAt` provenance on attempts.
 7. Add atomic completion, versioned scoring, immutable raw results, and the accessible result table.
 8. Add scheduled cleanup, monitoring, production assertions, and complete the public launch gate.
 9. Pilot the guest flow; introduce authentication and claiming only when durable accounts have demonstrated product value.
@@ -108,7 +120,9 @@ Do not expose the writable guest assessment publicly until all of these conditio
 
 Each numbered item may be split into smaller pull requests. Tooling changes, schema changes, and feature work should remain independently reviewable where practical.
 
-Implementation status as of 2026-08-11: phases 1 through 5 are implemented on the assessment MVP branch. Questionnaire answers intentionally remain client-only until phase 6.
+Implementation status as of 2026-08-13: phases 1 through 6 are implemented on the assessment MVP branch. Guest answers persist before navigation, and an interrupted attempt offers one explicit resume or a fresh replacement snapshot. Atomic completion and scoring remain phase 7 work.
+
+Until phase 7 creates the result atomically, final-step submission is represented by `currentQuestionIndex` advancing one position beyond the questionnaire. On reload, the server combines that sentinel with required-answer validation to reconstruct the submitted response as complete. It must not offer another resume or permit later answer writes. `completedAt` remains reserved for the phase 7 completion-and-result transaction.
 
 ## Deferred Decisions
 

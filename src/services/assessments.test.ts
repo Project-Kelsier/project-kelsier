@@ -1,4 +1,4 @@
-import { eq, gt } from "drizzle-orm";
+import { eq, gt, isNull } from "drizzle-orm";
 import { describe, expect, it, vi } from "vitest";
 import type { DbClient } from "#/db/client";
 import {
@@ -14,7 +14,10 @@ import {
 	getActiveAssessmentQuestionnaireBySlug,
 	getActiveGuestSessionByTokenHash,
 	getAssessmentResultForUserAttempt,
+	getGuestIncompleteAssessmentEntry,
 	listAssessmentAttemptsForUser,
+	resumeGuestAssessmentAttempt,
+	saveGuestAssessmentAnswer,
 } from "./assessments";
 
 vi.mock("drizzle-orm", async (importOriginal) => {
@@ -25,6 +28,7 @@ vi.mock("drizzle-orm", async (importOriginal) => {
 		and: vi.fn((...conditions: unknown[]) => ({ conditions })),
 		eq: vi.fn((left: unknown, right: unknown) => ({ left, right })),
 		gt: vi.fn((left: unknown, right: unknown) => ({ left, right })),
+		isNull: vi.fn((column: unknown) => ({ column })),
 	};
 });
 
@@ -206,6 +210,7 @@ describe("guest assessment ownership", () => {
 
 		const attempt = await createGuestAssessmentAttempt(db, {
 			assessmentVersionId: "version-1",
+			continuationTokenHash: "continuation-token-hash",
 			tokenHash: "token-hash",
 			expiresAt,
 		});
@@ -219,8 +224,210 @@ describe("guest assessment ownership", () => {
 		expect(attemptValues).toHaveBeenCalledWith({
 			guestSessionId: "session-1",
 			assessmentVersionId: "version-1",
+			continuationTokenHash: "continuation-token-hash",
 		});
 		expect(attempt).toMatchObject({ id: "attempt-1", expiresAt });
+	});
+
+	it("recognizes final-step submission when every required answer is saved", async () => {
+		const attemptLimit = vi.fn().mockResolvedValue([
+			{
+				id: "attempt-1",
+				startedAt: new Date("2026-08-11T11:00:00.000Z"),
+				resumedAt: null,
+				currentQuestionIndex: 2,
+				expiresAt: new Date("2026-08-18T11:00:00.000Z"),
+			},
+		]);
+		const attemptOrderBy = vi.fn(() => ({ limit: attemptLimit }));
+		const attemptWhere = vi.fn(() => ({ orderBy: attemptOrderBy }));
+		const attemptInnerJoin = vi.fn(() => ({ where: attemptWhere }));
+		const attemptFrom = vi.fn(() => ({ innerJoin: attemptInnerJoin }));
+		const questionWhere = vi.fn().mockResolvedValue([
+			{ id: "question-required", required: true },
+			{ id: "question-optional", required: false },
+		]);
+		const questionFrom = vi.fn(() => ({ where: questionWhere }));
+		const answerWhere = vi
+			.fn()
+			.mockResolvedValue([
+				{ questionId: "question-required", optionId: "option-1" },
+			]);
+		const answerFrom = vi.fn(() => ({ where: answerWhere }));
+		const db = {
+			select: vi
+				.fn()
+				.mockReturnValueOnce({ from: attemptFrom })
+				.mockReturnValueOnce({ from: questionFrom })
+				.mockReturnValueOnce({ from: answerFrom }),
+		} as unknown as DbClient;
+
+		const entry = await getGuestIncompleteAssessmentEntry(db, {
+			tokenHash: "guest-token-hash",
+			assessmentVersionId: "version-1",
+			now: new Date("2026-08-11T12:00:00.000Z"),
+		});
+
+		expect(entry).toMatchObject({
+			id: "attempt-1",
+			answeredCount: 1,
+			answersComplete: true,
+			answers: [{ questionId: "question-required", optionId: "option-1" }],
+		});
+	});
+
+	it("consumes the resume with ownership and completion checks repeated on the write", async () => {
+		const now = new Date("2026-08-11T12:00:00.000Z");
+		const limit = vi.fn().mockResolvedValue([
+			{
+				id: "attempt-1",
+				guestSessionId: "session-1",
+				assessmentVersionId: "version-1",
+				currentQuestionIndex: 1,
+				resumedAt: null,
+				continuationTokenHash: "old-continuation-hash",
+			},
+		]);
+		const selectWhere = vi.fn(() => ({ limit }));
+		const innerJoin = vi.fn(() => ({ where: selectWhere }));
+		const from = vi.fn(() => ({ innerJoin }));
+		const questionWhere = vi
+			.fn()
+			.mockResolvedValue([{ id: "question-1" }, { id: "question-2" }]);
+		const questionFrom = vi.fn(() => ({ where: questionWhere }));
+		const returning = vi.fn().mockResolvedValue([{ id: "attempt-1" }]);
+		const updateWhere = vi.fn(() => ({ returning }));
+		const set = vi.fn(() => ({ where: updateWhere }));
+		const transaction = {
+			select: vi
+				.fn()
+				.mockReturnValueOnce({ from })
+				.mockReturnValueOnce({ from: questionFrom }),
+			update: vi.fn(() => ({ set })),
+		};
+		const db = {
+			transaction: vi.fn((callback) => callback(transaction)),
+		} as unknown as DbClient;
+
+		expect(
+			await resumeGuestAssessmentAttempt(db, {
+				attemptId: "attempt-1",
+				tokenHash: "guest-token-hash",
+				continuationTokenHash: "new-continuation-hash",
+				now,
+			}),
+		).toBe("resumed");
+		expect(set).toHaveBeenCalledWith({
+			resumedAt: now,
+			continuationTokenHash: "new-continuation-hash",
+		});
+		expect(eq).toHaveBeenCalledWith(
+			guestSessions.tokenHash,
+			"guest-token-hash",
+		);
+		expect(eq).toHaveBeenCalledWith(assessmentAttempts.id, "attempt-1");
+		expect(eq).toHaveBeenCalledWith(
+			assessmentAttempts.guestSessionId,
+			"session-1",
+		);
+		expect(isNull).toHaveBeenCalledWith(assessmentAttempts.resumedAt);
+		expect(isNull).toHaveBeenCalledWith(assessmentAttempts.completedAt);
+	});
+
+	it("rejects a second resume without writing a new continuation token", async () => {
+		const limit = vi.fn().mockResolvedValue([
+			{
+				id: "attempt-1",
+				guestSessionId: "session-1",
+				assessmentVersionId: "version-1",
+				currentQuestionIndex: 1,
+				resumedAt: new Date("2026-08-11T11:00:00.000Z"),
+				continuationTokenHash: "first-resume-hash",
+			},
+		]);
+		const where = vi.fn(() => ({ limit }));
+		const innerJoin = vi.fn(() => ({ where }));
+		const from = vi.fn(() => ({ innerJoin }));
+		const questionWhere = vi
+			.fn()
+			.mockResolvedValue([{ id: "question-1" }, { id: "question-2" }]);
+		const questionFrom = vi.fn(() => ({ where: questionWhere }));
+		const transaction = {
+			select: vi
+				.fn()
+				.mockReturnValueOnce({ from })
+				.mockReturnValueOnce({ from: questionFrom }),
+			update: vi.fn(),
+		};
+		const db = {
+			transaction: vi.fn((callback) => callback(transaction)),
+		} as unknown as DbClient;
+
+		expect(
+			await resumeGuestAssessmentAttempt(db, {
+				attemptId: "attempt-1",
+				tokenHash: "guest-token-hash",
+				continuationTokenHash: "second-resume-hash",
+				now: new Date("2026-08-11T12:00:00.000Z"),
+			}),
+		).toBe("resume-unavailable");
+		expect(transaction.update).not.toHaveBeenCalled();
+	});
+
+	it("rejects an option from another question before any answer write", async () => {
+		const attemptLimit = vi.fn().mockResolvedValue([
+			{
+				id: "attempt-1",
+				guestSessionId: "session-1",
+				assessmentVersionId: "version-1",
+			},
+		]);
+		const attemptWhere = vi.fn(() => ({ limit: attemptLimit }));
+		const attemptInnerJoin = vi.fn(() => ({ where: attemptWhere }));
+		const attemptFrom = vi.fn(() => ({ innerJoin: attemptInnerJoin }));
+		const questionOrderBy = vi
+			.fn()
+			.mockResolvedValue([{ id: "question-1", required: true }]);
+		const questionWhere = vi.fn(() => ({ orderBy: questionOrderBy }));
+		const questionFrom = vi.fn(() => ({ where: questionWhere }));
+		const optionLimit = vi.fn().mockResolvedValue([]);
+		const optionWhere = vi.fn(() => ({ limit: optionLimit }));
+		const optionFrom = vi.fn(() => ({ where: optionWhere }));
+		const transaction = {
+			select: vi
+				.fn()
+				.mockReturnValueOnce({ from: attemptFrom })
+				.mockReturnValueOnce({ from: questionFrom })
+				.mockReturnValueOnce({ from: optionFrom }),
+			update: vi.fn(),
+			insert: vi.fn(),
+		};
+		const db = {
+			transaction: vi.fn((callback) => callback(transaction)),
+		} as unknown as DbClient;
+
+		expect(
+			await saveGuestAssessmentAnswer(db, {
+				attemptId: "attempt-1",
+				tokenHash: "guest-token-hash",
+				continuationTokenHash: "continuation-token-hash",
+				questionId: "question-1",
+				optionId: "option-from-another-question",
+				now: new Date("2026-08-11T12:00:00.000Z"),
+			}),
+		).toEqual({ status: "invalid-answer" });
+		expect(eq).toHaveBeenCalledWith(assessmentAttempts.id, "attempt-1");
+		expect(eq).toHaveBeenCalledWith(
+			guestSessions.tokenHash,
+			"guest-token-hash",
+		);
+		expect(eq).toHaveBeenCalledWith(
+			assessmentAttempts.continuationTokenHash,
+			"continuation-token-hash",
+		);
+		expect(eq).toHaveBeenCalledWith(assessmentOptions.questionId, "question-1");
+		expect(transaction.update).not.toHaveBeenCalled();
+		expect(transaction.insert).not.toHaveBeenCalled();
 	});
 
 	it("does not delete an attempt that the guest credential does not own", async () => {

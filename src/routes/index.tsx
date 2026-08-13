@@ -4,11 +4,22 @@ import { KelsierPage } from "../components/kelsier/KelsierPage";
 import { getActiveAssessmentQuestionnaire } from "../server/assessmentQuestionnaire.functions";
 import {
 	deleteGuestAttempt,
+	getGuestAssessmentEntry,
+	resumeGuestAssessment,
+	saveGuestAnswer,
+	startFreshGuestAssessment,
 	startGuestAssessment,
 } from "../server/guestAssessment.functions";
 
 export const Route = createFileRoute("/")({
-	loader: () => getActiveAssessmentQuestionnaire(),
+	loader: async () => {
+		const questionnaire = await getActiveAssessmentQuestionnaire();
+		const guestAssessmentEntry = await getGuestAssessmentEntry({
+			data: { assessmentVersionId: questionnaire.id },
+		});
+
+		return { questionnaire, guestAssessmentEntry };
+	},
 	head: () => ({
 		meta: [
 			{
@@ -28,13 +39,23 @@ export const Route = createFileRoute("/")({
 });
 
 function HomeRoute() {
-	const questionnaire = Route.useLoaderData();
+	const { questionnaire, guestAssessmentEntry } = Route.useLoaderData();
 
 	return (
 		<KelsierPage
 			questionnaire={questionnaire}
+			initialGuestAssessmentEntry={guestAssessmentEntry}
 			persistenceActions={{
 				startAttempt: () => startGuestAssessment(),
+				resumeAttempt: (attemptId, continuationToken) =>
+					resumeGuestAssessment({
+						data: { attemptId, continuationToken },
+					}),
+				startFreshAttempt: (attemptId, continuationToken) =>
+					startFreshGuestAssessment({
+						data: { attemptId, continuationToken },
+					}),
+				saveAnswer: (input) => saveGuestAnswer({ data: input }),
 				deleteAttempt: (attemptId) =>
 					deleteGuestAttempt({ data: { attemptId } }),
 			}}

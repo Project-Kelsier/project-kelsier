@@ -71,6 +71,13 @@
       "when": 1786454046792,
       "tag": "0009_plain_ultimates",
       "breakpoints": true
+    },
+    {
+      "idx": 10,
+      "version": "7",
+      "when": 1786624834543,
+      "tag": "0010_thin_marauders",
+      "breakpoints": true
     }
   ]
 }

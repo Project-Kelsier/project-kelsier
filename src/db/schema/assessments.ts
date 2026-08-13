@@ -140,6 +140,16 @@ export const assessmentAttempts = pgTable(
 			mode: "date",
 			withTimezone: true,
 		}),
+		resumedAt: timestamp("resumed_at", {
+			mode: "date",
+			withTimezone: true,
+		}),
+		continuationTokenHash: text("continuation_token_hash")
+			.notNull()
+			.default(sql`encode(digest(gen_random_uuid()::text, 'sha256'), 'hex')`),
+		currentQuestionIndex: integer("current_question_index")
+			.notNull()
+			.default(0),
 		createdAt: timestamp("created_at", { mode: "date", withTimezone: true })
 			.notNull()
 			.defaultNow(),

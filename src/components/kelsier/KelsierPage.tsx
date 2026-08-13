@@ -12,11 +12,13 @@ import {
 	useRef,
 	useState,
 } from "react";
-import type {
-	AssessmentPersistenceActions,
-	AssessmentQuestionnaire,
-	AssessmentQuestionnaireQuestion,
-	GuestAssessmentAttempt,
+import {
+	type AssessmentPersistenceActions,
+	type AssessmentQuestionnaire,
+	type AssessmentQuestionnaireQuestion,
+	type GuestAssessmentAttempt,
+	type GuestAssessmentEntry,
+	generateAssessmentContinuationToken,
 } from "#/lib/assessmentQuestionnaire";
 import { KelsierFooter } from "./KelsierFooter";
 import { KelsierHeader } from "./KelsierHeader";
@@ -269,6 +271,45 @@ const QuestionCard = forwardRef<HTMLDivElement, HTMLAttributes<HTMLDivElement>>(
 	},
 );
 
+function DeleteAttemptControl({
+	isConfirmationVisible,
+	isDeleting,
+	onCancel,
+	onConfirm,
+	onRequest,
+}: {
+	isConfirmationVisible: boolean;
+	isDeleting: boolean;
+	onCancel: () => void;
+	onConfirm: () => void;
+	onRequest: () => void;
+}) {
+	return (
+		<div className="mt-4 border-[var(--k-border)] border-t pt-4">
+			{isConfirmationVisible ? (
+				<div className="grid gap-3 text-sm">
+					<p className="m-0 text-[var(--k-text-muted)]">
+						Delete this attempt and any data saved under it? This cannot be
+						undone.
+					</p>
+					<div className="flex flex-wrap gap-3">
+						<KelsierButton variant="secondary" onClick={onCancel}>
+							Keep attempt
+						</KelsierButton>
+						<KelsierButton onClick={onConfirm} disabled={isDeleting}>
+							{isDeleting ? "Deleting…" : "Confirm deletion"}
+						</KelsierButton>
+					</div>
+				</div>
+			) : (
+				<KelsierButton variant="secondary" onClick={onRequest}>
+					Delete saved attempt
+				</KelsierButton>
+			)}
+		</div>
+	);
+}
+
 function QuestionOptionRadio({
 	isSelected,
 	id,
@@ -310,18 +351,31 @@ function getQuestionAt(
 
 export function KelsierPage({
 	questionnaire,
+	initialGuestAssessmentEntry = null,
 	persistenceActions,
 }: {
 	questionnaire: AssessmentQuestionnaire;
+	initialGuestAssessmentEntry?: GuestAssessmentEntry | null;
 	persistenceActions: AssessmentPersistenceActions;
 }) {
 	const [isHydrated, setIsHydrated] = useState(false);
-	const [isAssessmentStarted, setIsAssessmentStarted] = useState(false);
-	const [isAssessmentComplete, setIsAssessmentComplete] = useState(false);
+	const [isAssessmentStarted, setIsAssessmentStarted] = useState(
+		initialGuestAssessmentEntry?.answersComplete ?? false,
+	);
+	const [isAssessmentComplete, setIsAssessmentComplete] = useState(
+		initialGuestAssessmentEntry?.answersComplete ?? false,
+	);
 	const [currentQuestionIndex, setCurrentQuestionIndex] = useState(0);
-	const [answers, setAnswers] = useState<Record<string, string>>({});
+	const [answers, setAnswers] = useState<Record<string, string>>(
+		initialGuestAssessmentEntry?.answers ?? {},
+	);
 	const [attempt, setAttempt] = useState<GuestAssessmentAttempt | null>(null);
+	const [guestAssessmentEntry, setGuestAssessmentEntry] =
+		useState<GuestAssessmentEntry | null>(initialGuestAssessmentEntry);
 	const [isStarting, setIsStarting] = useState(false);
+	const [isResuming, setIsResuming] = useState(false);
+	const [isStartingFresh, setIsStartingFresh] = useState(false);
+	const [isSaving, setIsSaving] = useState(false);
 	const [isDeleting, setIsDeleting] = useState(false);
 	const [isDeleteConfirmationVisible, setIsDeleteConfirmationVisible] =
 		useState(false);
@@ -346,6 +400,8 @@ export function KelsierPage({
 	const ctaCardRef = useRef<HTMLDivElement>(null);
 	const ctaActionRef = useRef<HTMLDivElement>(null);
 	const questionHeadingRef = useRef<HTMLHeadingElement>(null);
+	const resumeContinuationTokenRef = useRef<string | null>(null);
+	const freshContinuationTokenRef = useRef<string | null>(null);
 
 	const prefersReducedMotion = usePrefersReducedMotion();
 	const { questions } = questionnaire;
@@ -374,13 +430,12 @@ export function KelsierPage({
 		try {
 			const createdAttempt = await persistenceActions.startAttempt();
 			setAttempt(createdAttempt);
+			setGuestAssessmentEntry(null);
 			setAnswers({});
 			setCurrentQuestionIndex(0);
 			setIsAssessmentStarted(true);
 			setIsAssessmentComplete(false);
-			setPersistenceMessage(
-				"Your guest attempt is saved. Answers will be saved in the next phase.",
-			);
+			setPersistenceMessage("Your private attempt is ready.");
 			scrollToAssessment();
 		} catch {
 			setPersistenceMessage(
@@ -391,16 +446,88 @@ export function KelsierPage({
 		}
 	}, [isStarting, persistenceActions, scrollToAssessment]);
 
-	const resetAssessment = useCallback(() => {
-		setAnswers({});
-		setCurrentQuestionIndex(0);
-		setIsAssessmentStarted(true);
-		setIsAssessmentComplete(false);
-		scrollToAssessment();
-	}, [scrollToAssessment]);
+	const resumeAssessment = useCallback(async () => {
+		if (!guestAssessmentEntry || isResuming) {
+			return;
+		}
+
+		setIsResuming(true);
+		setPersistenceMessage("Restoring your saved snapshot…");
+		resumeContinuationTokenRef.current ??=
+			generateAssessmentContinuationToken();
+
+		try {
+			const progress = await persistenceActions.resumeAttempt(
+				guestAssessmentEntry.attemptId,
+				resumeContinuationTokenRef.current,
+			);
+			setAttempt(progress);
+			setAnswers(progress.answers);
+			setCurrentQuestionIndex(
+				Math.min(progress.currentQuestionIndex, questions.length - 1),
+			);
+			setGuestAssessmentEntry(null);
+			setIsAssessmentStarted(true);
+			setIsAssessmentComplete(false);
+			setPersistenceMessage(
+				"Your snapshot has been resumed. This is its single resume.",
+			);
+			scrollToAssessment();
+		} catch {
+			setPersistenceMessage(
+				"We couldn’t resume this snapshot. Start fresh if it has already used its single resume.",
+			);
+		} finally {
+			setIsResuming(false);
+		}
+	}, [
+		guestAssessmentEntry,
+		isResuming,
+		persistenceActions,
+		questions.length,
+		scrollToAssessment,
+	]);
+
+	const startFreshAssessment = useCallback(async () => {
+		if (!guestAssessmentEntry || isStartingFresh) {
+			return;
+		}
+
+		setIsStartingFresh(true);
+		setPersistenceMessage("Replacing the unfinished snapshot…");
+		freshContinuationTokenRef.current ??= generateAssessmentContinuationToken();
+
+		try {
+			const createdAttempt = await persistenceActions.startFreshAttempt(
+				guestAssessmentEntry.attemptId,
+				freshContinuationTokenRef.current,
+			);
+			setAttempt(createdAttempt);
+			setGuestAssessmentEntry(null);
+			setAnswers({});
+			setCurrentQuestionIndex(0);
+			setIsAssessmentStarted(true);
+			setIsAssessmentComplete(false);
+			setPersistenceMessage("A fresh private snapshot is ready.");
+			scrollToAssessment();
+		} catch {
+			setPersistenceMessage(
+				"We couldn’t start a fresh snapshot. Please try again shortly.",
+			);
+		} finally {
+			setIsStartingFresh(false);
+		}
+	}, [
+		guestAssessmentEntry,
+		isStartingFresh,
+		persistenceActions,
+		scrollToAssessment,
+	]);
 
 	const handleDeleteAttempt = useCallback(async () => {
-		if (!attempt || isDeleting) {
+		const attemptId = attempt?.attemptId ?? guestAssessmentEntry?.attemptId;
+
+		if (!attemptId || isDeleting) {
 			return;
 		}
 
@@ -408,7 +535,7 @@ export function KelsierPage({
 		setPersistenceMessage("Deleting your saved guest attempt…");
 
 		try {
-			const result = await persistenceActions.deleteAttempt(attempt.attemptId);
+			const result = await persistenceActions.deleteAttempt(attemptId);
 
 			if (!result.deleted) {
 				setPersistenceMessage(
@@ -418,6 +545,7 @@ export function KelsierPage({
 			}
 
 			setAttempt(null);
+			setGuestAssessmentEntry(null);
 			setAnswers({});
 			setCurrentQuestionIndex(0);
 			setIsAssessmentStarted(false);
@@ -432,7 +560,13 @@ export function KelsierPage({
 		} finally {
 			setIsDeleting(false);
 		}
-	}, [attempt, isDeleting, persistenceActions, scrollToAssessment]);
+	}, [
+		attempt,
+		guestAssessmentEntry,
+		isDeleting,
+		persistenceActions,
+		scrollToAssessment,
+	]);
 
 	const onScroll = useCallback(
 		(scrollY: number) => {
@@ -592,20 +726,48 @@ export function KelsierPage({
 		[currentQuestion.id],
 	);
 
-	const handleNext = useCallback(() => {
-		if (currentQuestion.required && !selectedOptionId) {
+	const handleNext = useCallback(async () => {
+		if (
+			!attempt ||
+			isSaving ||
+			(currentQuestion.required && !selectedOptionId)
+		) {
 			return;
 		}
 
-		if (currentQuestionIndex === questions.length - 1) {
-			setIsAssessmentComplete(true);
-			return;
-		}
+		setIsSaving(true);
+		setPersistenceMessage("Saving your answer…");
 
-		setCurrentQuestionIndex((index) => index + 1);
+		try {
+			await persistenceActions.saveAnswer({
+				attemptId: attempt.attemptId,
+				continuationToken: attempt.continuationToken,
+				questionId: currentQuestion.id,
+				optionId: selectedOptionId ?? null,
+			});
+
+			if (currentQuestionIndex === questions.length - 1) {
+				setIsAssessmentComplete(true);
+				setPersistenceMessage("Your demonstration answers are saved.");
+				return;
+			}
+
+			setCurrentQuestionIndex((index) => index + 1);
+			setPersistenceMessage("Answer saved.");
+		} catch {
+			setPersistenceMessage(
+				"Your answer wasn’t saved. Check your connection and try again.",
+			);
+		} finally {
+			setIsSaving(false);
+		}
 	}, [
+		attempt,
 		currentQuestion.required,
+		currentQuestion.id,
 		currentQuestionIndex,
+		isSaving,
+		persistenceActions,
 		questions.length,
 		selectedOptionId,
 	]);
@@ -821,36 +983,110 @@ export function KelsierPage({
 					</p>
 
 					{!isAssessmentStarted ? (
-						<QuestionCard
-							className="k-q-card--intro flex flex-col gap-[18px]"
-							ref={ctaCardRef}
-						>
-							<h3 className="k-q-title">Start the behavioural cold start</h3>
-							<p className="m-0 text-[var(--k-text-muted)] text-sm leading-[1.65]">
-								Answer {questions.length} demonstration questions to preview how
-								the Kelsier flow will feel. Starting creates a pseudonymous
-								guest attempt that expires seven days after creation.
-							</p>
-							<div className="rounded-xl border border-[var(--k-border)] bg-[var(--k-accent-glow)] p-4 text-[var(--k-text-muted)] text-xs leading-[1.65]">
-								<p className="m-0">
-									We do not ask for your name or email, and we do not attach
-									analytics identifiers to this attempt. An HttpOnly browser
-									cookie lets you return to or delete it. If that cookie is
-									lost, we cannot identify or delete the attempt directly;
-									automatic expiry is the remaining deletion mechanism.
+						guestAssessmentEntry ? (
+							<QuestionCard
+								className="k-q-card--intro flex flex-col gap-[18px]"
+								ref={ctaCardRef}
+							>
+								<h3 className="k-q-title">
+									Continue or start a fresh snapshot
+								</h3>
+								<p className="m-0 text-[var(--k-text-muted)] text-sm leading-[1.65]">
+									This browser has an unfinished snapshot with{" "}
+									{guestAssessmentEntry.answeredCount} saved{" "}
+									{guestAssessmentEntry.answeredCount === 1
+										? "answer"
+										: "answers"}
+									.
 								</p>
-							</div>
-							<div className="k-cta-action" ref={ctaActionRef}>
-								<KelsierButton onClick={startAssessment} disabled={isStarting}>
-									{isStarting ? "Starting…" : "Start and save progress"}
-								</KelsierButton>
-							</div>
-							{persistenceMessage ? (
-								<p className="m-0 text-[var(--k-text-soft)] text-xs">
-									{persistenceMessage}
+								<div className="rounded-xl border border-[var(--k-border)] bg-[var(--k-accent-glow)] p-4 text-[var(--k-text-muted)] text-xs leading-[1.65]">
+									<p className="m-0">
+										For a consistent current snapshot, start fresh if your mood,
+										circumstances, or context have materially changed. Each
+										attempt can be resumed only once.
+									</p>
+								</div>
+								<div
+									className="k-q-actions flex flex-wrap gap-3"
+									ref={ctaActionRef}
+								>
+									{guestAssessmentEntry.resumeAvailable ? (
+										<KelsierButton
+											onClick={resumeAssessment}
+											disabled={isResuming || isStartingFresh}
+										>
+											{isResuming ? "Resuming…" : "Continue this snapshot"}
+										</KelsierButton>
+									) : null}
+									<KelsierButton
+										variant={
+											guestAssessmentEntry.resumeAvailable
+												? "secondary"
+												: "primary"
+										}
+										onClick={startFreshAssessment}
+										disabled={isResuming || isStartingFresh}
+									>
+										{isStartingFresh
+											? "Starting fresh…"
+											: "Start a fresh snapshot"}
+									</KelsierButton>
+								</div>
+								{!guestAssessmentEntry.resumeAvailable ? (
+									<p className="m-0 text-[var(--k-text-soft)] text-xs">
+										This attempt has already used its single resume, so it
+										cannot be continued again.
+									</p>
+								) : null}
+								{persistenceMessage ? (
+									<p className="m-0 text-[var(--k-text-soft)] text-xs">
+										{persistenceMessage}
+									</p>
+								) : null}
+								<DeleteAttemptControl
+									isConfirmationVisible={isDeleteConfirmationVisible}
+									isDeleting={isDeleting}
+									onCancel={() => setIsDeleteConfirmationVisible(false)}
+									onConfirm={handleDeleteAttempt}
+									onRequest={() => setIsDeleteConfirmationVisible(true)}
+								/>
+							</QuestionCard>
+						) : (
+							<QuestionCard
+								className="k-q-card--intro flex flex-col gap-[18px]"
+								ref={ctaCardRef}
+							>
+								<h3 className="k-q-title">Start the behavioural cold start</h3>
+								<p className="m-0 text-[var(--k-text-muted)] text-sm leading-[1.65]">
+									Set aside a few uninterrupted minutes to answer{" "}
+									{questions.length} demonstration questions in one sitting.
+									Starting creates a pseudonymous guest attempt that expires
+									seven days after creation.
 								</p>
-							) : null}
-						</QuestionCard>
+								<div className="rounded-xl border border-[var(--k-border)] bg-[var(--k-accent-glow)] p-4 text-[var(--k-text-muted)] text-xs leading-[1.65]">
+									<p className="m-0">
+										We do not ask for your name or email, and we do not attach
+										analytics identifiers to this attempt. An HttpOnly browser
+										cookie lets you return to or delete it. If that cookie is
+										lost, we cannot identify or delete the attempt directly;
+										automatic expiry is the remaining deletion mechanism.
+									</p>
+								</div>
+								<div className="k-cta-action" ref={ctaActionRef}>
+									<KelsierButton
+										onClick={startAssessment}
+										disabled={isStarting}
+									>
+										{isStarting ? "Starting…" : "Start and save progress"}
+									</KelsierButton>
+								</div>
+								{persistenceMessage ? (
+									<p className="m-0 text-[var(--k-text-soft)] text-xs">
+										{persistenceMessage}
+									</p>
+								) : null}
+							</QuestionCard>
+						)
 					) : isAssessmentComplete ? (
 						<QuestionCard
 							className="k-q-card--complete flex flex-col gap-[18px]"
@@ -860,9 +1096,9 @@ export function KelsierPage({
 								Prototype complete
 							</h3>
 							<p className="m-0 text-[var(--k-text-muted)] text-sm leading-[1.65]">
-								You&apos;ve completed the front-end prototype flow. Next we can
-								turn this into a full assessment experience with saved answers,
-								team invites, and generated insight output.
+								Your demonstration answers are saved. Scoring and the accessible
+								result table arrive in the next phase; this is not yet a
+								personality result or validated interpretation.
 							</p>
 							<ul
 								className="flex list-none flex-col gap-3 p-0 m-0"
@@ -891,11 +1127,8 @@ export function KelsierPage({
 								className="k-q-actions mt-[22px] flex justify-between gap-3 max-md:flex-col"
 								ref={ctaActionRef}
 							>
-								<KelsierButton onClick={resetAssessment}>
-									Restart questions
-								</KelsierButton>
 								<KelsierButton
-									variant="secondary"
+									variant="primary"
 									onClick={() => setIsDeleteConfirmationVisible(true)}
 								>
 									Delete saved attempt
@@ -939,6 +1172,7 @@ export function KelsierPage({
 							<fieldset
 								className="mt-[18px] flex flex-col gap-2.5"
 								aria-label={currentQuestion.prompt}
+								disabled={isSaving}
 							>
 								{currentQuestion.options.map((option) => {
 									const isSelected = selectedOptionId === option.id;
@@ -964,50 +1198,35 @@ export function KelsierPage({
 								<KelsierButton
 									variant="secondary"
 									onClick={handleBack}
-									disabled={currentQuestionIndex === 0}
+									disabled={currentQuestionIndex === 0 || isSaving}
 								>
 									Back
 								</KelsierButton>
 								<KelsierButton
 									onClick={handleNext}
-									disabled={currentQuestion.required && !selectedOptionId}
+									disabled={
+										isSaving || (currentQuestion.required && !selectedOptionId)
+									}
 								>
-									{currentQuestionIndex === questions.length - 1
-										? "Complete prototype"
-										: "Next question"}
+									{isSaving
+										? "Saving…"
+										: currentQuestionIndex === questions.length - 1
+											? "Complete prototype"
+											: "Next question"}
 								</KelsierButton>
 							</div>
-							<div className="mt-4 border-[var(--k-border)] border-t pt-4">
-								{isDeleteConfirmationVisible ? (
-									<div className="grid gap-3 text-sm">
-										<p className="m-0 text-[var(--k-text-muted)]">
-											Delete this attempt and any data saved under it? This
-											cannot be undone.
-										</p>
-										<div className="flex flex-wrap gap-3">
-											<KelsierButton
-												variant="secondary"
-												onClick={() => setIsDeleteConfirmationVisible(false)}
-											>
-												Keep attempt
-											</KelsierButton>
-											<KelsierButton
-												onClick={handleDeleteAttempt}
-												disabled={isDeleting}
-											>
-												{isDeleting ? "Deleting…" : "Confirm deletion"}
-											</KelsierButton>
-										</div>
-									</div>
-								) : (
-									<KelsierButton
-										variant="secondary"
-										onClick={() => setIsDeleteConfirmationVisible(true)}
-									>
-										Delete saved attempt
-									</KelsierButton>
-								)}
-							</div>
+							{persistenceMessage ? (
+								<p className="mt-3 mb-0 text-[var(--k-text-soft)] text-xs">
+									{persistenceMessage}
+								</p>
+							) : null}
+							<DeleteAttemptControl
+								isConfirmationVisible={isDeleteConfirmationVisible}
+								isDeleting={isDeleting}
+								onCancel={() => setIsDeleteConfirmationVisible(false)}
+								onConfirm={handleDeleteAttempt}
+								onRequest={() => setIsDeleteConfirmationVisible(true)}
+							/>
 						</QuestionCard>
 					)}
 				</section>
