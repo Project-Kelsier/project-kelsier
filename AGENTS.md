@@ -307,6 +307,7 @@ If you cannot run a check locally, say so explicitly in your handoff and explain
 
 - [`vitest.config.ts`](vitest.config.ts) intentionally does not reuse the full Vite app plugin stack.
 - [`vite.config.ts`](vite.config.ts) is configured for TanStack Start on Cloudflare Workers.
+- Local Vite serving defaults Wrangler logging to `warn` to suppress duplicate environment-source notices while preserving warnings and errors. Respect an explicitly supplied `WRANGLER_LOG` when deeper diagnostics are needed.
 - Do not pull the full TanStack Start or Cloudflare Workers runtime plugin stack into Vitest config unless there is a proven test need.
 
 ### Cloudflare Workers
@@ -319,6 +320,7 @@ If you cannot run a check locally, say so explicitly in your handoff and explain
 ### Drizzle And PostgreSQL
 
 - [`docker-compose.yml`](docker-compose.yml) defines the local PostgreSQL 17 service. It publishes container port `5432` on host port `55432` to avoid common Windows reservations around `5432`.
+- `pnpm dev` is the normal daily startup command. [`scripts/prepare-dev.mjs`](scripts/prepare-dev.mjs) starts and waits for the local PostgreSQL service, applies migrations, runs the idempotent seed, and refuses to prepare a hosted `DATABASE_URL` before Vite starts. `pnpm dev:app` deliberately bypasses that preparation.
 - [`drizzle.config.ts`](drizzle.config.ts) reads database credentials from `.env`.
 - Keep runtime database clients explicit. [`src/db/client.worker.ts`](src/db/client.worker.ts) is the Cloudflare Worker runtime client and uses Drizzle's Postgres.js driver through the generated `HYPERDRIVE` binding; [`src/db/client.node.ts`](src/db/client.node.ts) is Node-only for scripts, seed work, migration support, and tests that need postgres-js; [`src/db/client.ts`](src/db/client.ts) must remain a runtime-safe shared type/env helper and must not import concrete database drivers.
 - Do not import [`src/db/client.node.ts`](src/db/client.node.ts) or concrete database drivers from routes, services, or other Worker-facing modules. [`src/db/client-boundary.test.ts`](src/db/client-boundary.test.ts) enforces this boundary while allowing driver setup inside the two runtime clients.

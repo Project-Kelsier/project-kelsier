@@ -5,7 +5,8 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 ## Commands
 
 ```bash
-pnpm dev          # Start dev server on port 3000
+pnpm dev          # Prepare local PostgreSQL and start Vite on port 3000
+pnpm dev:app      # Start Vite without database preparation
 pnpm build        # Production build (Cloudflare Workers)
 pnpm deploy       # Build and deploy to Cloudflare
 
@@ -29,7 +30,13 @@ pnpm ci           # Full local CI: check + typecheck + test + build
 
 ## Local database
 
-The project uses a Docker Postgres instance for local development and scripts:
+The project uses a Docker Postgres instance for local development and scripts. With Docker Desktop running, normal daily startup is:
+
+```bash
+pnpm dev
+```
+
+That command starts and waits for PostgreSQL, applies migrations, runs the idempotent seed, and starts Vite. It refuses to prepare a non-local `DATABASE_URL`. Use the explicit Compose commands for manual container management:
 
 ```bash
 docker compose up -d   # Start local Postgres on port 55432

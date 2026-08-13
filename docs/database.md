@@ -44,6 +44,16 @@ Do not run destructive development commands against Neon. Hosted Neon connection
 
 `wrangler.jsonc` supplies the non-secret Docker URL as the Hyperdrive binding's `localConnectionString`. Local Worker requests therefore connect directly to Docker; they do not use the deployed Hyperdrive service or hosted Neon. An environment-specific `CLOUDFLARE_HYPERDRIVE_LOCAL_CONNECTION_STRING_HYPERDRIVE` value can override it when needed.
 
+## Daily Development
+
+With Docker Desktop running and `.env` pointing at the local database, use:
+
+```bash
+pnpm dev
+```
+
+The development bootstrap starts the PostgreSQL service, waits for its health check, applies committed migrations, runs the idempotent seed, and then starts Vite. It refuses to automate preparation when `DATABASE_URL` is not the approved local database on `localhost:55432`. Use `pnpm dev:app` only to start Vite against an already-prepared local database.
+
 ## Migration Workflow
 
 When changing schema:

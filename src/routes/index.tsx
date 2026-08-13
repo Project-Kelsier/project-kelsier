@@ -1,4 +1,5 @@
 import { createFileRoute } from "@tanstack/react-router";
+import { KelsierAssessmentUnavailablePage } from "../components/kelsier/KelsierAssessmentUnavailablePage";
 import { KelsierPage } from "../components/kelsier/KelsierPage";
 import { getActiveAssessmentQuestionnaire } from "../server/assessmentQuestionnaire.functions";
 import {
@@ -21,6 +22,9 @@ export const Route = createFileRoute("/")({
 		],
 	}),
 	component: HomeRoute,
+	errorComponent: ({ reset }) => (
+		<KelsierAssessmentUnavailablePage onRetry={reset} />
+	),
 });
 
 function HomeRoute() {
