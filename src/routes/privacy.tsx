@@ -19,13 +19,13 @@ export const Route = createFileRoute("/privacy")({
 
 function PrivacyRoute() {
 	return (
-		<LegalPage title="Privacy Policy" updatedAt="August 11, 2026">
+		<LegalPage title="Privacy Policy" updatedAt="August 17, 2026">
 			<section className="border-[rgba(49,31,76,0.12)] border-t py-6">
 				<h2 className="mt-0 mb-3 text-base">Prototype Notice</h2>
 				<p className="m-0 max-w-[64ch] text-[#584a72] leading-[1.8]">
 					This development notice exists so contributors and reviewers can
-					validate the guest assessment flow while the launch policy and final
-					retention period are being reviewed. The writable flow is not approved
+					validate the guest assessment flow while the final launch policy and
+					contact details are being reviewed. The writable flow is not approved
 					for public launch yet.
 				</p>
 			</section>
@@ -37,8 +37,9 @@ function PrivacyRoute() {
 					cryptographic hash of an opaque guest credential; the raw credential
 					is kept in an HttpOnly browser cookie. Names, email addresses,
 					analytics identifiers, raw IP addresses, and user-agent strings are
-					not attached to the attempt. Questionnaire answers are not saved in
-					this phase.
+					not attached to the attempt. Selected answers and the resulting
+					demonstration dimension scores are stored under the attempt until it
+					is deleted or expires.
 				</p>
 			</section>
 			<section className="border-[rgba(49,31,76,0.12)] border-t py-6">

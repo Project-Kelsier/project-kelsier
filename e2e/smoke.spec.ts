@@ -196,12 +196,20 @@ test("privacy route renders placeholder page", async ({ page }) => {
 	await expect(
 		page.getByRole("heading", { name: "Privacy Policy" }),
 	).toBeVisible();
+	await expect(
+		page.getByText("Selected answers and the resulting demonstration", {
+			exact: false,
+		}),
+	).toBeVisible();
 });
 
 test("terms route renders placeholder page", async ({ page }) => {
 	await page.goto("/terms");
 	await expect(
 		page.getByRole("heading", { name: "Terms of Use" }),
+	).toBeVisible();
+	await expect(
+		page.getByText("persists a private guest snapshot", { exact: false }),
 	).toBeVisible();
 });
 

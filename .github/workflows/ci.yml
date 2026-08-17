@@ -162,6 +162,9 @@ jobs:
       - name: Build
         run: pnpm build
 
+      - name: Validate Worker deployment configuration
+        run: pnpm worker:check
+
       - name: Build Storybook
         run: pnpm build-storybook
 

@@ -35,6 +35,7 @@ pnpm typecheck
 pnpm test
 pnpm coverage
 pnpm build
+pnpm worker:check
 pnpm build-storybook
 pnpm test:e2e
 ```
@@ -96,6 +97,7 @@ Before sharing logs, PR descriptions, screenshots, or generated docs, redact `DA
 
 - Cloudflare Workers configuration lives in [`wrangler.jsonc`](./wrangler.jsonc).
 - `pnpm preview` is the closest local deployment check before publishing to Cloudflare.
+- `pnpm worker:check` performs a Wrangler deployment dry run without publishing.
 - `pnpm deploy` builds the app and hands deployment to Wrangler.
 
 ## PR Guidance

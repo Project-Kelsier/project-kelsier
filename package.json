@@ -17,6 +17,7 @@
 		"preview": "pnpm build && vite preview",
 		"deploy": "pnpm build && wrangler deploy",
 		"cf-typegen": "wrangler types",
+		"worker:check": "wrangler deploy --dry-run",
 		"lint": "biome lint .",
 		"format": "biome format --write .",
 		"check": "biome check .",

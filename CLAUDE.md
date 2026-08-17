@@ -8,6 +8,9 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 pnpm dev          # Prepare local PostgreSQL and start Vite on port 3000
 pnpm dev:app      # Start Vite without database preparation
 pnpm build        # Production build (Cloudflare Workers)
+pnpm preview      # Build and run the local deployment preview
+pnpm cf-typegen   # Regenerate Cloudflare binding and runtime types
+pnpm worker:check # Validate the Worker deployment bundle without publishing
 pnpm deploy       # Build and deploy to Cloudflare
 
 pnpm check        # Biome lint + format check (what CI runs)
@@ -20,12 +23,14 @@ pnpm vitest run src/path/file.test.ts  # Run a single test file
 pnpm coverage     # Unit tests with v8 coverage report
 
 pnpm test:e2e     # Playwright e2e (auto-starts dev server if not running)
+pnpm storybook    # Start the isolated UI workbench
+pnpm build-storybook # Compile Storybook as CI does
 
 pnpm db:generate  # Generate Drizzle migration from schema changes
 pnpm db:migrate   # Apply migrations to the local database
 pnpm db:seed      # Seed local database with demo data
 
-pnpm ci           # Full local CI: check + typecheck + test + build
+pnpm ci           # Local CI: check + typecheck + test + app and Storybook builds
 ```
 
 ## Local database
@@ -51,7 +56,7 @@ The `.env` file is read by Drizzle Kit and seed scripts. Set `DATABASE_URL` ther
 
 ### Runtime target: Cloudflare Workers
 
-The app deploys as a Cloudflare Worker via TanStack Start's server entry (`@tanstack/react-start/server-entry`). The Vite config uses `@cloudflare/vite-plugin` with SSR mode, so the production bundle runs in the Workers edge runtime — not Node. The dev server emulates this locally.
+The app deploys through `src/worker.ts`, which delegates HTTP requests to TanStack Start's server entry (`@tanstack/react-start/server-entry`) and handles the scheduled expired-assessment cleanup. The Vite config uses `@cloudflare/vite-plugin` with SSR mode, so the production bundle runs in the Workers edge runtime — not Node. The dev server emulates this locally.
 
 ### Dual database clients
 
@@ -72,7 +77,7 @@ There are two Drizzle client implementations because the Worker connects through
 - `AuthenticatedUserContext` — `{ db: DbClient, userId: string }`
 - `OrganisationUserContext` — extends the above with `organisationId`
 
-Services always scope queries to `organisationId` and filter out soft-deleted rows (`isNull(deletedAt)`). All service functions are exported from `src/services/index.ts`.
+Organisation-scoped services always scope queries to `organisationId` and filter out soft-deleted rows (`isNull(deletedAt)`). Shared application services are exported from `src/services/index.ts`; narrowly scoped operational helpers such as scheduled cleanup may remain direct server imports when they are not part of the application service surface.
 
 ### Routing
 
@@ -132,7 +137,12 @@ pnpm check && pnpm typecheck && pnpm test
 
 **UI or routing changes (also required before a PR):**
 ```bash
-pnpm check && pnpm typecheck && pnpm test && pnpm coverage && pnpm build && pnpm test:e2e
+pnpm check && pnpm typecheck && pnpm test && pnpm coverage && pnpm build && pnpm build-storybook && pnpm test:e2e
+```
+
+**Worker entrypoint, binding, or deployment-configuration changes:**
+```bash
+pnpm cf-typegen && pnpm check && pnpm typecheck && pnpm test && pnpm build && pnpm worker:check
 ```
 
 **Dependency or install-path changes:**
@@ -175,4 +185,4 @@ The `users` table is a thin domain anchor — it stores only `authUserId` linkin
 
 ### Assessment data model
 
-Assessment content is versioned: `assessmentVersions` → `assessmentQuestions` → `assessmentOptions`. A user's response is an `assessmentAttempt` containing `assessmentAnswers`, which produces an `assessmentResult` with `traitScores` (JSONB keyed by dimension). The landing page loads the active questionnaire version and its ordered options from PostgreSQL through a TanStack Start server function. Starting creates a cookie-authorized guest attempt, while answers remain client-only until the persistence phase.
+Assessment content is versioned: `assessmentVersions` → `assessmentQuestions` → `assessmentOptions`. A guest's response is an `assessmentAttempt` containing persisted `assessmentAnswers`, which produces an immutable `assessmentResult` with `traitScores` and contributing-question counts keyed by dimension. The landing page loads the active questionnaire version and its ordered options from PostgreSQL through a TanStack Start server function. Starting creates a cookie-authorized guest attempt; each answer is acknowledged by the server before navigation, one interrupted attempt may be resumed once, and completion atomically stores the final answer, `dimension-mean-v1` result, and completion timestamp.

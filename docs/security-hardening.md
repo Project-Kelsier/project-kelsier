@@ -68,13 +68,9 @@ If pnpm rejects an update because the release is inside the cooldown window, fir
 
 When fixing advisories through `pnpm-workspace.yaml` overrides, prefer the narrowest compatible override and verify the parent package still works. Some packages import internal files from dependencies, so forcing a new major version can pass audit while breaking runtime or tests. If no compatible patched version exists, document the residual advisory and upstream blocker instead of hiding it with an unsafe override.
 
-### Current Residual Advisory
+### Resolved Sharp Advisory
 
-As of 2026-07-23, GHSA-f88m-g3jw-g9cj remains in development tooling through `@cloudflare/vite-plugin` and `wrangler`, which depend on Miniflare. The current Miniflare release pins `sharp` 0.34.5, while the advisory is fixed in `sharp` 0.35.0 and later.
-
-Do not override Miniflare's exact Sharp pin across the `0.34` to `0.35` compatibility boundary. Project Kelsier does not process untrusted image input through Miniflare, so the residual exposure is limited to local and CI development tooling rather than the production application dependency set.
-
-Remove this exception once a compatible Miniflare release uses `sharp` 0.35.0 or later, update the Cloudflare parent packages, and rerun the complete dependency maintenance gate.
+GHSA-f88m-g3jw-g9cj previously remained in development tooling because Miniflare pinned Sharp 0.34.5. The current dependency graph resolves Miniflare with Sharp 0.35.2, so that residual advisory and its compatibility exception no longer apply. Do not add a Sharp override unless a future reviewed dependency graph creates a concrete need.
 
 The workspace also carries narrow patch-level overrides for current transitive advisories where the parent dependency graph has not yet adopted the patched release. Their advisory IDs, exact versions, and parent paths are documented beside the overrides in `pnpm-workspace.yaml`. Remove each override as soon as normal parent resolution selects the same or a newer compatible patched version.
 

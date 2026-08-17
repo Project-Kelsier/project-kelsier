@@ -94,15 +94,18 @@ Change the scoring algorithm identifier when arithmetic or interpretation change
 
 ### Public launch gate
 
-Do not expose the writable guest assessment publicly until all of these conditions pass:
+Do not expose the writable guest assessment publicly while any row marked **Blocked** remains unresolved. Update this table in place so launch readiness has one source of truth.
 
-- Cross-session authorization tests cover read, answer, completion, deletion, and result access.
-- Cookie-authorized deletion has been exercised end to end by someone other than its implementer.
-- Native rate limiting protects the first public write endpoint.
-- Scheduled expiry cleanup is deployed and monitored.
-- The pre-persistence notice and privacy wording have been reviewed.
-- Production cookie behavior, runtime bindings, and the absence of development bypasses have been verified.
-- Save failures, reload/resume behavior, keyboard operation, focus management, disabled states, and live status announcements are covered proportionately by tests.
+| Requirement | Status | Evidence or required action | Launch blocker? |
+| --- | --- | --- | --- |
+| Cross-session authorization covers read, answer, completion, deletion, and result access. | Ready | Service and route tests prove that one guest credential cannot operate on another guest's attempt. | No |
+| Cookie-authorized deletion is independently exercised end to end. | Blocked | A reviewer other than the implementer must complete and record the deletion exercise. | Yes |
+| Native rate limiting protects the first public write endpoint. | Ready | `ASSESSMENT_ATTEMPT_RATE_LIMITER` is configured and its fail-closed creation path is covered by tests. | No |
+| Scheduled expiry cleanup is deployed and monitored. | Blocked | The daily Worker schedule and structured logs are implemented and locally exercised; deploy them, verify a production invocation, and retain monitoring evidence. | Yes |
+| Cleanup failure notifications reach a responsible person. | Blocked | Configure and test a Cloudflare failed-invocation notification recipient. | Yes |
+| The pre-persistence notice, privacy wording, retention period, and contact details are approved. | Blocked | Complete privacy review and replace the placeholder contact address before deployment. | Yes |
+| Production cookie behavior, bindings, and absence of development bypasses are verified. | Blocked | `pnpm worker:check` validates the bundle; repeat the runtime checks against the deployed environment. | Yes |
+| Save failures, reload/resume behavior, keyboard operation, focus management, disabled states, and live announcements have proportionate coverage. | Ready | Vitest and cross-browser Playwright coverage exercise the critical questionnaire states and the single-resume contract. | No |
 
 ## Phased Delivery
 
@@ -120,9 +123,13 @@ Do not expose the writable guest assessment publicly until all of these conditio
 
 Each numbered item may be split into smaller pull requests. Tooling changes, schema changes, and feature work should remain independently reviewable where practical.
 
-Implementation status as of 2026-08-13: phases 1 through 7 are implemented on the assessment MVP branch. Guest answers persist before navigation, and an interrupted attempt offers one explicit resume or a fresh replacement snapshot. The final answer, `completedAt` transition, deterministic `dimension-mean-v1` calculation, and immutable raw result are now created in one database transaction. Refresh restores the completed result through the owning guest credential, and the UI presents ordered dimension scores and contributing-question counts in an accessible table.
+Implementation status as of 2026-08-17: phases 1 through 7 and the technical portion of phase 8 are implemented on the assessment MVP branch. Guest answers persist before navigation, and an interrupted attempt offers one explicit resume or a fresh replacement snapshot. The final answer, `completedAt` transition, deterministic `dimension-mean-v1` calculation, and immutable raw result are created in one database transaction. Refresh restores the completed result through the owning guest credential, and the UI presents ordered dimension scores and contributing-question counts in an accessible table.
 
 The active assessment version, questions, options, dimensions, and score weights are treated as immutable scoring inputs once responses exist. Future editing tools must create a new assessment version rather than mutate an active version in place. A changed arithmetic or interpretation contract requires a new scoring algorithm identifier. The database enforces one result per attempt; the service layer exposes creation and owner-scoped reads but no result update path.
+
+Phase 8 schedules cleanup daily at 03:17 UTC. The scheduled Worker deletes expired guest sessions in one indexed PostgreSQL statement; database cascades remove their guest-owned attempts, answers, and results atomically. It emits structured `assessment_cleanup_completed` or `assessment_cleanup_failed` logs, and failures are rethrown so Cloudflare records a failed invocation. Workers Logs capture all cleanup events during the pilot. Run `pnpm worker:check` to validate the deployment configuration without deploying, and invoke `/cdn-cgi/handler/scheduled?format=json` against local Vite to exercise the scheduled handler.
+
+Public launch remains blocked until the placeholder contact details and privacy wording are approved, a Cloudflare failure notification recipient is configured, and cookie-authorized deletion is independently exercised end to end. Completing technical phase 8 does not itself approve deployment.
 
 ## Deferred Decisions
 
