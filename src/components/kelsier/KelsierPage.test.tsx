@@ -276,7 +276,7 @@ describe("KelsierPage", () => {
 		).toBe("/terms");
 		expect(
 			screen.getByRole("link", { name: "Contact" }).getAttribute("href"),
-		).toBe("mailto:hello@kelsier.example");
+		).toBe("mailto:curiousphreak@gmail.com");
 		const githubLinks = screen.getAllByRole("link", { name: "GitHub" });
 		expect(githubLinks).toHaveLength(3);
 		expect(

@@ -1,5 +1,5 @@
 import { Link } from "@tanstack/react-router";
-import { GITHUB_REPOSITORY_URL } from "#/lib/projectLinks";
+import { CONTACT_EMAIL_HREF, GITHUB_REPOSITORY_URL } from "#/lib/projectLinks";
 import { APP_VERSION } from "#/lib/version";
 
 type FooterRouteHref = "/privacy" | "/terms";
@@ -41,7 +41,7 @@ const FOOTER_LINK_GROUPS: Array<{
 			},
 			{
 				label: "Contact",
-				href: "mailto:hello@kelsier.example",
+				href: CONTACT_EMAIL_HREF,
 				type: "anchor",
 			},
 		],

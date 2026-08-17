@@ -1,4 +1,5 @@
 import { createFileRoute } from "@tanstack/react-router";
+import { CONTACT_EMAIL, CONTACT_EMAIL_HREF } from "#/lib/projectLinks";
 import { LegalPage } from "../components/LegalPage";
 
 export const Route = createFileRoute("/terms")({
@@ -40,11 +41,8 @@ function TermsRoute() {
 				<h2 className="mt-0 mb-3 text-base">Contact</h2>
 				<p className="m-0 max-w-[64ch] text-[#584a72] leading-[1.8]">
 					Questions about these placeholder terms can be sent to{" "}
-					<a
-						className="font-bold text-[#1f1632]"
-						href="mailto:hello@kelsier.example"
-					>
-						hello@kelsier.example
+					<a className="font-bold text-[#1f1632]" href={CONTACT_EMAIL_HREF}>
+						{CONTACT_EMAIL}
 					</a>
 					.
 				</p>

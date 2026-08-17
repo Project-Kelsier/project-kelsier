@@ -58,14 +58,14 @@ The assessment should ideally be completed in one sitting so its demonstration o
 - Attempt IDs are non-secret UUIDs and never authorize access by themselves.
 - A valid guest cookie may delete its own attempt, but may not access any other attempt.
 
-The MVP will not add a recovery code. If the cookie is lost, the person cannot identify or delete the record directly; automatic expiry is the remaining deletion mechanism. Public-facing copy must state this limitation plainly before persistence begins. The final retention period and copy require privacy review before public launch.
+The MVP will not add a recovery code. If the cookie is lost, the person cannot identify or delete the record directly; automatic expiry is the remaining deletion mechanism. Public-facing copy must state this limitation plainly before persistence begins. The seven-day pilot retention period is approved; the final privacy wording still requires review before public launch.
 
 ### Retention
 
 Expiry is fixed from attempt creation rather than extended on activity. This avoids retaining an answer-by-answer activity trail merely to refresh retention.
 
-- Development default: seven days from creation.
-- Public value: provisional until privacy review.
+- Pilot retention: seven days from creation.
+- The fixed period is approved for the initial public pilot and must be reconsidered if the data collected or product use changes materially.
 - Expired attempts and their dependent records must be removed by a scheduled cleanup job.
 - Cleanup success and failure require operational visibility; configuring a schedule is not evidence that it continues to run.
 
@@ -102,8 +102,8 @@ Do not expose the writable guest assessment publicly while any row marked **Bloc
 | Cookie-authorized deletion is independently exercised end to end. | Blocked | A reviewer other than the implementer must complete and record the deletion exercise. | Yes |
 | Native rate limiting protects the first public write endpoint. | Ready | `ASSESSMENT_ATTEMPT_RATE_LIMITER` is configured and its fail-closed creation path is covered by tests. | No |
 | Scheduled expiry cleanup is deployed and monitored. | Blocked | The daily Worker schedule and structured logs are implemented and locally exercised; deploy them, verify a production invocation, and retain monitoring evidence. | Yes |
-| Cleanup failure notifications reach a responsible person. | Blocked | Configure and test a Cloudflare failed-invocation notification recipient. | Yes |
-| The pre-persistence notice, privacy wording, retention period, and contact details are approved. | Blocked | Complete privacy review and replace the placeholder contact address before deployment. | Yes |
+| Cleanup failure notifications reach a responsible person. | Blocked | `curiousphreak@gmail.com` is the approved recipient; configure and test the Cloudflare email notification after the Worker is deployed. | Yes |
+| The pre-persistence notice, privacy wording, retention period, and contact details are approved. | Blocked | `curiousphreak@gmail.com` and seven-day fixed retention are approved; complete the remaining privacy-wording review before deployment. | Yes |
 | Production cookie behavior, bindings, and absence of development bypasses are verified. | Blocked | `pnpm worker:check` validates the bundle; repeat the runtime checks against the deployed environment. | Yes |
 | Save failures, reload/resume behavior, keyboard operation, focus management, disabled states, and live announcements have proportionate coverage. | Ready | Vitest and cross-browser Playwright coverage exercise the critical questionnaire states and the single-resume contract. | No |
 
@@ -129,13 +129,13 @@ The active assessment version, questions, options, dimensions, and score weights
 
 Phase 8 schedules cleanup daily at 03:17 UTC. The scheduled Worker deletes expired guest sessions in one indexed PostgreSQL statement; database cascades remove their guest-owned attempts, answers, and results atomically. It emits structured `assessment_cleanup_completed` or `assessment_cleanup_failed` logs, and failures are rethrown so Cloudflare records a failed invocation. Workers Logs capture all cleanup events during the pilot. Run `pnpm worker:check` to validate the deployment configuration without deploying, and invoke `/cdn-cgi/handler/scheduled?format=json` against local Vite to exercise the scheduled handler.
 
-Public launch remains blocked until the placeholder contact details and privacy wording are approved, a Cloudflare failure notification recipient is configured, and cookie-authorized deletion is independently exercised end to end. Completing technical phase 8 does not itself approve deployment.
+Public launch remains blocked until the privacy wording is approved, a Cloudflare failure notification recipient is configured, and cookie-authorized deletion is independently exercised end to end. Completing technical phase 8, configuring the contact address, and approving seven-day retention do not themselves approve deployment.
 
 ## Deferred Decisions
 
 These decisions are intentionally postponed until evidence or a later phase makes them necessary:
 
-- The public retention period and final privacy wording.
+- The final privacy wording and whether later product changes require a different retention period.
 - Whether account creation is offered, when it is offered, and how a guest attempt is claimed safely.
 - How conflicting, expired, already-claimed, or concurrently active claim attempts behave.
 - The signal or threshold that justifies building durable accounts; an explicit product review may be used if no numeric threshold is defensible.
