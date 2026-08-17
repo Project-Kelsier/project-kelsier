@@ -94,7 +94,7 @@ Change the scoring algorithm identifier when arithmetic or interpretation change
 
 ### Public launch gate
 
-Do not expose the writable guest assessment publicly while any row marked **Blocked** remains unresolved. Update this table in place so launch readiness has one source of truth.
+The top-level `workers.dev` deployment may remain publicly reachable as staging. Do not present it as production or actively promote it as the public pilot while any row marked **Blocked** remains unresolved. Update this table in place so launch readiness has one source of truth.
 
 | Requirement | Status | Evidence or required action | Launch blocker? |
 | --- | --- | --- | --- |

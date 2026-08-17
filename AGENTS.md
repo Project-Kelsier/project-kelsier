@@ -175,7 +175,7 @@ The approved guest-first assessment boundaries and phased delivery plan live in 
 - The attempt is the authorization boundary for its answers and result. Assessment child rows deliberately derive ownership through the attempt instead of duplicating organisation or user ownership.
 - The initial response engine is explicitly single-select with required and optional questions. Ranking, multi-select, branching, and free text require later design and may require migrations.
 - The seeded questionnaire and dimension-mean output are demonstration content. Do not describe them as validated, predictive, clinical, diagnostic, or suitable for hiring decisions.
-- Do not expose writable guest assessment routes publicly until the launch gate in the decision document is satisfied.
+- The top-level `workers.dev` deployment may operate as publicly reachable staging. Do not present it as production or actively promote it as the public pilot until the launch gate in the decision document is satisfied.
 
 Default bias: start local, then extract when reuse or complexity justifies it.
 
