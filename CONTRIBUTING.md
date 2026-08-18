@@ -103,6 +103,7 @@ Before sharing logs, PR descriptions, screenshots, or generated docs, redact `DA
 
 - Prefer small PRs with a single focused change.
 - Release-relevant PRs must update both [`package.json`](./package.json) version and [`CHANGELOG.md`](./CHANGELOG.md). CI enforces this with `pnpm version:check`.
+- Maintainers can request an on-demand, review-only Claude pass by mentioning `@claude` in a pull request comment or review. Claude is not an automatic or required approver.
 - If you touch routing, add or update at least one relevant test.
 - If you change shared tooling or config, update [`README.md`](./README.md) and this file when the workflow changes.
 - If you change dependencies, package-manager config, or CI install behavior, also review [`docs/security-hardening.md`](./docs/security-hardening.md).

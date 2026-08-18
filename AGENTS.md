@@ -325,6 +325,12 @@ If you cannot run a check locally, say so explicitly in your handoff and explain
 - [`playwright.config.ts`](playwright.config.ts) starts Vite directly for Windows-friendly cleanup.
 - Preserve that behavior unless you have validated a replacement across local and CI execution.
 
+### GitHub Review Assistants
+
+- [`.github/workflows/claude.yml`](.github/workflows/claude.yml) provides on-demand, review-only Claude assistance for maintainers in pull request conversations. Invoke it by mentioning `@claude` in a pull request comment or review.
+- Claude review is intentionally not automatic because CodeRabbit already supplies automatic pull request review. Keep their responsibilities distinct before expanding either workflow.
+- Keep review-assistant actions pinned to reviewed full commit SHAs. Do not grant repository write access unless a separately reviewed workflow explicitly needs Claude to modify code.
+
 ### TypeScript Paths
 
 - `#/*` and `@/*` both resolve to `src/*`.
