@@ -4,7 +4,7 @@ All notable changes to Project Kelsier will be documented in this file.
 
 This project follows semantic versioning while it moves toward MVP. Versions below `1.0.0` may still include breaking product or API changes when they are called out here.
 
-## [0.3.4] - 2026-08-11
+## [0.3.4] - 2026-08-18
 
 ### Added
 
