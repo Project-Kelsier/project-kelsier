@@ -109,3 +109,5 @@ GitHub Actions runs the baseline checks on pushes to `main` and on pull requests
 - `pnpm build`
 - `pnpm build-storybook`
 - `pnpm test:e2e`
+
+CodeRabbit supplies automatic pull request review. Maintainers can request a separate, review-only Claude pass by mentioning `@claude` in a pull request comment or review; Claude is not an automatic or required approver.

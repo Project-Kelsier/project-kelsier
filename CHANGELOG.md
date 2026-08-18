@@ -4,6 +4,16 @@ All notable changes to Project Kelsier will be documented in this file.
 
 This project follows semantic versioning while it moves toward MVP. Versions below `1.0.0` may still include breaking product or API changes when they are called out here.
 
+## [0.3.3] - 2026-08-17
+
+### Added
+
+- Added an on-demand, review-only Claude GitHub workflow that maintainers can invoke with `@claude` in pull request conversations.
+
+### Security
+
+- Limited the Claude workflow to repository read access plus pull request and issue feedback, and pinned its GitHub Actions dependencies to reviewed commits.
+
 ## [0.3.2] - 2026-08-03
 
 ### Changed
