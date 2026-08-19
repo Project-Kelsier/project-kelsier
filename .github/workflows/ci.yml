@@ -45,6 +45,9 @@ jobs:
       - name: Audit package signatures
         run: pnpm audit signatures
 
+      - name: Audit known vulnerabilities
+        run: pnpm audit --audit-level high
+
       - name: Rebuild approved native tooling
         run: pnpm rebuild
 

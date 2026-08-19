@@ -4,6 +4,19 @@ All notable changes to Project Kelsier will be documented in this file.
 
 This project follows semantic versioning while it moves toward MVP. Versions below `1.0.0` may still include breaking product or API changes when they are called out here.
 
+## [0.3.4] - 2026-08-19
+
+### Changed
+
+- Updated policy-compatible TanStack, Cloudflare, Storybook, Vite, Biome, TSX, Lucide, and JSDOM dependencies, keeping the TanStack packages exactly pinned and the Node type definitions aligned with the Node 24 runtime target.
+- Updated the pinned package manager from pnpm 11.18.0 to 11.22.0 for its supply-chain, lockfile-update, and package-manager-switching fixes.
+- Updated the Biome configuration schema reference to match Biome 2.5.9.
+
+### Security
+
+- Resolved the open Nano ID, JS-YAML, and Undici advisories reported by pnpm and Dependabot, and removed the obsolete JS-YAML override after the dependency graph selected the patched release naturally.
+- Hardened dependency resolution with strict 24-hour release-age enforcement, fail-closed publication metadata, trust-downgrade rejection, transitive exotic-source blocking, and a high-severity advisory check in CI. Added one exact, documented trust-policy exception for the official `semver@6.3.1` security patch required transitively by Babel.
+
 ## [0.3.3] - 2026-08-17
 
 ### Added

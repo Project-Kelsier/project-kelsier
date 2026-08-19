@@ -282,7 +282,8 @@ If you cannot run a check locally, say so explicitly in your handoff and explain
 
 - `package.json` pins the project package manager version.
 - [`.nvmrc`](.nvmrc) mirrors the Node `24.x` runtime target for local version managers.
-- [`pnpm-workspace.yaml`](pnpm-workspace.yaml) owns pnpm 11 dependency build-script approvals and install policy through `allowBuilds`, `engineStrict`, and `strictDepBuilds`.
+- [`pnpm-workspace.yaml`](pnpm-workspace.yaml) owns pnpm 11 dependency build-script approvals and install policy through `allowBuilds`, strict engine/build enforcement, a strict 24-hour release-age gate, trust-downgrade rejection, and transitive exotic-source blocking.
+- Keep trust-policy exceptions exact, evidence-backed, and documented next to the package selector. Do not replace a narrow historical-metadata exception with a broad age-based trust bypass.
 - If a future supply-chain incident needs temporary pnpm overrides, put them in [`pnpm-workspace.yaml`](pnpm-workspace.yaml), document the reason, and remove them once clean upstream versions are available.
 - Do not add `pnpm approve-builds` to CI. Use it locally only as a review helper, then commit the explicit `allowBuilds` decision.
 

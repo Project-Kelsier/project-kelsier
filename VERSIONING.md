@@ -26,6 +26,7 @@ Before tagging a release:
 ```bash
 pnpm install --frozen-lockfile --ignore-scripts
 pnpm audit signatures
+pnpm audit --audit-level high
 pnpm rebuild
 pnpm version:check
 pnpm check
@@ -33,6 +34,7 @@ pnpm typecheck
 pnpm test
 pnpm coverage
 pnpm build
+pnpm build-storybook
 pnpm test:e2e
 ```
 

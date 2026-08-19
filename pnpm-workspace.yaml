@@ -10,10 +10,19 @@ engineStrict: true
 
 strictDepBuilds: true
 
+# Fail closed on immature, unverifiable, or trust-downgraded dependency releases.
+minimumReleaseAge: 1440
+minimumReleaseAgeStrict: true
+minimumReleaseAgeIgnoreMissingTime: false
+trustPolicy: no-downgrade
+# Babel still requires this official npm/node-semver security patch. It has a
+# valid registry signature but lacks the legacy trust metadata from 6.3.0.
+trustPolicyExclude:
+  - semver@6.3.1
+blockExoticSubdeps: true
+
 # Temporary overrides for transitive CVEs.
 # Remove each entry once the dependency graph resolves a patched version without it:
 #   @esbuild-kit/core-utils>esbuild 0.25.12 — GHSA-67mh-4wv8-2f99; parent: drizzle-kit → @esbuild-kit/esm-loader
-#   xmlbuilder2>js-yaml 4.3.0 — GHSA-52cp-r559-cp3m; parent: TanStack Start → xmlbuilder2
 overrides:
   "@esbuild-kit/core-utils>esbuild": "0.25.12"
-  "xmlbuilder2>js-yaml": "4.3.0"
