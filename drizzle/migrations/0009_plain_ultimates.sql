@@ -1,0 +1,1 @@
+ALTER TABLE "assessment_results" ADD CONSTRAINT "assessment_results_attempt_version_fk" FOREIGN KEY ("attempt_id","assessment_version_id") REFERENCES "public"."assessment_attempts"("id","assessment_version_id") ON DELETE cascade ON UPDATE no action;

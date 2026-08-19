@@ -4,6 +4,31 @@ All notable changes to Project Kelsier will be documented in this file.
 
 This project follows semantic versioning while it moves toward MVP. Versions below `1.0.0` may still include breaking product or API changes when they are called out here.
 
+## [0.4.0] - 2026-08-19
+
+### Added
+
+- Documented the approved guest-first assessment MVP boundaries, dependency policy, phased delivery, and public-launch gate.
+- Added a dedicated PostgreSQL CI job that applies migrations and verifies the development seed is idempotent.
+- Added stable same-organisation and cross-organisation development fixtures for future ownership-isolation tests.
+- Added pseudonymous guest-session issuance, persisted assessment-attempt creation, and cookie-authorized deletion.
+- Added a pre-persistence privacy notice and explicit deletion confirmation to the questionnaire flow.
+
+### Changed
+
+- Replaced organisation-owned assessment attempts with personal guest-session or user ownership enforced by an exactly-one-owner database constraint.
+- Normalized assessment answers and results to derive authorization through their owning attempt, and updated service helpers to enforce user ownership through that boundary.
+- Added explicit question requiredness, fixed guest-session expiry metadata, and result scoring provenance with database-enforced assessment-version consistency.
+- Routed the Cloudflare Worker database client through a cache-disabled Hyperdrive binding while preserving direct local PostgreSQL access for Node tooling.
+- Replaced the landing-page questionnaire constant with the active PostgreSQL-backed assessment version, ordered questions, and ordered options through a TanStack Start server function.
+- Added database-backed browser-test infrastructure and explicit optional-question progression behavior.
+- Made operational seed-script imports explicit for Node 24 ESM compatibility with the upgraded TSX runtime.
+
+### Security
+
+- Protected guest attempt creation with a native Cloudflare Workers rate limiter keyed by a transient hash rather than stored request metadata.
+- Store only a SHA-256 hash of each high-entropy guest token while keeping the raw credential in an HttpOnly, SameSite cookie that is Secure outside local development.
+
 ## [0.3.4] - 2026-08-19
 
 ### Changed
@@ -14,7 +39,7 @@ This project follows semantic versioning while it moves toward MVP. Versions bel
 
 ### Security
 
-- Resolved the open Nano ID, JS-YAML, and Undici advisories reported by pnpm and Dependabot, and removed the obsolete JS-YAML override after the dependency graph selected the patched release naturally.
+- Resolved the open Nano ID, JS-YAML, and Undici advisories through the policy-compatible dependency graph and removed their obsolete transitive overrides.
 - Hardened dependency resolution with strict 24-hour release-age enforcement, fail-closed publication metadata, trust-downgrade rejection, transitive exotic-source blocking, and a high-severity advisory check in CI. Added one exact, documented trust-policy exception for the official `semver@6.3.1` security patch required transitively by Babel.
 
 ## [0.3.3] - 2026-08-17

@@ -7,7 +7,7 @@ export type DatabaseEnv = {
 };
 
 export type WorkerDatabaseEnv = {
-	DATABASE_URL?: string;
+	HYPERDRIVE?: Pick<Hyperdrive, "connectionString">;
 };
 
 export function shouldUseHyperdrive(value: DatabaseEnv["USE_HYPERDRIVE"]) {
@@ -32,11 +32,11 @@ export function getConnectionString(env: DatabaseEnv) {
 }
 
 export function getWorkerConnectionString(env: WorkerDatabaseEnv) {
-	if (!env.DATABASE_URL) {
-		throw new Error("DATABASE_URL is required.");
+	if (!env.HYPERDRIVE?.connectionString) {
+		throw new Error("The HYPERDRIVE binding is required.");
 	}
 
-	return env.DATABASE_URL;
+	return env.HYPERDRIVE.connectionString;
 }
 
 export type DbClient = ReturnType<typeof getWorkerDb>;

@@ -1,5 +1,7 @@
 import { sql } from "drizzle-orm";
 import {
+	boolean,
+	check,
 	doublePrecision,
 	foreignKey,
 	index,
@@ -9,11 +11,10 @@ import {
 	pgTable,
 	text,
 	timestamp,
+	unique,
 	uniqueIndex,
 	uuid,
 } from "drizzle-orm/pg-core";
-import { organisations } from "./organisations";
-import { teams } from "./teams";
 import { users } from "./users";
 
 export const assessmentVersionStatus = pgEnum("assessment_version_status", [
@@ -53,6 +54,7 @@ export const assessmentQuestions = pgTable(
 		dimension: text("dimension").notNull(),
 		sortOrder: integer("sort_order").notNull(),
 		prompt: text("prompt").notNull(),
+		required: boolean("required").notNull().default(true),
 		createdAt: timestamp("created_at", { mode: "date", withTimezone: true })
 			.notNull()
 			.defaultNow(),
@@ -100,17 +102,34 @@ export const assessmentOptions = pgTable(
 	],
 );
 
+export const guestSessions = pgTable(
+	"guest_sessions",
+	{
+		id: uuid("id").primaryKey().default(sql`gen_random_uuid()`),
+		tokenHash: text("token_hash").notNull(),
+		expiresAt: timestamp("expires_at", {
+			mode: "date",
+			withTimezone: true,
+		}).notNull(),
+		createdAt: timestamp("created_at", { mode: "date", withTimezone: true })
+			.notNull()
+			.defaultNow(),
+	},
+	(table) => [
+		uniqueIndex("guest_sessions_token_hash_unique").on(table.tokenHash),
+		index("guest_sessions_expires_at_idx").on(table.expiresAt),
+	],
+);
+
 export const assessmentAttempts = pgTable(
 	"assessment_attempts",
 	{
 		id: uuid("id").primaryKey().default(sql`gen_random_uuid()`),
-		organisationId: uuid("organisation_id")
-			.notNull()
-			.references(() => organisations.id, { onDelete: "cascade" }),
-		teamId: uuid("team_id"),
-		userId: uuid("user_id")
-			.notNull()
-			.references(() => users.id, { onDelete: "cascade" }),
+		guestSessionId: uuid("guest_session_id").references(
+			() => guestSessions.id,
+			{ onDelete: "cascade" },
+		),
+		userId: uuid("user_id").references(() => users.id, { onDelete: "cascade" }),
 		assessmentVersionId: uuid("assessment_version_id")
 			.notNull()
 			.references(() => assessmentVersions.id, { onDelete: "restrict" }),
@@ -121,6 +140,16 @@ export const assessmentAttempts = pgTable(
 			mode: "date",
 			withTimezone: true,
 		}),
+		resumedAt: timestamp("resumed_at", {
+			mode: "date",
+			withTimezone: true,
+		}),
+		continuationTokenHash: text("continuation_token_hash")
+			.notNull()
+			.default(sql`encode(digest(gen_random_uuid()::text, 'sha256'), 'hex')`),
+		currentQuestionIndex: integer("current_question_index")
+			.notNull()
+			.default(0),
 		createdAt: timestamp("created_at", { mode: "date", withTimezone: true })
 			.notNull()
 			.defaultNow(),
@@ -129,29 +158,19 @@ export const assessmentAttempts = pgTable(
 			.defaultNow(),
 	},
 	(table) => [
-		uniqueIndex("assessment_attempts_id_organisation_id_unique").on(
-			table.id,
-			table.organisationId,
-		),
-		index("assessment_attempts_organisation_id_idx").on(table.organisationId),
-		index("assessment_attempts_organisation_id_user_id_idx").on(
-			table.organisationId,
-			table.userId,
-		),
-		index("assessment_attempts_organisation_id_team_id_idx").on(
-			table.organisationId,
-			table.teamId,
-		),
-		index("assessment_attempts_team_id_idx").on(table.teamId),
+		index("assessment_attempts_guest_session_id_idx").on(table.guestSessionId),
 		index("assessment_attempts_user_id_idx").on(table.userId),
 		index("assessment_attempts_assessment_version_id_idx").on(
 			table.assessmentVersionId,
 		),
-		foreignKey({
-			columns: [table.teamId, table.organisationId],
-			foreignColumns: [teams.id, teams.organisationId],
-			name: "assessment_attempts_team_organisation_fk",
-		}).onDelete("restrict"),
+		unique("assessment_attempts_id_assessment_version_id_unique").on(
+			table.id,
+			table.assessmentVersionId,
+		),
+		check(
+			"assessment_attempts_exactly_one_owner_check",
+			sql`(${table.guestSessionId} is null) <> (${table.userId} is null)`,
+		),
 	],
 );
 
@@ -159,9 +178,6 @@ export const assessmentAnswers = pgTable(
 	"assessment_answers",
 	{
 		id: uuid("id").primaryKey().default(sql`gen_random_uuid()`),
-		organisationId: uuid("organisation_id")
-			.notNull()
-			.references(() => organisations.id, { onDelete: "cascade" }),
 		attemptId: uuid("attempt_id")
 			.notNull()
 			.references(() => assessmentAttempts.id, { onDelete: "cascade" }),
@@ -180,7 +196,6 @@ export const assessmentAnswers = pgTable(
 			table.attemptId,
 			table.questionId,
 		),
-		index("assessment_answers_organisation_id_idx").on(table.organisationId),
 		index("assessment_answers_attempt_id_idx").on(table.attemptId),
 		index("assessment_answers_question_id_idx").on(table.questionId),
 		index("assessment_answers_option_id_idx").on(table.optionId),
@@ -188,14 +203,6 @@ export const assessmentAnswers = pgTable(
 			table.optionId,
 			table.questionId,
 		),
-		foreignKey({
-			columns: [table.attemptId, table.organisationId],
-			foreignColumns: [
-				assessmentAttempts.id,
-				assessmentAttempts.organisationId,
-			],
-			name: "assessment_answers_attempt_organisation_fk",
-		}).onDelete("cascade"),
 		foreignKey({
 			columns: [table.optionId, table.questionId],
 			foreignColumns: [assessmentOptions.id, assessmentOptions.questionId],
@@ -208,19 +215,17 @@ export const assessmentResults = pgTable(
 	"assessment_results",
 	{
 		id: uuid("id").primaryKey().default(sql`gen_random_uuid()`),
-		organisationId: uuid("organisation_id")
-			.notNull()
-			.references(() => organisations.id, { onDelete: "cascade" }),
-		attemptId: uuid("attempt_id")
-			.notNull()
-			.references(() => assessmentAttempts.id, { onDelete: "cascade" }),
-		userId: uuid("user_id")
-			.notNull()
-			.references(() => users.id, { onDelete: "cascade" }),
+		attemptId: uuid("attempt_id").notNull(),
 		assessmentVersionId: uuid("assessment_version_id")
 			.notNull()
 			.references(() => assessmentVersions.id, { onDelete: "restrict" }),
 		traitScores: jsonb("trait_scores").notNull().default({}),
+		contributingQuestionCounts: jsonb("contributing_question_counts")
+			.notNull()
+			.default({}),
+		scoringAlgorithmVersion: text("scoring_algorithm_version")
+			.notNull()
+			.default("dimension-mean-v1"),
 		confidence: doublePrecision("confidence"),
 		createdAt: timestamp("created_at", { mode: "date", withTimezone: true })
 			.notNull()
@@ -231,22 +236,16 @@ export const assessmentResults = pgTable(
 	},
 	(table) => [
 		uniqueIndex("assessment_results_attempt_id_unique").on(table.attemptId),
-		index("assessment_results_organisation_id_idx").on(table.organisationId),
-		index("assessment_results_organisation_id_attempt_id_idx").on(
-			table.organisationId,
-			table.attemptId,
-		),
-		index("assessment_results_user_id_idx").on(table.userId),
 		index("assessment_results_assessment_version_id_idx").on(
 			table.assessmentVersionId,
 		),
 		foreignKey({
-			columns: [table.attemptId, table.organisationId],
+			columns: [table.attemptId, table.assessmentVersionId],
 			foreignColumns: [
 				assessmentAttempts.id,
-				assessmentAttempts.organisationId,
+				assessmentAttempts.assessmentVersionId,
 			],
-			name: "assessment_results_attempt_organisation_fk",
+			name: "assessment_results_attempt_version_fk",
 		}).onDelete("cascade"),
 	],
 );
@@ -257,6 +256,8 @@ export type AssessmentQuestion = typeof assessmentQuestions.$inferSelect;
 export type NewAssessmentQuestion = typeof assessmentQuestions.$inferInsert;
 export type AssessmentOption = typeof assessmentOptions.$inferSelect;
 export type NewAssessmentOption = typeof assessmentOptions.$inferInsert;
+export type GuestSession = typeof guestSessions.$inferSelect;
+export type NewGuestSession = typeof guestSessions.$inferInsert;
 export type AssessmentAttempt = typeof assessmentAttempts.$inferSelect;
 export type NewAssessmentAttempt = typeof assessmentAttempts.$inferInsert;
 export type AssessmentAnswer = typeof assessmentAnswers.$inferSelect;

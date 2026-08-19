@@ -1,6 +1,6 @@
 {
 	"name": "project-kelsier",
-	"version": "0.3.4",
+	"version": "0.4.0",
 	"private": true,
 	"type": "module",
 	"packageManager": "pnpm@11.22.0+sha512.1ff870c4c6133dfd88fb2afc46dd13d47f09c9794b438c6fdb47ca98caf3bc16381ee0be93a091b8e3824cf01f889f46d7d9e20910fb0be1ab0fb5baa80dd621",
@@ -11,11 +11,13 @@
 		"#/*": "./src/*"
 	},
 	"scripts": {
-		"dev": "vite dev --port 3000",
+		"dev": "node scripts/prepare-dev.mjs && vite dev --port 3000",
+		"dev:app": "vite dev --port 3000",
 		"build": "vite build",
 		"preview": "pnpm build && vite preview",
 		"deploy": "pnpm build && wrangler deploy",
 		"cf-typegen": "wrangler types",
+		"worker:check": "wrangler deploy --dry-run",
 		"lint": "biome lint .",
 		"format": "biome format --write .",
 		"check": "biome check .",
@@ -33,7 +35,6 @@
 		"ci": "pnpm check && pnpm typecheck && pnpm test && pnpm build && pnpm build-storybook"
 	},
 	"dependencies": {
-		"@neondatabase/serverless": "^1.1.0",
 		"@tailwindcss/vite": "^4.3.3",
 		"@tanstack/react-devtools": "0.10.10",
 		"@tanstack/react-router": "1.170.29",

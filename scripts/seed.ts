@@ -1,5 +1,5 @@
 import "dotenv/config";
-import { createDbConnection } from "#/db/client.node";
+import { createDbConnection } from "#/db/client.node.ts";
 import {
 	assessmentOptions,
 	assessmentQuestions,
@@ -9,65 +9,80 @@ import {
 	teamMembers,
 	teams,
 	users,
-} from "#/db/schema";
-import { assertSeedTargetIsAllowed, getSeedDatabaseUrl } from "./seed-config";
+} from "#/db/schema/index.ts";
+import {
+	assertSeedTargetIsAllowed,
+	getSeedDatabaseUrl,
+} from "./seed-config.ts";
 
 const databaseUrl = getSeedDatabaseUrl(process.env);
 assertSeedTargetIsAllowed(databaseUrl, process.env);
 
 const { db, queryClient } = createDbConnection(databaseUrl);
 
-// Dev-only fake Neon Auth user ID. Neon Auth owns real identity records.
-const DEMO_AUTH_USER_ID = "00000000-0000-4000-8000-000000000001";
+// Dev-only fake Neon Auth user IDs. Neon Auth owns real identity records.
+const DEMO_OWNER_AUTH_USER_ID = "00000000-0000-4000-8000-000000000001";
+const DEMO_COLLEAGUE_AUTH_USER_ID = "00000000-0000-4000-8000-000000000002";
+const SECOND_ORG_OWNER_AUTH_USER_ID = "00000000-0000-4000-8000-000000000003";
 
 const questions = [
 	{
 		dimension: "clarity",
+		required: true,
 		sortOrder: 1,
 		prompt: "I understand what my team needs from me this week.",
 	},
 	{
 		dimension: "candour",
+		required: true,
 		sortOrder: 2,
 		prompt: "Important concerns are raised directly and respectfully.",
 	},
 	{
 		dimension: "listening",
+		required: true,
 		sortOrder: 3,
 		prompt: "People adjust their views when they hear useful new information.",
 	},
 	{
 		dimension: "trust",
+		required: true,
 		sortOrder: 4,
 		prompt: "I can rely on teammates to follow through on commitments.",
 	},
 	{
 		dimension: "conflict",
+		required: true,
 		sortOrder: 5,
 		prompt: "Disagreements help the team make better decisions.",
 	},
 	{
 		dimension: "decision_making",
+		required: true,
 		sortOrder: 6,
 		prompt: "Decision owners and next steps are clear after discussions.",
 	},
 	{
 		dimension: "energy",
+		required: true,
 		sortOrder: 7,
 		prompt: "The team's communication leaves me with energy to do good work.",
 	},
 	{
 		dimension: "support",
+		required: true,
 		sortOrder: 8,
 		prompt: "When someone is blocked, help arrives early enough to matter.",
 	},
 	{
 		dimension: "accountability",
+		required: true,
 		sortOrder: 9,
 		prompt: "The team notices and resolves missed commitments constructively.",
 	},
 	{
 		dimension: "adaptability",
+		required: false,
 		sortOrder: 10,
 		prompt:
 			"The team changes how it communicates when the current pattern fails.",
@@ -88,7 +103,7 @@ async function seed() {
 	const [demoUser] = await db
 		.insert(users)
 		.values({
-			authUserId: DEMO_AUTH_USER_ID,
+			authUserId: DEMO_OWNER_AUTH_USER_ID,
 		})
 		.onConflictDoUpdate({
 			target: users.authUserId,
@@ -100,6 +115,40 @@ async function seed() {
 
 	if (!demoUser) {
 		throw new Error("Failed to seed demo user.");
+	}
+
+	const [demoColleague] = await db
+		.insert(users)
+		.values({
+			authUserId: DEMO_COLLEAGUE_AUTH_USER_ID,
+		})
+		.onConflictDoUpdate({
+			target: users.authUserId,
+			set: {
+				updatedAt,
+			},
+		})
+		.returning({ id: users.id });
+
+	if (!demoColleague) {
+		throw new Error("Failed to seed demo colleague.");
+	}
+
+	const [secondOrganisationOwner] = await db
+		.insert(users)
+		.values({
+			authUserId: SECOND_ORG_OWNER_AUTH_USER_ID,
+		})
+		.onConflictDoUpdate({
+			target: users.authUserId,
+			set: {
+				updatedAt,
+			},
+		})
+		.returning({ id: users.id });
+
+	if (!secondOrganisationOwner) {
+		throw new Error("Failed to seed second organisation owner.");
 	}
 
 	const [demoOrganisation] = await db
@@ -128,6 +177,59 @@ async function seed() {
 		.values({
 			organisationId: demoOrganisation.id,
 			userId: demoUser.id,
+			role: "owner",
+		})
+		.onConflictDoUpdate({
+			target: [organisationMembers.organisationId, organisationMembers.userId],
+			set: {
+				role: "owner",
+				deletedAt: null,
+				updatedAt,
+			},
+		});
+
+	await db
+		.insert(organisationMembers)
+		.values({
+			organisationId: demoOrganisation.id,
+			userId: demoColleague.id,
+			role: "member",
+		})
+		.onConflictDoUpdate({
+			target: [organisationMembers.organisationId, organisationMembers.userId],
+			set: {
+				role: "member",
+				deletedAt: null,
+				updatedAt,
+			},
+		});
+
+	const [secondOrganisation] = await db
+		.insert(organisations)
+		.values({
+			slug: "second-organisation",
+			name: "Second Organisation",
+		})
+		.onConflictDoUpdate({
+			target: organisations.slug,
+			set: {
+				name: "Second Organisation",
+				status: "active",
+				deletedAt: null,
+				updatedAt,
+			},
+		})
+		.returning({ id: organisations.id });
+
+	if (!secondOrganisation) {
+		throw new Error("Failed to seed second organisation.");
+	}
+
+	await db
+		.insert(organisationMembers)
+		.values({
+			organisationId: secondOrganisation.id,
+			userId: secondOrganisationOwner.id,
 			role: "owner",
 		})
 		.onConflictDoUpdate({
@@ -179,6 +281,24 @@ async function seed() {
 			},
 		});
 
+	await db
+		.insert(teamMembers)
+		.values({
+			organisationId: demoOrganisation.id,
+			teamId: demoTeam.id,
+			userId: demoColleague.id,
+			role: "member",
+		})
+		.onConflictDoUpdate({
+			target: [teamMembers.teamId, teamMembers.userId],
+			set: {
+				organisationId: demoOrganisation.id,
+				role: "member",
+				deletedAt: null,
+				updatedAt,
+			},
+		});
+
 	const [assessmentVersion] = await db
 		.insert(assessmentVersions)
 		.values({
@@ -210,6 +330,7 @@ async function seed() {
 			.values({
 				versionId: assessmentVersion.id,
 				dimension: question.dimension,
+				required: question.required,
 				sortOrder: question.sortOrder,
 				prompt: question.prompt,
 			})
@@ -218,6 +339,7 @@ async function seed() {
 				set: {
 					dimension: question.dimension,
 					prompt: question.prompt,
+					required: question.required,
 					updatedAt,
 				},
 			})
