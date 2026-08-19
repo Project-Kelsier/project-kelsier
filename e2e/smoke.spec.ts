@@ -59,8 +59,10 @@ test("home page renders the Kelsier hero and interactive questionnaire", async (
 		await expect(
 			page.getByText(`Question ${questionNumber} of 10`),
 		).toBeVisible();
+		await expect(page.locator(".k-q-card .k-q-title")).toBeFocused();
 		const firstOption = page.getByRole("radio").first();
 		await firstOption.focus();
+		await expect(firstOption).toBeFocused();
 		await firstOption.press("Space");
 		await expect(firstOption).toBeChecked();
 		await page

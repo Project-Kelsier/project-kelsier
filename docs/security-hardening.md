@@ -9,8 +9,10 @@ The repository should preserve these defaults unless a reviewed change explicitl
 - Pin the project package manager in `package.json` `packageManager`.
 - Use `pnpm install --frozen-lockfile --ignore-scripts` in CI.
 - Run `pnpm audit signatures` after dependency installation.
+- Run `pnpm audit --audit-level high` in CI to reject known high- and critical-severity vulnerabilities.
 - Keep dependency build-script approvals in `pnpm-workspace.yaml` `allowBuilds`.
 - Keep `engineStrict` and `strictDepBuilds` in `pnpm-workspace.yaml`.
+- Keep the strict 24-hour release-age gate, fail-closed publication metadata, trust-downgrade rejection, and transitive exotic-source blocking in `pnpm-workspace.yaml`.
 - Pin direct `@tanstack/*` dependencies to exact versions until maintainers intentionally relax that policy.
 - Pin third-party GitHub Actions to full commit SHAs.
 - Keep top-level GitHub Actions permissions minimal, usually `contents: read`.
@@ -29,7 +31,7 @@ Project Kelsier uses pnpm through the `packageManager` field in `package.json`. 
 - Regenerate `pnpm-lock.yaml` only when required.
 - Run the validation checklist in this document.
 
-pnpm v11 reads workspace install policy from `pnpm-workspace.yaml`, not from `package.json#pnpm` or non-registry `.npmrc` settings. Keep `allowBuilds`, `engineStrict`, and `strictDepBuilds` there.
+pnpm v11 reads workspace install policy from `pnpm-workspace.yaml`, not from `package.json#pnpm` or non-registry `.npmrc` settings. Keep build approvals, strict engine/build enforcement, release-age controls, trust policy, exotic-source blocking, and temporary overrides there.
 
 ### Install Scripts
 
@@ -44,6 +46,12 @@ CI runs `pnpm audit signatures` after install. This verifies registry ECDSA sign
 Signature auditing helps detect tampered package metadata or tarballs that do not match registry provenance. It does not replace vulnerability scanning, exact version pins, lockfile review, install-script restrictions, or maintainer judgment.
 
 If a package registry does not publish signing keys, pnpm may skip signature verification for packages from that registry. Document skipped registries before treating the audit result as equivalent to a fully signed dependency graph.
+
+### Vulnerability Audit
+
+CI runs `pnpm audit --audit-level high` independently of signature verification. Signatures establish package provenance and integrity; the vulnerability audit checks the resolved graph against known advisories. Neither check replaces the other.
+
+Dependency maintenance should also inspect lower-severity findings locally. If a compatible fix does not exist, document the residual risk and upstream blocker instead of forcing an incompatible transitive major version.
 
 ### Temporary Overrides
 
@@ -68,11 +76,14 @@ If pnpm rejects an update because the release is inside the cooldown window, fir
 
 When fixing advisories through `pnpm-workspace.yaml` overrides, prefer the narrowest compatible override and verify the parent package still works. Some packages import internal files from dependencies, so forcing a new major version can pass audit while breaking runtime or tests. If no compatible patched version exists, document the residual advisory and upstream blocker instead of hiding it with an unsafe override.
 
-### Resolved Sharp Advisory
+### Current Reviewed Exceptions
 
-GHSA-f88m-g3jw-g9cj previously remained in development tooling because Miniflare pinned Sharp 0.34.5. The current dependency graph resolves Miniflare with Sharp 0.35.2, so that residual advisory and its compatibility exception no longer apply. Do not add a Sharp override unless a future reviewed dependency graph creates a concrete need.
+As of 2026-08-19, `pnpm audit` reports no known vulnerabilities. Two narrow dependency-policy exceptions remain in `pnpm-workspace.yaml`:
 
-The workspace also carries narrow patch-level overrides for current transitive advisories where the parent dependency graph has not yet adopted the patched release. Their advisory IDs, exact versions, and parent paths are documented beside the overrides in `pnpm-workspace.yaml`. Remove each override as soon as normal parent resolution selects the same or a newer compatible patched version.
+- `@esbuild-kit/core-utils>esbuild` is overridden to the compatible patched `0.25.12` release for GHSA-67mh-4wv8-2f99 because Drizzle Kit's deprecated loader chain still requests an older Esbuild range. Remove the override once that parent chain resolves a patched version naturally.
+- `semver@6.3.1` is excluded from trust-downgrade comparison because Babel requires this official security-fixed 6.x release. The registry artifact has a valid signature, but it lacks the legacy trust metadata present on `6.3.0`. Keep this exception exact and remove it once Babel no longer resolves the legacy line.
+
+The formerly documented Sharp advisory is resolved by the current Cloudflare dependency graph and no longer requires an exception.
 
 For dependency maintenance PRs, run:
 
@@ -248,7 +259,7 @@ Rotate npm, GitHub, Cloudflare, database, SSH, and cloud credentials that were r
 
 GHSA-g7cv-rxg3-hmpx / CVE-2026-45321 was a malicious npm package publication incident affecting parts of the TanStack ecosystem. Affected package versions executed install-time malware through an injected optional dependency on `@tanstack/setup` from a GitHub commit, plus a `prepare` lifecycle script.
 
-The active remediation for this repo is complete: use clean current TanStack versions, keep exact direct pins, avoid long-lived transitive overrides, preserve `--ignore-scripts` in CI, and keep `pnpm audit signatures` in the install path.
+The active remediation for this repo is complete: use clean current TanStack versions, keep exact direct pins, avoid long-lived transitive overrides, preserve `--ignore-scripts` in CI, and keep both signature and known-vulnerability audits in the install path.
 
 Historical indicators worth checking during forensic review:
 

@@ -114,7 +114,7 @@ pnpm db:seed          # Seed the local database
 
 pnpm version:show     # Print the current app version
 pnpm version:check    # Verify version + CHANGELOG metadata (CI gate)
-pnpm ci               # check + typecheck + test + app and Storybook builds
+pnpm run ci           # check + typecheck + test + app and Storybook builds
 ```
 
 Non-obvious safety behaviour:
@@ -123,6 +123,7 @@ Non-obvious safety behaviour:
 - `pnpm db:seed` refuses non-local databases unless `ALLOW_SEED=true` is set explicitly.
 - `pnpm db:generate` writes generated SQL under [`drizzle/migrations`](drizzle/migrations) — review it before applying anywhere, and never apply unreviewed to hosted Neon.
 - `pnpm deploy` publishes to Cloudflare. Prefer `pnpm preview` and `pnpm worker:check` first, and get explicit approval before running it.
+- Dependency installation enforces a strict 24-hour release-age gate, fail-closed publication metadata, trust-downgrade rejection, and transitive exotic-source blocking. Investigate policy failures; do not weaken these controls merely to make an install pass.
 
 Local default: `postgres://kelsier:kelsier@localhost:55432/kelsier_dev`.
 

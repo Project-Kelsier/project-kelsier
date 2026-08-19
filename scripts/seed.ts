@@ -1,5 +1,5 @@
 import "dotenv/config";
-import { createDbConnection } from "#/db/client.node";
+import { createDbConnection } from "#/db/client.node.ts";
 import {
 	assessmentOptions,
 	assessmentQuestions,
@@ -9,8 +9,11 @@ import {
 	teamMembers,
 	teams,
 	users,
-} from "#/db/schema";
-import { assertSeedTargetIsAllowed, getSeedDatabaseUrl } from "./seed-config";
+} from "#/db/schema/index.ts";
+import {
+	assertSeedTargetIsAllowed,
+	getSeedDatabaseUrl,
+} from "./seed-config.ts";
 
 const databaseUrl = getSeedDatabaseUrl(process.env);
 assertSeedTargetIsAllowed(databaseUrl, process.env);
