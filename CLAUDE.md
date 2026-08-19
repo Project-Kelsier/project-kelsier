@@ -24,7 +24,7 @@ pnpm db:generate  # Generate Drizzle migration from schema changes
 pnpm db:migrate   # Apply migrations to the local database
 pnpm db:seed      # Seed local database with demo data
 
-pnpm ci           # Full local CI: check + typecheck + test + build
+pnpm run ci       # Full local CI: check + typecheck + test + build
 ```
 
 ## Local database
@@ -103,6 +103,8 @@ Direct `@tanstack/*` dependencies are pinned to **exact versions** (no `^` or `~
 Dependency work is not complete when `pnpm install` succeeds. Before editing dependency files, read `AGENTS.md`, this file, `CONTRIBUTING.md`, and `docs/security-hardening.md`. Follow the strictest applicable instruction.
 
 When pnpm blocks a version because of release-age policy, choose the newest policy-compliant version unless the user explicitly approves a security exception. Do not commit `minimumReleaseAgeExclude` or other cooldown bypasses as repository configuration.
+
+The workspace also fails closed when registry publication times are missing, rejects trust downgrades, and blocks exotic transitive dependency sources. Do not weaken these policies to make an install pass; investigate the package and request an explicit reviewed exception when necessary.
 
 Prefer direct package upgrades over transitive overrides. If an override is necessary, put it in `pnpm-workspace.yaml`, document the advisory and removal condition nearby, and use the narrowest compatible version. Do not use broad `>=` overrides when an exact compatible version is safer. After every override, run the full dependency-change quality gate and verify that tests still execute.
 
