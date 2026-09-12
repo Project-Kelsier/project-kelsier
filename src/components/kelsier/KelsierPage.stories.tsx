@@ -2,10 +2,18 @@ import type { Meta, StoryObj } from "@storybook/react-vite";
 import { userEvent, within } from "storybook/test";
 import { KelsierStoryRouter } from "../../../.storybook/KelsierStoryRouter";
 import { KelsierPage } from "./KelsierPage";
+import {
+	assessmentPersistenceActionsFixture,
+	assessmentQuestionnaireFixture,
+} from "./KelsierPage.fixture";
 
 const meta = {
 	title: "Kelsier/Page",
 	component: KelsierPage,
+	args: {
+		questionnaire: assessmentQuestionnaireFixture,
+		persistenceActions: assessmentPersistenceActionsFixture,
+	},
 	parameters: {
 		layout: "fullscreen",
 	},

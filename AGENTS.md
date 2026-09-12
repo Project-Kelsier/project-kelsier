@@ -154,7 +154,7 @@ Every user-facing change should maintain or improve baseline accessibility.
 
 ## State And Data
 
-The current UI is mostly static, but the repository now includes a production-shaped Drizzle/PostgreSQL foundation.
+The UI combines the authored Kelsier landing experience with an interactive, PostgreSQL-backed guest assessment flow. The repository includes a production-shaped Drizzle/PostgreSQL foundation.
 
 - Keep route data fetching close to the route when the data is route-owned.
 - Move shared transformation logic into `src/lib` rather than embedding it in JSX.
@@ -166,6 +166,18 @@ The current UI is mostly static, but the repository now includes a production-sh
 - When a table stores a duplicated `organisationId` for tenant-scoped lookup speed and also references a parent row, enforce that tenant relationship at the database level with composite unique keys/foreign keys where practical. Do not rely only on service-layer predicates to prevent cross-tenant rows.
 - Keep external auth decoupled from domain users. `users.authUserId` is the bridge to managed auth identity; do not add foreign keys to provider-owned auth tables.
 - Local database work should use Docker PostgreSQL through `DATABASE_URL=postgres://kelsier:kelsier@localhost:55432/kelsier_dev`. Do not run destructive development commands against Neon.
+
+### Assessment MVP Direction
+
+The approved guest-first assessment boundaries and phased delivery plan live in [`docs/assessment-mvp.md`](docs/assessment-mvp.md). Treat that document as the product and data-design source of truth for assessment MVP work while its decisions are implemented incrementally.
+
+- Guest and claimed attempts are personal records; account creation must not implicitly expose them to an organisation or team.
+- The attempt is the authorization boundary for its answers and result. Assessment child rows deliberately derive ownership through the attempt instead of duplicating organisation or user ownership.
+- The initial response engine is explicitly single-select with required and optional questions. Ranking, multi-select, branching, and free text require later design and may require migrations.
+- Completion and replacement lock the owned attempt before reading dependent state. Preserve that transaction boundary so concurrent saves cannot make scoring disagree with persisted answers, and replacement cannot delete a newly completed result. Only a stored result establishes completion in the UI; reaching the final question or saving required answers does not.
+- Guest HTTP functions share `src/server/guestRateLimit.ts`: hosted requests use only Cloudflare's `CF-Connecting-IP`; missing edge metadata or limiter failures reject requests before database access. Creation has a 10/minute bucket, activity (including questionnaire reads) has a 120/minute bucket, and deletion uses a separate 120/minute bucket. These are approximate per-IP, per-location abuse controls, not global quotas. Preserve TanStack's default server-function CSRF middleware; adding `src/start.ts` requires explicitly retaining that middleware. Dynamic Worker responses are `private, no-store` because rendered HTML can contain guest data.
+- The seeded questionnaire and dimension-mean output are demonstration content. Do not describe them as validated, predictive, clinical, diagnostic, or suitable for hiring decisions.
+- The top-level `workers.dev` deployment may operate as publicly reachable staging. Do not present it as production or actively promote it as the public pilot until the launch gate in the decision document is satisfied.
 
 Default bias: start local, then extract when reuse or complexity justifies it.
 
@@ -184,6 +196,8 @@ This repo already has a clear split between unit and end-to-end coverage.
 - Do not place unit tests under `e2e`.
 
 ### Query Helper Tests
+
+`src/db/assessmentIntegrity.test.ts` exercises real PostgreSQL ownership/uniqueness constraints, lifecycle races, seed immutability, and cleanup batching/cascades/contention. It is opt-in with `RUN_DB_TESTS=true` and runs in the CI database job after migration and seed. Locally, set `RUN_DB_TESTS=true` and `DATABASE_URL` to the documented `localhost:55432/kelsier_dev` database, then run `pnpm test src/db/assessmentIntegrity.test.ts`. The suite refuses non-local hosts and removes only its own fixtures; cleanup tests use temporary tables or rolled-back transactions.
 
 When testing Drizzle query helpers, avoid assertions that depend on Drizzle's internal predicate object shape, generated SQL chunk repetition, or magic string counts.
 
@@ -298,6 +312,7 @@ If you cannot run a check locally, say so explicitly in your handoff and explain
 
 - [`vitest.config.ts`](vitest.config.ts) intentionally does not reuse the full Vite app plugin stack.
 - [`vite.config.ts`](vite.config.ts) is configured for TanStack Start on Cloudflare Workers.
+- Local Vite serving defaults Wrangler logging to `warn` to suppress duplicate environment-source notices while preserving warnings and errors. Respect an explicitly supplied `WRANGLER_LOG` when deeper diagnostics are needed.
 - Do not pull the full TanStack Start or Cloudflare Workers runtime plugin stack into Vitest config unless there is a proven test need.
 
 ### Cloudflare Workers
@@ -305,21 +320,24 @@ If you cannot run a check locally, say so explicitly in your handoff and explain
 - [`wrangler.jsonc`](wrangler.jsonc) is the source of truth for Cloudflare deployment configuration and bindings.
 - [`worker-configuration.d.ts`](worker-configuration.d.ts) is generated by Wrangler and should be refreshed with `pnpm cf-typegen` after binding changes.
 - Prefer `pnpm preview` before `pnpm deploy` when validating runtime changes.
+- Run `pnpm worker:check` after Worker entrypoint or deployment-configuration changes. It performs a Wrangler dry run without deploying.
 - If bindings are added or changed, rerun `pnpm cf-typegen` and keep generated types aligned with the Wrangler config.
 
 ### Drizzle And PostgreSQL
 
 - [`docker-compose.yml`](docker-compose.yml) defines the local PostgreSQL 17 service. It publishes container port `5432` on host port `55432` to avoid common Windows reservations around `5432`.
+- `pnpm dev` is the normal daily startup command. [`scripts/prepare-dev.mjs`](scripts/prepare-dev.mjs) starts and waits for the local PostgreSQL service, applies migrations, runs the idempotent seed, and refuses to prepare a hosted `DATABASE_URL` before Vite starts. `pnpm dev:app` deliberately bypasses that preparation.
 - [`drizzle.config.ts`](drizzle.config.ts) reads database credentials from `.env`.
-- Keep runtime database clients explicit. [`src/db/client.worker.ts`](src/db/client.worker.ts) is the Cloudflare Worker runtime client and uses Drizzle's Neon HTTP driver; [`src/db/client.node.ts`](src/db/client.node.ts) is Node-only for scripts, seed work, migration support, and tests that need postgres-js; [`src/db/client.ts`](src/db/client.ts) must remain a runtime-safe shared type/env helper and must not import Node-only database modules.
-- Do not import [`src/db/client.node.ts`](src/db/client.node.ts), `postgres`, or `drizzle-orm/postgres-js` from routes, services, or other Worker-facing modules. [`src/db/client-boundary.test.ts`](src/db/client-boundary.test.ts) enforces this boundary.
-- Do not wire Hyperdrive into the Worker client until `wrangler.jsonc` has a Hyperdrive binding and generated Worker types are updated.
+- Keep runtime database clients explicit. [`src/db/client.worker.ts`](src/db/client.worker.ts) is the Cloudflare Worker runtime client and uses Drizzle's Postgres.js driver through the generated `HYPERDRIVE` binding; [`src/db/client.node.ts`](src/db/client.node.ts) is Node-only for scripts, seed work, migration support, and tests that need postgres-js; [`src/db/client.ts`](src/db/client.ts) must remain a runtime-safe shared type/env helper and must not import concrete database drivers.
+- Do not import [`src/db/client.node.ts`](src/db/client.node.ts) or concrete database drivers from routes, services, or other Worker-facing modules. [`src/db/client-boundary.test.ts`](src/db/client-boundary.test.ts) enforces this boundary while allowing driver setup inside the two runtime clients.
 - [`src/db/schema/index.ts`](src/db/schema/index.ts) is the schema export surface used by Drizzle.
 - Keep relation definitions in [`src/db/schema/relations.ts`](src/db/schema/relations.ts) unless a future refactor proves colocated relations are safe and clearer.
-- Preserve tenant integrity in schema design. If child rows duplicate `organisation_id` while referencing a parent row, add a composite unique key on the parent and a composite foreign key from the child so mismatched tenant rows are impossible. Current examples include `assessment_attempts(team_id, organisation_id)` referencing `teams(id, organisation_id)`, and `assessment_answers(attempt_id, organisation_id)` plus `assessment_results(attempt_id, organisation_id)` referencing `assessment_attempts(id, organisation_id)`.
+- Preserve tenant integrity in schema design. If child rows duplicate `organisation_id` while referencing a parent row, add a composite unique key on the parent and a composite foreign key from the child so mismatched tenant rows are impossible. Personal assessment attempts are a deliberate exception: they have exactly one guest-session or user owner, and answers/results derive authorization through their attempt rather than carrying tenant ownership columns.
 - Generate migrations with `pnpm db:generate`; do not hand-write or casually edit generated migration metadata.
 - Apply and seed locally with `pnpm db:migrate` and `pnpm db:seed` after confirming `.env` points at `localhost:55432`.
 - Keep seed data idempotent and useful for frontend/API development. Avoid seed records that imply product behavior not yet supported.
+- `scripts/assessment-seed.ts` inserts new questionnaires atomically and compares existing content without updating it. Changed prompts, options, required flags, or scoring inputs require an explicit new questionnaire version and a reviewed active-questionnaire selection change. This is separate from the app release version. Seeding must not reactivate retired versions.
+- Expiry cleanup commits batches of at most 100 sessions, with database lock/statement timeouts and a per-invocation work limit. Keep partial-progress failure logs free of SQL, credentials, and raw database error messages; failed invocations require operational follow-up.
 
 ### Playwright
 
@@ -331,6 +349,7 @@ If you cannot run a check locally, say so explicitly in your handoff and explain
 - [`.github/workflows/claude.yml`](.github/workflows/claude.yml) provides on-demand, review-only Claude assistance for maintainers in pull request conversations. Invoke it by mentioning `@claude` in a pull request comment or review.
 - Claude review is intentionally not automatic because CodeRabbit already supplies automatic pull request review. Keep their responsibilities distinct before expanding either workflow.
 - Keep review-assistant actions pinned to reviewed full commit SHAs. Do not grant repository write access unless a separately reviewed workflow explicitly needs Claude to modify code.
+- CI PostgreSQL services use the same reviewed immutable image digest. Review upstream version/source metadata when updating the pin. CI checkouts disable credential persistence because later steps do not need authenticated Git access.
 
 ### TypeScript Paths
 

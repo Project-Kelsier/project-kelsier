@@ -15,9 +15,24 @@ The repository should preserve these defaults unless a reviewed change explicitl
 - Keep the strict 24-hour release-age gate, fail-closed publication metadata, trust-downgrade rejection, and transitive exotic-source blocking in `pnpm-workspace.yaml`.
 - Pin direct `@tanstack/*` dependencies to exact versions until maintainers intentionally relax that policy.
 - Pin third-party GitHub Actions to full commit SHAs.
+- Pin CI service containers to reviewed immutable image digests and disable persisted checkout credentials when later steps do not need authenticated Git access.
 - Keep top-level GitHub Actions permissions minimal, usually `contents: read`.
 - Do not let untrusted pull requests save dependency caches used by trusted jobs.
 - Do not grant `id-token: write` to CI jobs that install or execute pull-request-controlled code.
+
+## Guest HTTP Controls
+
+`src/server/guestRateLimit.ts` limits creation/replacement to 10 per minute and questionnaire reads, guest reads, saves, resume, and completion to 120 per minute. Deletion has a separate 120-per-minute key so exhaustion of the activity bucket does not itself block deletion. All keys contain a transient hash of Cloudflare's edge-provided `CF-Connecting-IP`; `X-Forwarded-For` and `X-Forwarded-Host` are not trusted for these decisions. Hosted requests without the edge address and limiter failures return 503 before database queries. Throttled requests return 429 with `Retry-After: 60`. Local development without an edge header uses a shared local-only key.
+
+These [Cloudflare native limits](https://developers.cloudflare.com/workers/runtime-apis/bindings/rate-limit/) are approximate and local to a Cloudflare location. They do not guarantee a global request budget or defeat distributed attackers. Visitors behind one IP share limits; tune them from staging observations. Concurrent first starts before cookie receipt can issue separate guest sessions, bounded by creation throttling rather than the per-session unique index. Do not claim browser-wide uniqueness before a session exists.
+
+Guest cookies are checked for the issued token format before lookup. New cookies are host-only, HttpOnly, SameSite=Lax, and Secure unless the actual request URL is explicitly local; forwarded host headers cannot disable Secure. Existing sessions are not extended by reads or starts. Every service operation still authorizes against the owning, unexpired guest credential, with continuation tokens additionally required for answer writes and completion.
+
+The installed [TanStack default server-function middleware](https://tanstack.com/start/latest/docs/framework/react/guide/middleware) checks same-origin browser metadata. A new custom Start instance must explicitly retain CSRF protection. Browser security tests replay an authenticated request with cross-site and opaque origins (403), without the owner cookie (404), and as a legitimate same-origin retry (200).
+
+Dynamic Worker responses, including server-rendered guest data and errors, use `Cache-Control: private, no-store`. Static assets remain under the assets binding. Questionnaire error logging omits raw database exceptions. The public questionnaire is not cached yet; any later cache must exclude all guest entry, result, credential, and rendered private data.
+
+The new activity binding must accompany the code when deploying. Local tests and generated configuration do not constitute hosted verification or public launch approval.
 
 ## Supply-Chain Controls
 
@@ -70,7 +85,7 @@ Prefer clean direct upgrades and a regenerated lockfile over long-lived transiti
 
 Normal dependency updates should keep PRs small and grouped by ecosystem. Separate npm package updates from GitHub Actions updates.
 
-Security updates may bypass normal dependency timing controls only when the PR explains why the newer version materially reduces risk. If pnpm's release-age cooldown is bypassed for a security update, do it only as a local command option. Do not commit a cooldown bypass as repository configuration.
+Do not bypass the release-age cooldown without an explicit maintainer request for a reviewed emergency exception. A security-related task alone is not that exception. Prefer the newest policy-compatible version and document any upstream blocker; never silently weaken install policy to pass an audit.
 
 If pnpm rejects an update because the release is inside the cooldown window, first look for the newest already-aged version that satisfies the same compatibility range. Treat committed cooldown bypasses, broad transitive overrides, and audit-only fixes that break tests as failed dependency maintenance.
 
@@ -78,12 +93,17 @@ When fixing advisories through `pnpm-workspace.yaml` overrides, prefer the narro
 
 ### Current Reviewed Exceptions
 
-As of 2026-08-19, `pnpm audit` reports no known vulnerabilities. Two narrow dependency-policy exceptions remain in `pnpm-workspace.yaml`:
+The 2026-08-19 audit reported no known vulnerabilities; that is historical evidence, not a current clean bill of health. On 2026-09-12, [CI for commit 97aebb6](https://github.com/Project-Kelsier/project-kelsier/actions/runs/34693462674) failed `pnpm audit --audit-level high`, reporting two high and two moderate findings, including Sharp/libheif and JS-YAML. The database job passed. Dependency remediation and a fresh passing validation job are required before merge; local behavioral tests do not replace this audit gate.
+
+The reviewed overrides and trust exception in `pnpm-workspace.yaml` are:
 
 - `@esbuild-kit/core-utils>esbuild` is overridden to the compatible patched `0.25.12` release for GHSA-67mh-4wv8-2f99 because Drizzle Kit's deprecated loader chain still requests an older Esbuild range. Remove the override once that parent chain resolves a patched version naturally.
 - `semver@6.3.1` is excluded from trust-downgrade comparison because Babel requires this official security-fixed 6.x release. The registry artifact has a valid signature, but it lacks the legacy trust metadata present on `6.3.0`. Keep this exception exact and remove it once Babel no longer resolves the legacy line.
 
-The formerly documented Sharp advisory is resolved by the current Cloudflare dependency graph and no longer requires an exception.
+- `miniflare@5.20260815.0-alpha>sharp` is overridden from its exact `0.35.2` pin to `0.35.4` for [GHSA-rgj7-g3m4-5g8c](https://github.com/advisories/GHSA-rgj7-g3m4-5g8c). Its prebuilt native packages include the patched libheif. Remove this override when Miniflare advances its pin.
+- `xmlbuilder2@4.0.3>js-yaml` is overridden to `4.3.2`, within the parent's `^4.1.1` range, for [GHSA-2883-xcg3-v3hh](https://github.com/advisories/GHSA-2883-xcg3-v3hh). Remove it when the dependency graph retains a patched resolution without it.
+
+The September remediation also updates Vitest and its coverage package together to `4.1.11` for [GHSA-82fw-gwwq-j7x9](https://github.com/advisories/GHSA-82fw-gwwq-j7x9). All selected fixes were published in August and satisfy the existing 24-hour release-age gate; no trust or release-age bypass was added. After remediation on 2026-09-12, the local audit reported no known vulnerabilities and verified registry signatures for all 634 packages. Frozen installation, approved native rebuilds, version metadata, formatting, type checking, all 160 tests (including PostgreSQL), coverage, and the app build passed. A fresh remote CI run is still required before merge.
 
 For dependency maintenance PRs, run:
 
@@ -225,13 +245,11 @@ Maintain an inventory of GitHub repository secrets, environment secrets, Cloudfl
 
 Keep database clients split by runtime:
 
-- `src/db/client.worker.ts` is the Cloudflare Worker application client. It uses Drizzle's Neon HTTP driver, which runs over `fetch` and does not rely on Node TCP sockets.
+- `src/db/client.worker.ts` is the Cloudflare Worker application client. It uses Drizzle's Postgres.js driver with the generated `HYPERDRIVE` binding and creates a lightweight client per request.
 - `src/db/client.node.ts` is for Node-only scripts, local seed work, migration support, and tests that need postgres-js. Do not import it from route, service, or Worker runtime modules.
 - `src/db/client.ts` is a runtime-safe shared surface for environment parsing and `DbClient` typing. It must not import `postgres`, `drizzle-orm/postgres-js`, `node:*`, or other Node-only modules.
 
-Hyperdrive is intentionally not wired into the Worker client yet because this repo does not define a Hyperdrive binding. Add that only with the corresponding Cloudflare binding and generated Worker types.
-
-`src/db/client-boundary.test.ts` statically scans Worker-facing source files so postgres-js and `client.node.ts` cannot enter the Worker bundle by accident.
+`src/db/client-boundary.test.ts` statically scans Worker-facing source files so concrete drivers remain isolated to `client.worker.ts` and `client.node.ts`, and the Node-only client cannot enter the Worker bundle by accident.
 
 ## Incident Response
 

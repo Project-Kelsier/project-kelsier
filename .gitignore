@@ -17,3 +17,6 @@ coverage
 playwright-report
 test-results
 storybook-static
+
+# Local PR plans and review notes
+/docs/pr-*.md

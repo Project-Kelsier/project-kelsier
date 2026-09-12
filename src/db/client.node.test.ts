@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { getConnectionString } from "./client";
+import { getConnectionString, getWorkerConnectionString } from "./client";
 import { closeDbConnections, getDb, getDbConnection } from "./client.node";
 
 describe("database client factory", () => {
@@ -14,6 +14,20 @@ describe("database client factory", () => {
 				USE_HYPERDRIVE: "true",
 			}),
 		).toThrow("DATABASE_URL_POOLED is required when USE_HYPERDRIVE=true.");
+	});
+
+	it("requires the Worker Hyperdrive binding", () => {
+		expect(() => getWorkerConnectionString({})).toThrow(
+			"The HYPERDRIVE binding is required.",
+		);
+	});
+
+	it("reads the connection string from the Worker Hyperdrive binding", () => {
+		expect(
+			getWorkerConnectionString({
+				HYPERDRIVE: { connectionString: "postgres://hyperdrive.example/db" },
+			}),
+		).toBe("postgres://hyperdrive.example/db");
 	});
 
 	it("reuses a connection for matching connection strings", async () => {

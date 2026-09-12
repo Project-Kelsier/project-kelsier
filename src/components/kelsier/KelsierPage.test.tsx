@@ -1,8 +1,27 @@
-import { fireEvent, render, screen, waitFor } from "@testing-library/react";
+import {
+	fireEvent,
+	render,
+	screen,
+	waitFor,
+	within,
+} from "@testing-library/react";
 import type { AnchorHTMLAttributes, ReactNode } from "react";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import { GITHUB_REPOSITORY_URL } from "#/lib/projectLinks";
-import { KelsierPage } from "./KelsierPage";
+import { KelsierPage as KelsierPageComponent } from "./KelsierPage";
+import {
+	assessmentPersistenceActionsFixture,
+	assessmentQuestionnaireFixture,
+} from "./KelsierPage.fixture";
+
+function KelsierPage() {
+	return (
+		<KelsierPageComponent
+			questionnaire={assessmentQuestionnaireFixture}
+			persistenceActions={assessmentPersistenceActionsFixture}
+		/>
+	);
+}
 
 vi.mock("@tanstack/react-router", async (importOriginal) => {
 	const actual =
@@ -180,7 +199,7 @@ describe("KelsierPage", () => {
 		expect(removeListener).toHaveBeenCalledOnce();
 	});
 
-	it("does not smooth scroll assessment controls for reduced-motion users", () => {
+	it("does not smooth scroll assessment controls for reduced-motion users", async () => {
 		window.matchMedia = vi.fn().mockImplementation((query: string) => ({
 			matches: query === "(prefers-reduced-motion: reduce)",
 			media: query,
@@ -194,11 +213,15 @@ describe("KelsierPage", () => {
 
 		render(<KelsierPage />);
 
-		fireEvent.click(screen.getByRole("button", { name: "Start assessment" }));
+		fireEvent.click(
+			screen.getByRole("button", { name: "Start and save progress" }),
+		);
 
-		expect(HTMLElement.prototype.scrollIntoView).toHaveBeenCalledWith({
-			behavior: "auto",
-			block: "start",
+		await waitFor(() => {
+			expect(HTMLElement.prototype.scrollIntoView).toHaveBeenCalledWith({
+				behavior: "auto",
+				block: "start",
+			});
 		});
 	});
 
@@ -259,7 +282,7 @@ describe("KelsierPage", () => {
 		).toBe("/terms");
 		expect(
 			screen.getByRole("link", { name: "Contact" }).getAttribute("href"),
-		).toBe("mailto:hello@kelsier.example");
+		).toBe("mailto:curiousphreak@gmail.com");
 		const githubLinks = screen.getAllByRole("link", { name: "GitHub" });
 		expect(githubLinks).toHaveLength(3);
 		expect(
@@ -277,26 +300,42 @@ describe("KelsierPage", () => {
 		);
 	});
 
-	it("starts and progresses through the questionnaire", () => {
+	it("starts and progresses through the questionnaire", async () => {
 		render(<KelsierPage />);
 
-		fireEvent.click(screen.getByRole("button", { name: "Start assessment" }));
+		fireEvent.click(
+			screen.getByRole("button", { name: "Start and save progress" }),
+		);
+		await screen.findByRole("radio", { name: "Restructure immediately" });
+		expect(screen.getByText("Question 1 of 3 · Required")).toBeTruthy();
+		expect(
+			screen.getByRole("button", { name: "Next question" }),
+		).toHaveProperty("disabled", true);
+		expect(screen.getByRole("group").getAttribute("aria-describedby")).toBe(
+			"assessment-answer-help",
+		);
+		expect(screen.getByText("Choose one answer to continue.")).toBeTruthy();
 		fireEvent.click(
 			screen.getByRole("radio", { name: "Restructure immediately" }),
 		);
 		fireEvent.click(screen.getByRole("button", { name: "Next question" }));
 
 		expect(
-			screen.getByRole("heading", {
+			await screen.findByRole("heading", {
 				name: "Your preferred way to resolve conflict is…",
 			}),
 		).toBeTruthy();
 	});
 
-	it("keeps questionnaire progression disabled until an option is selected", () => {
+	it("keeps questionnaire progression disabled until an option is selected", async () => {
 		render(<KelsierPage />);
 
-		fireEvent.click(screen.getByRole("button", { name: "Start assessment" }));
+		fireEvent.click(
+			screen.getByRole("button", { name: "Start and save progress" }),
+		);
+		await screen.findByRole("group", {
+			name: "When a deadline moves unexpectedly, you tend to…",
+		});
 
 		expect(
 			screen.getByRole("group", {
@@ -320,14 +359,75 @@ describe("KelsierPage", () => {
 		expect(nextButton).toHaveProperty("disabled", false);
 	});
 
-	it("keeps an in-progress questionnaire when the hero call to action is clicked", () => {
+	it("allows an optional question to be skipped", async () => {
+		const optionalQuestionnaire = {
+			...assessmentQuestionnaireFixture,
+			questions: [
+				{
+					...assessmentQuestionnaireFixture.questions[0],
+					required: false,
+				},
+			],
+		};
+
+		render(
+			<KelsierPageComponent
+				questionnaire={optionalQuestionnaire}
+				persistenceActions={{
+					...assessmentPersistenceActionsFixture,
+					completeAttempt: async () => ({
+						attemptId: "10000000-0000-4000-8000-000000000001",
+						completedAt: "2026-08-13T12:00:00.000Z",
+						scoringAlgorithmVersion: "dimension-mean-v1",
+						confidence: null,
+						rows: [
+							{
+								dimension: "adaptability",
+								label: "Adaptability",
+								score: null,
+								contributingQuestionCount: 0,
+							},
+						],
+					}),
+				}}
+			/>,
+		);
+		fireEvent.click(
+			screen.getByRole("button", { name: "Start and save progress" }),
+		);
+		await screen.findByText(/Question 1 of 1 · Optional/);
+
+		expect(screen.getByText(/Question 1 of 1 · Optional/)).toBeTruthy();
+		const completeButton = screen.getByRole("button", {
+			name: "Complete prototype",
+		});
+		expect(completeButton).toHaveProperty("disabled", false);
+
+		fireEvent.click(completeButton);
+
+		expect(await screen.findByText("No response")).toBeTruthy();
+		expect(
+			within(screen.getByRole("row", { name: /Adaptability/ })).getByRole(
+				"cell",
+				{ name: "0" },
+			),
+		).toBeTruthy();
+	});
+
+	it("keeps an in-progress questionnaire when the hero call to action is clicked", async () => {
 		render(<KelsierPage />);
 
-		fireEvent.click(screen.getByRole("button", { name: "Start assessment" }));
+		fireEvent.click(
+			screen.getByRole("button", { name: "Start and save progress" }),
+		);
+		await screen.findByRole("radio", { name: "Restructure immediately" });
 		fireEvent.click(
 			screen.getByRole("radio", { name: "Restructure immediately" }),
 		);
 		fireEvent.click(screen.getByRole("button", { name: "Next question" }));
+		await screen.findByRole("heading", {
+			name: "Your preferred way to resolve conflict is…",
+		});
 		fireEvent.click(screen.getByRole("button", { name: "Discover your team" }));
 
 		expect(
@@ -341,15 +441,22 @@ describe("KelsierPage", () => {
 	it("shows and focuses the completion state after the last question", async () => {
 		render(<KelsierPage />);
 
-		fireEvent.click(screen.getByRole("button", { name: "Start assessment" }));
+		fireEvent.click(
+			screen.getByRole("button", { name: "Start and save progress" }),
+		);
+		await screen.findByRole("radio", { name: "Restructure immediately" });
 		fireEvent.click(
 			screen.getByRole("radio", { name: "Restructure immediately" }),
 		);
 		fireEvent.click(screen.getByRole("button", { name: "Next question" }));
+		await screen.findByRole("radio", { name: "Find common ground first" });
 		fireEvent.click(
 			screen.getByRole("radio", { name: "Find common ground first" }),
 		);
 		fireEvent.click(screen.getByRole("button", { name: "Next question" }));
+		await screen.findByRole("radio", {
+			name: "Pair them with the strongest collaborator",
+		});
 		fireEvent.click(
 			screen.getByRole("radio", {
 				name: "Pair them with the strongest collaborator",
@@ -358,30 +465,66 @@ describe("KelsierPage", () => {
 		fireEvent.click(screen.getByRole("button", { name: "Complete prototype" }));
 
 		expect(
-			screen.getByRole("heading", { name: "Prototype complete" }),
-		).toBeTruthy();
-		expect(
-			screen.getByRole("button", { name: "Restart prototype" }),
+			await screen.findByRole("heading", { name: "Demonstration result" }),
 		).toBeTruthy();
 		await waitFor(() => {
-			expect(screen.getByRole("heading", { name: "Prototype complete" })).toBe(
-				document.activeElement,
-			);
+			expect(
+				screen.getByRole("heading", { name: "Demonstration result" }),
+			).toBe(document.activeElement);
 		});
 	});
 
-	it("starts a fresh questionnaire when the hero call to action is clicked after completion", () => {
+	it("keeps completion deletion confirmation focused and cancellable", async () => {
+		render(
+			<KelsierPageComponent
+				questionnaire={assessmentQuestionnaireFixture}
+				persistenceActions={assessmentPersistenceActionsFixture}
+				initialGuestAssessmentResult={
+					await assessmentPersistenceActionsFixture.completeAttempt({
+						attemptId: "10000000-0000-4000-8000-000000000001",
+						continuationToken: "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+						questionId: "new-joiner",
+						optionId: "pair",
+					})
+				}
+			/>,
+		);
+		fireEvent.click(
+			screen.getByRole("button", { name: "Delete saved attempt" }),
+		);
+		expect(
+			screen.queryByRole("button", { name: "Delete saved attempt" }),
+		).toBeNull();
+		const keep = screen.getByRole("button", { name: "Keep attempt" });
+		expect(keep).toBe(document.activeElement);
+		fireEvent.click(keep);
+		expect(screen.getByRole("button", { name: "Delete saved attempt" })).toBe(
+			document.activeElement,
+		);
+		expect(
+			screen.queryByRole("button", { name: "Confirm deletion" }),
+		).toBeNull();
+	});
+
+	it("returns to the questionnaire when the hero call to action is clicked after completion", async () => {
 		render(<KelsierPage />);
 
-		fireEvent.click(screen.getByRole("button", { name: "Start assessment" }));
+		fireEvent.click(
+			screen.getByRole("button", { name: "Start and save progress" }),
+		);
+		await screen.findByRole("radio", { name: "Restructure immediately" });
 		fireEvent.click(
 			screen.getByRole("radio", { name: "Restructure immediately" }),
 		);
 		fireEvent.click(screen.getByRole("button", { name: "Next question" }));
+		await screen.findByRole("radio", { name: "Find common ground first" });
 		fireEvent.click(
 			screen.getByRole("radio", { name: "Find common ground first" }),
 		);
 		fireEvent.click(screen.getByRole("button", { name: "Next question" }));
+		await screen.findByRole("radio", {
+			name: "Pair them with the strongest collaborator",
+		});
 		fireEvent.click(
 			screen.getByRole("radio", {
 				name: "Pair them with the strongest collaborator",
@@ -390,19 +533,292 @@ describe("KelsierPage", () => {
 		fireEvent.click(screen.getByRole("button", { name: "Complete prototype" }));
 
 		expect(
-			screen.getByRole("heading", { name: "Prototype complete" }),
+			await screen.findByRole("heading", { name: "Demonstration result" }),
 		).toBeTruthy();
 
 		fireEvent.click(screen.getByRole("button", { name: "Discover your team" }));
 
 		expect(
 			screen.getByRole("heading", {
+				name: "Demonstration result",
+			}),
+		).toBeTruthy();
+	});
+
+	it("offers explicit advice before consuming the single resume", async () => {
+		const resumeAttempt = vi
+			.fn()
+			.mockImplementation((_attemptId: string, continuationToken: string) =>
+				Promise.resolve({
+					attemptId: "10000000-0000-4000-8000-000000000001",
+					expiresAt: "2026-08-18T00:00:00.000Z",
+					continuationToken,
+					currentQuestionIndex: 1,
+					answers: { "deadline-response": "restructure" },
+				}),
+			);
+
+		render(
+			<KelsierPageComponent
+				questionnaire={assessmentQuestionnaireFixture}
+				initialGuestAssessmentEntry={{
+					attemptId: "10000000-0000-4000-8000-000000000001",
+					startedAt: "2026-08-11T00:00:00.000Z",
+					expiresAt: "2026-08-18T00:00:00.000Z",
+					answeredCount: 1,
+					resumeAvailable: true,
+				}}
+				persistenceActions={{
+					...assessmentPersistenceActionsFixture,
+					resumeAttempt,
+				}}
+			/>,
+		);
+
+		expect(screen.getByText(/mood, circumstances, or context/)).toBeTruthy();
+		fireEvent.click(
+			screen.getByRole("button", { name: "Continue this snapshot" }),
+		);
+
+		expect(
+			await screen.findByRole("heading", {
+				name: "Your preferred way to resolve conflict is…",
+			}),
+		).toBeTruthy();
+		expect(resumeAttempt).toHaveBeenCalledOnce();
+		expect(resumeAttempt).toHaveBeenCalledWith(
+			"10000000-0000-4000-8000-000000000001",
+			expect.stringMatching(/^[A-Za-z0-9_-]{43}$/),
+		);
+		expect(
+			within(screen.getByRole("status")).getByText(/This is its single resume/),
+		).toBeTruthy();
+	});
+
+	it("keeps saved answers resumable until a persisted result exists", () => {
+		render(
+			<KelsierPageComponent
+				questionnaire={assessmentQuestionnaireFixture}
+				initialGuestAssessmentEntry={{
+					attemptId: "10000000-0000-4000-8000-000000000001",
+					startedAt: "2026-08-11T00:00:00.000Z",
+					expiresAt: "2026-08-18T00:00:00.000Z",
+					answeredCount: 3,
+					answers: {
+						"deadline-response": "restructure",
+						"conflict-style": "common-ground",
+						"new-joiner": "pair",
+					},
+					resumeAvailable: true,
+				}}
+				persistenceActions={assessmentPersistenceActionsFixture}
+			/>,
+		);
+
+		expect(
+			screen.queryByRole("heading", { name: "Demonstration result" }),
+		).toBeNull();
+		expect(
+			screen.getByRole("button", { name: "Continue this snapshot" }),
+		).toBeTruthy();
+	});
+
+	it("retains the final answer after submission fails and allows a retry", async () => {
+		const completeAttempt = vi
+			.fn(assessmentPersistenceActionsFixture.completeAttempt)
+			.mockRejectedValueOnce(new Error("offline"));
+		render(
+			<KelsierPageComponent
+				questionnaire={{
+					...assessmentQuestionnaireFixture,
+					questions: [assessmentQuestionnaireFixture.questions[0]],
+				}}
+				persistenceActions={{
+					...assessmentPersistenceActionsFixture,
+					completeAttempt,
+				}}
+			/>,
+		);
+		fireEvent.click(
+			screen.getByRole("button", { name: "Start and save progress" }),
+		);
+		fireEvent.click(
+			await screen.findByRole("radio", { name: "Restructure immediately" }),
+		);
+		fireEvent.click(screen.getByRole("button", { name: "Complete prototype" }));
+		await waitFor(() => expect(completeAttempt).toHaveBeenCalledOnce());
+		await waitFor(() =>
+			expect(
+				screen.getByRole("button", { name: "Complete prototype" }),
+			).toHaveProperty("disabled", false),
+		);
+		expect(
+			screen.queryByRole("heading", { name: "Demonstration result" }),
+		).toBeNull();
+		expect(
+			screen.getByRole("radio", { name: "Restructure immediately" }),
+		).toHaveProperty("checked", true);
+		fireEvent.click(screen.getByRole("button", { name: "Complete prototype" }));
+		expect(
+			await screen.findByRole("heading", { name: "Demonstration result" }),
+		).toBeTruthy();
+		expect(completeAttempt).toHaveBeenCalledTimes(2);
+		expect(completeAttempt.mock.calls[1]).toEqual(
+			completeAttempt.mock.calls[0],
+		);
+	});
+
+	it("keeps the current question available when saving fails", async () => {
+		const saveAnswer = vi.fn().mockRejectedValue(new Error("offline"));
+		render(
+			<KelsierPageComponent
+				questionnaire={assessmentQuestionnaireFixture}
+				persistenceActions={{
+					...assessmentPersistenceActionsFixture,
+					saveAnswer,
+				}}
+			/>,
+		);
+
+		fireEvent.click(
+			screen.getByRole("button", { name: "Start and save progress" }),
+		);
+		await screen.findByRole("radio", { name: "Restructure immediately" });
+		fireEvent.click(
+			screen.getByRole("radio", { name: "Restructure immediately" }),
+		);
+		fireEvent.click(screen.getByRole("button", { name: "Next question" }));
+
+		expect(
+			await within(screen.getByRole("status")).findByText(
+				/Your answer wasn’t saved/,
+			),
+		).toBeTruthy();
+		expect(document.activeElement?.textContent).toContain(
+			"Your answer wasn’t saved",
+		);
+		expect(
+			screen.getByRole("heading", {
 				name: "When a deadline moves unexpectedly, you tend to…",
 			}),
 		).toBeTruthy();
-		expect(screen.getByText("0% answered")).toBeTruthy();
 		expect(
-			screen.getByRole("button", { name: "Next question" }),
-		).toHaveProperty("disabled", true);
+			screen.getByRole("radio", { name: "Restructure immediately" }),
+		).toHaveProperty("checked", true);
+	});
+
+	it("retries a lost fresh-start response with the same replacement capability", async () => {
+		const startFreshAttempt = vi
+			.fn()
+			.mockRejectedValueOnce(new Error("Response lost after commit"))
+			.mockImplementation(
+				assessmentPersistenceActionsFixture.startFreshAttempt,
+			);
+		render(
+			<KelsierPageComponent
+				questionnaire={assessmentQuestionnaireFixture}
+				initialGuestAssessmentEntry={{
+					attemptId: "10000000-0000-4000-8000-000000000001",
+					startedAt: "2026-08-11T00:00:00.000Z",
+					expiresAt: "2026-08-18T00:00:00.000Z",
+					answeredCount: 1,
+					resumeAvailable: true,
+				}}
+				persistenceActions={{
+					...assessmentPersistenceActionsFixture,
+					startFreshAttempt,
+				}}
+			/>,
+		);
+		fireEvent.click(
+			screen.getByRole("button", { name: "Start a fresh snapshot" }),
+		);
+		await within(screen.getByRole("status")).findByText(
+			/couldn’t start a fresh snapshot/,
+		);
+		fireEvent.click(
+			screen.getByRole("button", { name: "Start a fresh snapshot" }),
+		);
+		await screen.findByRole("radio", { name: "Restructure immediately" });
+		expect(startFreshAttempt).toHaveBeenCalledTimes(2);
+		expect(startFreshAttempt.mock.calls[1]).toEqual(
+			startFreshAttempt.mock.calls[0],
+		);
+		expect(startFreshAttempt.mock.calls[0]).toEqual([
+			"10000000-0000-4000-8000-000000000001",
+			expect.stringMatching(/^[A-Za-z0-9_-]{43}$/),
+		]);
+	});
+
+	it("allows a returned guest to delete without consuming the resume", async () => {
+		const deleteAttempt = vi.fn().mockResolvedValue({ deleted: true });
+		render(
+			<KelsierPageComponent
+				questionnaire={assessmentQuestionnaireFixture}
+				initialGuestAssessmentEntry={{
+					attemptId: "10000000-0000-4000-8000-000000000001",
+					startedAt: "2026-08-11T00:00:00.000Z",
+					expiresAt: "2026-08-18T00:00:00.000Z",
+					answeredCount: 1,
+					resumeAvailable: true,
+				}}
+				persistenceActions={{
+					...assessmentPersistenceActionsFixture,
+					deleteAttempt,
+				}}
+			/>,
+		);
+
+		fireEvent.click(
+			screen.getByRole("button", { name: "Delete saved attempt" }),
+		);
+		fireEvent.click(screen.getByRole("button", { name: "Confirm deletion" }));
+
+		expect(
+			await within(screen.getByRole("status")).findByText(
+				"Your saved guest attempt has been deleted.",
+			),
+		).toBeTruthy();
+		expect(deleteAttempt).toHaveBeenCalledWith(
+			"10000000-0000-4000-8000-000000000001",
+		);
+		expect(
+			screen.getByRole("button", { name: "Start and save progress" }),
+		).toBeTruthy();
+	});
+
+	it("shows the privacy notice before persistence and deletes with confirmation", async () => {
+		const deleteAttempt = vi.fn().mockResolvedValue({ deleted: true });
+		render(
+			<KelsierPageComponent
+				questionnaire={assessmentQuestionnaireFixture}
+				persistenceActions={{
+					...assessmentPersistenceActionsFixture,
+					deleteAttempt,
+				}}
+			/>,
+		);
+
+		expect(screen.getByText(/If that cookie is lost/)).toBeTruthy();
+		fireEvent.click(
+			screen.getByRole("button", { name: "Start and save progress" }),
+		);
+		await screen.findByRole("radio", { name: "Restructure immediately" });
+		fireEvent.click(
+			screen.getByRole("button", { name: "Delete saved attempt" }),
+		);
+		fireEvent.click(screen.getByRole("button", { name: "Confirm deletion" }));
+
+		expect(
+			await within(screen.getByRole("status")).findByText(
+				"Your saved guest attempt has been deleted.",
+			),
+		).toBeTruthy();
+		expect(deleteAttempt).toHaveBeenCalledWith(
+			"10000000-0000-4000-8000-000000000001",
+		);
+		expect(
+			screen.getByRole("button", { name: "Start and save progress" }),
+		).toBeTruthy();
 	});
 });

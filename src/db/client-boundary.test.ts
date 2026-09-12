@@ -4,6 +4,7 @@ import { describe, expect, it } from "vitest";
 
 const sourceRoot = join(process.cwd(), "src");
 const nodeOnlyClientPath = join(sourceRoot, "db", "client.node.ts");
+const workerClientPath = join(sourceRoot, "db", "client.worker.ts");
 const nodeOnlyClientModulePath = normalize(
 	join(sourceRoot, "db", "client.node"),
 );
@@ -70,9 +71,9 @@ function isNodeOnlyClientSpecifier(filePath: string, specifier: string) {
 }
 
 describe("database runtime boundary", () => {
-	it("keeps postgres-js out of Worker-facing source modules", () => {
+	it("keeps concrete database drivers inside the runtime clients", () => {
 		const workerFacingFiles = listSourceFiles(sourceRoot).filter(
-			(path) => path !== nodeOnlyClientPath,
+			(path) => path !== nodeOnlyClientPath && path !== workerClientPath,
 		);
 
 		const violations = workerFacingFiles
