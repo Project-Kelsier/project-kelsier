@@ -51,7 +51,7 @@
 	},
 	"devDependencies": {
 		"@biomejs/biome": "2.5.13",
-		"@cloudflare/vite-plugin": "^1.53.0",
+		"@cloudflare/vite-plugin": "^1.54.7",
 		"@playwright/test": "^1.62.1",
 		"@storybook/addon-a11y": "10.5.9",
 		"@storybook/react-vite": "10.5.9",
@@ -62,7 +62,7 @@
 		"@types/node": "^24.13.4",
 		"@types/react": "^19.2.18",
 		"@types/react-dom": "^19.2.4",
-		"@vitejs/plugin-react": "^6.0.5",
+		"@vitejs/plugin-react": "^6.1.1",
 		"@vitest/coverage-v8": "^4.1.11",
 		"dotenv": "^17.4.2",
 		"drizzle-kit": "^0.31.10",
@@ -70,8 +70,8 @@
 		"storybook": "10.5.9",
 		"tsx": "^4.23.13",
 		"typescript": "^7.0.2",
-		"vite": "^8.2.1",
+		"vite": "^8.3.0",
 		"vitest": "^4.1.11",
-		"wrangler": "^4.124.0"
+		"wrangler": "^4.131.0"
 	}
 }
