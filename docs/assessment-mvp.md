@@ -62,9 +62,9 @@ The MVP will not add a recovery code. If the cookie is lost, the person cannot i
 
 ### Retention
 
-Expiry is fixed from attempt creation rather than extended on activity. This avoids retaining an answer-by-answer activity trail merely to refresh retention.
+Implemented expiry is fixed on the guest session when it is first created. Attempts started or replaced within that session inherit its existing deadline and may have less than seven days remaining; activity never extends it. This avoids retaining an answer-by-answer activity trail merely to refresh retention.
 
-- Pilot retention: seven days from creation.
+- Pilot retention: a seven-day guest-session window. Access is denied at expiry; physical deletion follows during scheduled cleanup and can occur after expiry. Failed cleanup can delay physical deletion and requires monitoring.
 - The fixed period is approved for the initial public pilot and must be reconsidered if the data collected or product use changes materially.
 - Expired attempts and their dependent records must be removed by a scheduled cleanup job.
 - Cleanup success and failure require operational visibility; configuring a schedule is not evidence that it continues to run.
@@ -105,7 +105,7 @@ The maintainer explicitly confirmed **no public launch yet** on 2026-09-12. Stag
 | Native rate limiting protects the first public write endpoint. | Ready | `ASSESSMENT_ATTEMPT_RATE_LIMITER` is configured and its fail-closed creation path is covered by tests. | No |
 | Scheduled expiry cleanup is deployed and monitored. | Blocked | Hosted logs confirm successful runs on 2026-09-11 and 2026-09-12 under the previous Worker. The new bounded-cleanup Worker was deployed 2026-09-12; verify its first 03:17 UTC invocation. | Yes |
 | Cleanup failure notifications reach a responsible person. | Blocked | `curiousphreak@gmail.com` is the approved recipient. The Cloudflare policy list was empty on 2026-09-12; configure and test notification delivery before production promotion. | Yes |
-| The pre-persistence notice, privacy wording, retention period, and contact details are approved. | Blocked | `curiousphreak@gmail.com` and seven-day fixed retention are approved; complete the remaining privacy-wording review before deployment. | Yes |
+| The pre-persistence notice, privacy wording, retention period, and contact details are approved. | Blocked | `curiousphreak@gmail.com` and seven-day fixed retention are approved; complete the remaining privacy-wording review before public launch. Staging deployment was separately authorized. | Yes |
 | Production cookie behavior, bindings, and absence of development bypasses are verified. | Ready for staging | Hosted Chromium checks on 2026-09-12 verified Secure/HttpOnly/SameSite=Lax cookies with seven-day expiry, no-store responses, and rejected cross-site/anonymous writes. Live version metadata contains only Hyperdrive and the two rate-limit bindings, with no demo identity binding. Repeat if promoting a different environment. | No |
 | Save failures, reload/resume behavior, keyboard operation, focus management, disabled states, and live announcements have proportionate coverage. | Ready | Vitest and cross-browser Playwright coverage exercise the critical questionnaire states and the single-resume contract. | No |
 
@@ -127,7 +127,7 @@ Each numbered item may be split into smaller pull requests. Tooling changes, sch
 
 Implementation status as of 2026-08-17: phases 1 through 7 and the technical portion of phase 8 are implemented on the assessment MVP branch. Guest answers persist before navigation, and an interrupted attempt offers one explicit resume or a fresh replacement snapshot. The final answer, `completedAt` transition, deterministic `dimension-mean-v1` calculation, and immutable raw result are created in one database transaction. Refresh restores the completed result through the owning guest credential, and the UI presents ordered dimension scores and contributing-question counts in an accessible table.
 
-Public-staging evidence as of 2026-08-17: Cloudflare Worker version `22b0f905-551f-4b58-84ee-90f1f942f89e` was active at `https://project-kelsier.mindphreak.workers.dev` with the expected Hyperdrive and native rate-limit bindings and the `17 3 * * *` schedule. The committed migrations were applied to the verified Neon database behind Hyperdrive, the idempotent seed completed twice, and fresh hosted requests returned `200` for the database-backed questionnaire, privacy page, and terms page. The final hosted browser walkthrough and evidence from the first real scheduled invocation remain pending.
+Public-staging evidence as of 2026-08-17: Cloudflare Worker version `22b0f905-551f-4b58-84ee-90f1f942f89e` was active at `https://project-kelsier.mindphreak.workers.dev` with the expected Hyperdrive and native rate-limit bindings and the `17 3 * * *` schedule. The committed migrations were applied to the verified Neon database behind Hyperdrive, the idempotent seed completed twice, and fresh hosted requests returned `200` for the database-backed questionnaire, privacy page, and terms page. At that checkpoint, the hosted browser walkthrough and real scheduled-invocation evidence were pending; the September update below supersedes that status.
 
 Public-staging update, 2026-09-12: following the maintainer's explicit deployment instruction, commit `24fb6ad` was deployed as Worker version `7f3fde5d-777d-438d-afa0-f814ec8b12a5` at the same staging URL; app version remains `0.4.0`. Before deployment the Hyperdrive origin matched the local hosted credential, all 12 migration hashes/timestamps matched repository history, and guest sessions/attempts/results and duplicate unfinished groups were empty. Applied only additive migration `0012_furry_shiva`; the resulting ledger contains all 13 migrations and the unique index is present. No existing rows were discarded and no hosted seed was needed.
 

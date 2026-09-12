@@ -15,6 +15,7 @@ The repository should preserve these defaults unless a reviewed change explicitl
 - Keep the strict 24-hour release-age gate, fail-closed publication metadata, trust-downgrade rejection, and transitive exotic-source blocking in `pnpm-workspace.yaml`.
 - Pin direct `@tanstack/*` dependencies to exact versions until maintainers intentionally relax that policy.
 - Pin third-party GitHub Actions to full commit SHAs.
+- Pin CI service containers to reviewed immutable image digests and disable persisted checkout credentials when later steps do not need authenticated Git access.
 - Keep top-level GitHub Actions permissions minimal, usually `contents: read`.
 - Do not let untrusted pull requests save dependency caches used by trusted jobs.
 - Do not grant `id-token: write` to CI jobs that install or execute pull-request-controlled code.
@@ -84,7 +85,7 @@ Prefer clean direct upgrades and a regenerated lockfile over long-lived transiti
 
 Normal dependency updates should keep PRs small and grouped by ecosystem. Separate npm package updates from GitHub Actions updates.
 
-Security updates may bypass normal dependency timing controls only when the PR explains why the newer version materially reduces risk. If pnpm's release-age cooldown is bypassed for a security update, do it only as a local command option. Do not commit a cooldown bypass as repository configuration.
+Do not bypass the release-age cooldown without an explicit maintainer request for a reviewed emergency exception. A security-related task alone is not that exception. Prefer the newest policy-compatible version and document any upstream blocker; never silently weaken install policy to pass an audit.
 
 If pnpm rejects an update because the release is inside the cooldown window, first look for the newest already-aged version that satisfies the same compatibility range. Treat committed cooldown bypasses, broad transitive overrides, and audit-only fixes that break tests as failed dependency maintenance.
 
@@ -92,12 +93,14 @@ When fixing advisories through `pnpm-workspace.yaml` overrides, prefer the narro
 
 ### Current Reviewed Exceptions
 
-As of 2026-08-19, `pnpm audit` reports no known vulnerabilities. Two narrow dependency-policy exceptions remain in `pnpm-workspace.yaml`:
+The 2026-08-19 audit reported no known vulnerabilities; that is historical evidence, not a current clean bill of health. On 2026-09-12, [CI for commit 97aebb6](https://github.com/Project-Kelsier/project-kelsier/actions/runs/34693462674) failed `pnpm audit --audit-level high`, reporting two high and two moderate findings, including Sharp/libheif and JS-YAML. The database job passed. Dependency remediation and a fresh passing validation job are required before merge; local behavioral tests do not replace this audit gate.
+
+Two narrow dependency-policy exceptions remain in `pnpm-workspace.yaml`:
 
 - `@esbuild-kit/core-utils>esbuild` is overridden to the compatible patched `0.25.12` release for GHSA-67mh-4wv8-2f99 because Drizzle Kit's deprecated loader chain still requests an older Esbuild range. Remove the override once that parent chain resolves a patched version naturally.
 - `semver@6.3.1` is excluded from trust-downgrade comparison because Babel requires this official security-fixed 6.x release. The registry artifact has a valid signature, but it lacks the legacy trust metadata present on `6.3.0`. Keep this exception exact and remove it once Babel no longer resolves the legacy line.
 
-The formerly documented Sharp advisory is resolved by the current Cloudflare dependency graph and no longer requires an exception.
+The older Sharp advisory was resolved by the August dependency update. The new September audit findings require a separate compatibility review; no new exception has been added.
 
 For dependency maintenance PRs, run:
 

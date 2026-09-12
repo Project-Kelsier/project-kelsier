@@ -17,6 +17,8 @@ pnpm version:show
 - Release-relevant pull requests must update both `package.json` `version` and [`CHANGELOG.md`](./CHANGELOG.md).
 - The new `package.json` version must be greater than the base branch version.
 
+The increase is evaluated across the PR against its base, not required again for every review-fix commit. Unreleased changelog notes may be added without changing the app version; explicit maintainer instructions control when the next bump or release occurs.
+
 CI enforces this with `pnpm version:check`. The check compares a pull request with the base branch and fails when release-relevant files changed without a version increase and changelog update.
 
 ## Release Checklist
@@ -34,6 +36,7 @@ pnpm typecheck
 pnpm test
 pnpm coverage
 pnpm build
+pnpm worker:check
 pnpm build-storybook
 pnpm test:e2e
 ```

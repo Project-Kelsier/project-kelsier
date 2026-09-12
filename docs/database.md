@@ -79,6 +79,8 @@ Review generated SQL before applying it to any hosted database. Initial/fresh da
 
 CI runs migrations and the seed against a fresh PostgreSQL 17 service in a dedicated database job. It runs the seed twice so loss of idempotency fails before feature tests begin relying on fixture identities. The validation job owns a separate fresh PostgreSQL service for browser tests and overrides the Hyperdrive local connection string to CI's PostgreSQL port.
 
+Both CI jobs use the same reviewed immutable image digest. The database job also runs the PostgreSQL integrity suite with `RUN_DB_TESTS=true`, covering ownership, concurrent lifecycle operations, seed immutability, and bounded cleanup.
+
 ## Development Fixtures
 
 The local seed includes three domain users across two organisations so ownership checks can prove both important boundaries:
@@ -115,6 +117,8 @@ Use this pattern when practical:
 Personal assessments deliberately use a different boundary. `assessment_attempts` must have exactly one owner: either a guest session or a domain user. Answers and results reference the attempt and do not duplicate user or organisation ownership. Service helpers authorize those child records by joining through the attempt. Organisation or team access will require a separate explicit sharing artefact rather than changing ownership of the personal attempt.
 
 Guest attempt creation is protected by the `ASSESSMENT_ATTEMPT_RATE_LIMITER` Workers binding. Its key is a one-way hash derived from the request IP and exists only in Cloudflare's short-lived rate-limit state; neither the raw IP nor its hash is stored with guest sessions or attempts.
+
+The `ASSESSMENT_ACTIVITY_RATE_LIMITER` protects assessment reads and remaining mutations, with a separate deletion key. Hosted IP/limiter failures fail closed. See [security-hardening.md](security-hardening.md#guest-http-controls) for limits and residual constraints.
 
 For source-scoped lookup helpers, include all columns that define the source identity. For AI insights, source lookups must filter by both `sourceEntityType` and `sourceEntityId`.
 

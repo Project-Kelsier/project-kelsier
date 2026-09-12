@@ -40,6 +40,7 @@ Parts of that commitment are already load-bearing in the schema:
 - **Implemented** — `assessmentResults.confidence` is nullable and stays `null` until there is a defensible way to compute it. The schema declines to fabricate precision.
 - **Implemented** — result traceability comes from the full persisted chain: result → attempt → answers → versioned questions and options. Every answer records its question and chosen option, so a score can be traced back to the exact items that produced it. `contributingQuestionCounts` is supporting metadata within that chain — it records how many questions fed each dimension, not which ones.
 - **Direction** — assessment versions, questions, options, dimensions, and score weights must not be mutated once responses exist; future editing tools must create a new version rather than change an active one in place ([`docs/assessment-mvp.md`](docs/assessment-mvp.md)). The database does **not** structurally prohibit such updates, so the provenance chain only means what it claims for as long as this is honoured.
+- **Implemented** — `scripts/assessment-seed.ts` inserts questionnaires atomically and rejects any content drift on an existing version, even before responses exist. It does not reactivate retired versions. This guard protects seeding, not privileged direct SQL updates.
 - **Implemented (schema only)** — `aiInsights` is *designed* to record machine-inference provenance (`model`, `promptVersion`, `generatedAt`, nullable `confidence`) for insights when they are generated. There is no AI generation pipeline in this repository: the service exposes two read-only list helpers and nothing writes insights. Do not describe inference provenance as a working behaviour.
 
 The harm boundary is a hard product rule. The seeded questionnaire and its dimension-mean output are **demonstration content**. Never describe them — in code, comments, UI, tests, or docs — as validated, predictive, clinical, diagnostic, or suitable for hiring decisions. [`docs/assessment-mvp.md`](docs/assessment-mvp.md) is the approved source of truth for assessment work, including the public launch gate.
@@ -54,7 +55,7 @@ The harm boundary is a hard product rule. The seeded questionnaire and its dimen
 - **Production targets Cloudflare Workers** via Wrangler and `@cloudflare/vite-plugin` in SSR mode — the edge runtime, not Node.
 - **Drizzle ORM over PostgreSQL.** Local development uses Docker PostgreSQL on `localhost:55432`; hosted access is Neon reached through the Cloudflare **Hyperdrive** binding.
 - **Cloudflare Cron Triggers perform scheduled cleanup** (`17 3 * * *` in [`wrangler.jsonc`](wrangler.jsonc) → the `scheduled` export in [`src/worker.ts`](src/worker.ts)). No queue system or external job runner.
-- Native Workers rate limiting (`ASSESSMENT_ATTEMPT_RATE_LIMITER`), Tailwind v4, Biome, Vitest, Playwright, Storybook.
+- Native Workers rate limiting (`ASSESSMENT_ATTEMPT_RATE_LIMITER` and `ASSESSMENT_ACTIVITY_RATE_LIMITER`), Tailwind v4, Biome, Vitest, Playwright, Storybook.
 
 **Not part of the current architecture.** Bun, Hono, Braintrust, Inngest, and a multi-package workspace layout are not installed dependencies, implemented services, or part of the tracked architecture — they appear in this repository only as named exclusions. If a task assumes any of them, verify against `package.json` and tracked source before building, and confirm the intent before introducing one. A comment in [`src/db/schema/aiInsights.ts`](src/db/schema/aiInsights.ts) records the intended background-job direction as Cloudflare Queues or Workflows, keeping that path platform-native.
 
@@ -78,7 +79,9 @@ Layout, file placement, and generated-file rules live in `AGENTS.md` ([Directory
 - **Direction** — guest and claimed attempts remain personal records. Creating an account must not implicitly expose or route them to an organisation or team; sharing will be an explicit later action ([`docs/assessment-mvp.md`](docs/assessment-mvp.md)).
 - **Implemented** — the attempt is the authorization boundary for its answers and result. Children derive ownership through the attempt rather than duplicating tenant columns — a deliberate exception to the repository's usual denormalized tenant-key convention, because these records are personal before any sharing decision exists.
 - **Implemented** — only a SHA-256 hash of the guest token is stored (`guestSessions.tokenHash`); the raw value stays in an `HttpOnly`, `SameSite=Lax` cookie, `Secure` outside local development. Attempt IDs are non-secret UUIDs and never authorize access alone. A live questionnaire holds a continuation capability whose hash is stored on the attempt and rotated when the single resume succeeds.
-- **Implemented** — retention is fixed from attempt creation, never extended on activity. [`src/server/assessmentCleanup.ts`](src/server/assessmentCleanup.ts) deletes expired guest sessions in one indexed statement, lets cascades remove dependents, emits structured `assessment_cleanup_completed` / `assessment_cleanup_failed` logs, and rethrows so Cloudflare records a failed invocation.
+- **Implemented** — retention uses a fixed guest-session deadline, inherited by later attempts and never extended on activity. Access stops at expiry; physical deletion follows during scheduled cleanup. [`src/server/assessmentCleanup.ts`](src/server/assessmentCleanup.ts) drains indexed batches of at most 100 expired guest sessions through the cleanup service; each batch cascades atomically. Lock/statement timeouts and invocation work limits bound execution. Structured success/failure logs report partial counts without raw database errors, and failures rethrow a sanitized error. See [`docs/staging-operations.md`](docs/staging-operations.md) for hosted verification and notification limits.
+- **DB-enforced** — one unfinished attempt per guest session and assessment version, using a partial unique index. This does not deduplicate separate guest sessions issued before cookie receipt.
+- **Implemented** — completion and replacement lock the owned attempt before dependent reads/writes; HTTP endpoints enforce rate limits and validate credentials. Dynamic responses are private/no-store. See [`docs/security-hardening.md`](docs/security-hardening.md#guest-http-controls).
 - Never attach names, emails, analytics identifiers, raw IPs, or user-agent strings to attempts.
 - **Convention** — data minimization extends to identity: the `users` table is a thin domain anchor storing only `authUserId`. Do not add auth identity fields (email, display name, avatar) to it.
 
@@ -109,8 +112,8 @@ pnpm storybook        # Storybook workbench on port 6006
 pnpm build-storybook  # Compile Storybook as CI does
 
 pnpm db:generate      # Generate a Drizzle migration from schema changes
-pnpm db:migrate       # Apply migrations to the local database
-pnpm db:seed          # Seed the local database
+pnpm db:migrate       # Apply migrations to DATABASE_URL; verify the target first
+pnpm db:seed          # Seed the configured database; non-local targets require opt-in
 
 pnpm version:show     # Print the current app version
 pnpm version:check    # Verify version + CHANGELOG metadata (CI gate)

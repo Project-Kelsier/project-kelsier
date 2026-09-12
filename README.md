@@ -2,7 +2,9 @@
 
 Open-source exploration of cognition, communication patterns, and human-centered collaboration.
 
-[Live Demo](https://project-kelsier.mindphreak.workers.dev/) | [Assessment MVP](./docs/assessment-mvp.md) | [Security Notes](./docs/security-hardening.md) | [Versioning](./VERSIONING.md)
+[Staging](https://project-kelsier.mindphreak.workers.dev/) | [Assessment MVP](./docs/assessment-mvp.md) | [Staging Operations](./docs/staging-operations.md) | [Security Notes](./docs/security-hardening.md) | [Versioning](./VERSIONING.md)
+
+Public launch is on hold. The hosted app is staging for verification; its seeded questionnaire and results are demonstration content.
 
 Built with TanStack Start, React, Vite, Storybook, Biome, Vitest, Playwright, GitHub Actions CI, and Cloudflare Workers-ready deployment.
 
@@ -127,3 +129,5 @@ GitHub Actions runs the baseline checks on pushes to `main` and on pull requests
 - `pnpm test:e2e`
 
 CodeRabbit supplies automatic pull request review. Maintainers can request a separate, review-only Claude pass by mentioning `@claude` in a pull request comment or review; Claude is not an automatic or required approver.
+
+The separate database job applies migrations, seeds twice, and runs `src/db/assessmentIntegrity.test.ts` with `RUN_DB_TESTS=true`. Both jobs use the same pinned PostgreSQL image digest and disable persisted checkout credentials.

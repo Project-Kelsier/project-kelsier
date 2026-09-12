@@ -4,6 +4,21 @@ All notable changes to Project Kelsier will be documented in this file.
 
 This project follows semantic versioning while it moves toward MVP. Versions below `1.0.0` may still include breaking product or API changes when they are called out here.
 
+## [Unreleased]
+
+### Changed
+
+- Added persisted answer progression, single-use resume with credential rotation, atomic completion and demonstration scoring, and result recovery on reload.
+- Unified deletion confirmation, explained required questions, and improved keyboard focus for confirmation and save failures.
+- Made questionnaire seeding atomic and immutable for existing content; bounded expiry cleanup with batch, lock, statement, and invocation limits.
+- Added staging deployment evidence, monitoring query definitions, and operational review procedures. Public launch remains on hold; app version stays 0.4.0.
+
+### Security
+
+- Enforced one unfinished guest/version attempt with a partial unique index and serialized concurrent completion/replacement operations.
+- Added activity rate limits, fail-closed hosted IP handling, cookie validation, private/no-store responses, and HTTP/CSRF regression coverage.
+- Pinned CI PostgreSQL images and disabled persisted checkout credentials; expanded database ownership and concurrency tests.
+
 ## [0.4.0] - 2026-08-19
 
 ### Added
