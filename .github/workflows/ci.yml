@@ -18,7 +18,7 @@ jobs:
 
     services:
       postgres:
-        image: postgres:17
+        image: postgres:17@sha256:67f41722b7a8cbdb868a44a4995c846eddfdc2973bccb291ce937dce88ad5675 # 17.11
         env:
           POSTGRES_DB: kelsier_dev
           POSTGRES_USER: kelsier
@@ -38,6 +38,8 @@ jobs:
     steps:
       - name: Checkout
         uses: actions/checkout@34e114876b0b11c390a56381ad16ebd13914f8d5 # v4
+        with:
+          persist-credentials: false
 
       - name: Setup pnpm
         uses: pnpm/action-setup@f40ffcd9367d9f12939873eb1018b921a783ffaa # v4
@@ -72,7 +74,7 @@ jobs:
 
     services:
       postgres:
-        image: postgres:17
+        image: postgres:17@sha256:67f41722b7a8cbdb868a44a4995c846eddfdc2973bccb291ce937dce88ad5675 # 17.11
         env:
           POSTGRES_DB: kelsier_dev
           POSTGRES_USER: kelsier
@@ -95,6 +97,7 @@ jobs:
         uses: actions/checkout@34e114876b0b11c390a56381ad16ebd13914f8d5 # v4
         with:
           fetch-depth: 0
+          persist-credentials: false
 
       - name: Setup pnpm
         uses: pnpm/action-setup@f40ffcd9367d9f12939873eb1018b921a783ffaa # v4

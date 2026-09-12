@@ -59,7 +59,12 @@ test("home page renders the Kelsier hero and interactive questionnaire", async (
 		await expect(
 			page.getByText(`Question ${questionNumber} of 10`),
 		).toBeVisible();
-		await expect(page.locator(".k-q-card .k-q-title")).toBeFocused();
+		const questionPrompt = await page
+			.getByRole("group")
+			.getAttribute("aria-label");
+		await expect(
+			page.getByRole("heading", { name: questionPrompt ?? "", exact: true }),
+		).toBeFocused();
 		const firstOption = page.getByRole("radio").first();
 		await firstOption.focus();
 		await expect(firstOption).toBeFocused();
@@ -94,6 +99,17 @@ test("home page renders the Kelsier hero and interactive questionnaire", async (
 	await expect(
 		page.getByRole("button", { name: "Continue this snapshot" }),
 	).toHaveCount(0);
+	await page.getByRole("button", { name: "Delete saved attempt" }).click();
+	await expect(
+		page.getByRole("button", { name: "Keep attempt" }),
+	).toBeFocused();
+	await expect(
+		page.getByRole("button", { name: "Delete saved attempt" }),
+	).toHaveCount(0);
+	await page.getByRole("button", { name: "Keep attempt" }).click();
+	await expect(
+		page.getByRole("button", { name: "Delete saved attempt" }),
+	).toBeFocused();
 	await page.getByRole("button", { name: "Delete saved attempt" }).click();
 	await page.getByRole("button", { name: "Confirm deletion" }).click();
 	await expect(

@@ -247,6 +247,7 @@ function KelsierButton({
 	...props
 }: ButtonHTMLAttributes<HTMLButtonElement> & {
 	variant?: keyof typeof BUTTON_STYLES;
+	ref?: RefObject<HTMLButtonElement | null>;
 }) {
 	return (
 		<button
@@ -285,6 +286,15 @@ function DeleteAttemptControl({
 	onConfirm: () => void;
 	onRequest: () => void;
 }) {
+	const deleteRequestRef = useRef<HTMLButtonElement>(null);
+	const keepAttemptRef = useRef<HTMLButtonElement>(null);
+	const previousConfirmation = useRef(isConfirmationVisible);
+	useEffect(() => {
+		if (previousConfirmation.current === isConfirmationVisible) return;
+		previousConfirmation.current = isConfirmationVisible;
+		if (isConfirmationVisible) keepAttemptRef.current?.focus();
+		else deleteRequestRef.current?.focus();
+	}, [isConfirmationVisible]);
 	return (
 		<div className="mt-4 border-[var(--k-border)] border-t pt-4">
 			{isConfirmationVisible ? (
@@ -294,7 +304,12 @@ function DeleteAttemptControl({
 						undone.
 					</p>
 					<div className="flex flex-wrap gap-3">
-						<KelsierButton variant="secondary" onClick={onCancel}>
+						<KelsierButton
+							ref={keepAttemptRef}
+							variant="secondary"
+							onClick={onCancel}
+							disabled={isDeleting}
+						>
 							Keep attempt
 						</KelsierButton>
 						<KelsierButton onClick={onConfirm} disabled={isDeleting}>
@@ -303,7 +318,11 @@ function DeleteAttemptControl({
 					</div>
 				</div>
 			) : (
-				<KelsierButton variant="secondary" onClick={onRequest}>
+				<KelsierButton
+					ref={deleteRequestRef}
+					variant="secondary"
+					onClick={onRequest}
+				>
 					Delete saved attempt
 				</KelsierButton>
 			)}
@@ -381,6 +400,11 @@ export function KelsierPage({
 	const [isResuming, setIsResuming] = useState(false);
 	const [isStartingFresh, setIsStartingFresh] = useState(false);
 	const [isSaving, setIsSaving] = useState(false);
+	const [hasSaveError, setHasSaveError] = useState(false);
+	const saveErrorRef = useRef<HTMLParagraphElement>(null);
+	useEffect(() => {
+		if (hasSaveError && !isSaving) saveErrorRef.current?.focus();
+	}, [hasSaveError, isSaving]);
 	const [isDeleting, setIsDeleting] = useState(false);
 	const [isDeleteConfirmationVisible, setIsDeleteConfirmationVisible] =
 		useState(false);
@@ -751,6 +775,7 @@ export function KelsierPage({
 		}
 
 		setIsSaving(true);
+		setHasSaveError(false);
 		setPersistenceMessage("Saving your answer…");
 
 		try {
@@ -775,8 +800,9 @@ export function KelsierPage({
 			setPersistenceMessage("Answer saved.");
 		} catch {
 			setPersistenceMessage(
-				"Your answer wasn’t saved. Check your connection and try again.",
+				"Your answer wasn’t saved. Your selection is still here. Please try again.",
 			);
+			setHasSaveError(true);
 		} finally {
 			setIsSaving(false);
 		}
@@ -1170,46 +1196,22 @@ export function KelsierPage({
 									begin again with the current result engine.
 								</p>
 							)}
-							<div
-								className="k-q-actions mt-[22px] flex justify-between gap-3 max-md:flex-col"
-								ref={ctaActionRef}
-							>
-								<KelsierButton
-									variant="primary"
-									onClick={() => setIsDeleteConfirmationVisible(true)}
-								>
-									Delete saved attempt
-								</KelsierButton>
+							<div className="k-q-actions mt-[22px]" ref={ctaActionRef}>
+								<DeleteAttemptControl
+									isConfirmationVisible={isDeleteConfirmationVisible}
+									isDeleting={isDeleting}
+									onCancel={() => setIsDeleteConfirmationVisible(false)}
+									onConfirm={handleDeleteAttempt}
+									onRequest={() => setIsDeleteConfirmationVisible(true)}
+								/>
 							</div>
-							{isDeleteConfirmationVisible ? (
-								<div className="rounded-xl border border-[var(--k-border)] p-4 text-sm">
-									<p className="mt-0 text-[var(--k-text-muted)]">
-										Delete this attempt and any data saved under it? This cannot
-										be undone.
-									</p>
-									<div className="flex flex-wrap gap-3">
-										<KelsierButton
-											variant="secondary"
-											onClick={() => setIsDeleteConfirmationVisible(false)}
-										>
-											Keep attempt
-										</KelsierButton>
-										<KelsierButton
-											onClick={handleDeleteAttempt}
-											disabled={isDeleting}
-										>
-											{isDeleting ? "Deleting…" : "Confirm deletion"}
-										</KelsierButton>
-									</div>
-								</div>
-							) : null}
 						</QuestionCard>
 					) : (
 						<QuestionCard ref={ctaCardRef}>
 							<div className="k-q-step mb-3.5 flex justify-between text-[10px] text-[var(--k-text-soft)]">
 								<span>
 									Question {currentQuestionIndex + 1} of {questions.length}
-									{currentQuestion.required ? "" : " · Optional"}
+									{currentQuestion.required ? " · Required" : " · Optional"}
 								</span>
 								<span>{answeredCount} answered</span>
 							</div>
@@ -1219,6 +1221,7 @@ export function KelsierPage({
 							<fieldset
 								className="mt-[18px] flex flex-col gap-2.5"
 								aria-label={currentQuestion.prompt}
+								aria-describedby="assessment-answer-help"
 								disabled={isSaving}
 							>
 								{currentQuestion.options.map((option) => {
@@ -1238,6 +1241,14 @@ export function KelsierPage({
 									);
 								})}
 							</fieldset>
+							<p
+								id="assessment-answer-help"
+								className="mt-3 mb-0 text-[var(--k-text-soft)] text-xs"
+							>
+								{currentQuestion.required
+									? "Choose one answer to continue."
+									: "You can skip this question."}
+							</p>
 							<div
 								className="k-q-actions mt-[22px] flex justify-between gap-3 max-md:flex-col"
 								ref={ctaActionRef}
@@ -1263,7 +1274,11 @@ export function KelsierPage({
 								</KelsierButton>
 							</div>
 							{persistenceMessage ? (
-								<p className="mt-3 mb-0 text-[var(--k-text-soft)] text-xs">
+								<p
+									ref={saveErrorRef}
+									tabIndex={-1}
+									className="mt-3 mb-0 text-[var(--k-text-soft)] text-xs"
+								>
 									{persistenceMessage}
 								</p>
 							) : null}

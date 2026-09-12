@@ -1,4 +1,10 @@
-import { fireEvent, render, screen, waitFor } from "@testing-library/react";
+import {
+	fireEvent,
+	render,
+	screen,
+	waitFor,
+	within,
+} from "@testing-library/react";
 import type { AnchorHTMLAttributes, ReactNode } from "react";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import { GITHUB_REPOSITORY_URL } from "#/lib/projectLinks";
@@ -301,6 +307,14 @@ describe("KelsierPage", () => {
 			screen.getByRole("button", { name: "Start and save progress" }),
 		);
 		await screen.findByRole("radio", { name: "Restructure immediately" });
+		expect(screen.getByText("Question 1 of 3 · Required")).toBeTruthy();
+		expect(
+			screen.getByRole("button", { name: "Next question" }),
+		).toHaveProperty("disabled", true);
+		expect(screen.getByRole("group").getAttribute("aria-describedby")).toBe(
+			"assessment-answer-help",
+		);
+		expect(screen.getByText("Choose one answer to continue.")).toBeTruthy();
 		fireEvent.click(
 			screen.getByRole("radio", { name: "Restructure immediately" }),
 		);
@@ -392,7 +406,12 @@ describe("KelsierPage", () => {
 		fireEvent.click(completeButton);
 
 		expect(await screen.findByText("No response")).toBeTruthy();
-		expect(screen.getByText("0")).toBeTruthy();
+		expect(
+			within(screen.getByRole("row", { name: /Adaptability/ })).getByRole(
+				"cell",
+				{ name: "0" },
+			),
+		).toBeTruthy();
 	});
 
 	it("keeps an in-progress questionnaire when the hero call to action is clicked", async () => {
@@ -453,6 +472,38 @@ describe("KelsierPage", () => {
 				screen.getByRole("heading", { name: "Demonstration result" }),
 			).toBe(document.activeElement);
 		});
+	});
+
+	it("keeps completion deletion confirmation focused and cancellable", async () => {
+		render(
+			<KelsierPageComponent
+				questionnaire={assessmentQuestionnaireFixture}
+				persistenceActions={assessmentPersistenceActionsFixture}
+				initialGuestAssessmentResult={
+					await assessmentPersistenceActionsFixture.completeAttempt({
+						attemptId: "10000000-0000-4000-8000-000000000001",
+						continuationToken: "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+						questionId: "new-joiner",
+						optionId: "pair",
+					})
+				}
+			/>,
+		);
+		fireEvent.click(
+			screen.getByRole("button", { name: "Delete saved attempt" }),
+		);
+		expect(
+			screen.queryByRole("button", { name: "Delete saved attempt" }),
+		).toBeNull();
+		const keep = screen.getByRole("button", { name: "Keep attempt" });
+		expect(keep).toBe(document.activeElement);
+		fireEvent.click(keep);
+		expect(screen.getByRole("button", { name: "Delete saved attempt" })).toBe(
+			document.activeElement,
+		);
+		expect(
+			screen.queryByRole("button", { name: "Confirm deletion" }),
+		).toBeNull();
 	});
 
 	it("returns to the questionnaire when the hero call to action is clicked after completion", async () => {
@@ -535,7 +586,13 @@ describe("KelsierPage", () => {
 			}),
 		).toBeTruthy();
 		expect(resumeAttempt).toHaveBeenCalledOnce();
-		expect(screen.getAllByText(/This is its single resume/)).toHaveLength(2);
+		expect(resumeAttempt).toHaveBeenCalledWith(
+			"10000000-0000-4000-8000-000000000001",
+			expect.stringMatching(/^[A-Za-z0-9_-]{43}$/),
+		);
+		expect(
+			within(screen.getByRole("status")).getByText(/This is its single resume/),
+		).toBeTruthy();
 	});
 
 	it("keeps saved answers resumable until a persisted result exists", () => {
@@ -632,8 +689,13 @@ describe("KelsierPage", () => {
 		);
 		fireEvent.click(screen.getByRole("button", { name: "Next question" }));
 
-		expect(await screen.findAllByText(/Your answer wasn’t saved/)).toHaveLength(
-			2,
+		expect(
+			await within(screen.getByRole("status")).findByText(
+				/Your answer wasn’t saved/,
+			),
+		).toBeTruthy();
+		expect(document.activeElement?.textContent).toContain(
+			"Your answer wasn’t saved",
 		);
 		expect(
 			screen.getByRole("heading", {
@@ -670,8 +732,10 @@ describe("KelsierPage", () => {
 		fireEvent.click(screen.getByRole("button", { name: "Confirm deletion" }));
 
 		expect(
-			await screen.findAllByText("Your saved guest attempt has been deleted."),
-		).toHaveLength(2);
+			await within(screen.getByRole("status")).findByText(
+				"Your saved guest attempt has been deleted.",
+			),
+		).toBeTruthy();
 		expect(deleteAttempt).toHaveBeenCalledWith(
 			"10000000-0000-4000-8000-000000000001",
 		);
@@ -703,8 +767,10 @@ describe("KelsierPage", () => {
 		fireEvent.click(screen.getByRole("button", { name: "Confirm deletion" }));
 
 		expect(
-			await screen.findAllByText("Your saved guest attempt has been deleted."),
-		).toHaveLength(2);
+			await within(screen.getByRole("status")).findByText(
+				"Your saved guest attempt has been deleted.",
+			),
+		).toBeTruthy();
 		expect(deleteAttempt).toHaveBeenCalledWith(
 			"10000000-0000-4000-8000-000000000001",
 		);

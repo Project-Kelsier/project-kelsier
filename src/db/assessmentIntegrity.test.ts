@@ -40,6 +40,7 @@ import {
 	assessmentResults,
 	assessmentVersions,
 	guestSessions,
+	users,
 } from "./schema";
 
 describe.skipIf(process.env.RUN_DB_TESTS !== "true")(
@@ -170,6 +171,39 @@ describe.skipIf(process.env.RUN_DB_TESTS !== "true")(
 				last: { ...identity, questionId: lastId, optionId: lastOptionId },
 			};
 		}
+
+		it.each(["none", "both", "user"])(
+			"enforces personal ownership for %s owners",
+			async (owners) => {
+				const rollback = new Error("Rollback ownership fixture");
+				await expect(
+					connection.db.transaction(async (transaction) => {
+						const [user] = await transaction
+							.insert(users)
+							.values({ authUserId: randomUUID() })
+							.returning();
+						const insert = transaction.transaction(async (attemptTransaction) =>
+							attemptTransaction.insert(assessmentAttempts).values({
+								assessmentVersionId: versionId,
+								guestSessionId: owners === "both" ? sessionId : null,
+								userId: owners === "none" ? null : user.id,
+								continuationTokenHash: randomUUID(),
+							}),
+						);
+						if (owners === "user") await insert;
+						else
+							await expect(insert).rejects.toMatchObject({
+								cause: expect.objectContaining({
+									code: "23514",
+									constraint_name:
+										"assessment_attempts_exactly_one_owner_check",
+								}),
+							});
+						throw rollback;
+					}),
+				).rejects.toBe(rollback);
+			},
+		);
 
 		async function seedFixture() {
 			const definition: AssessmentSeed = {

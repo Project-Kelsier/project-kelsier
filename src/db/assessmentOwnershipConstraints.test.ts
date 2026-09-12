@@ -54,6 +54,19 @@ describe("assessment personal ownership constraints", () => {
 		expect(assessmentQuestions.required.notNull).toBe(true);
 		expect(assessmentQuestions.required.hasDefault).toBe(true);
 		expect(guestSessions.expiresAt.notNull).toBe(true);
+		expect(getTableConfig(guestSessions).indexes).toEqual(
+			expect.arrayContaining([
+				expect.objectContaining({
+					config: expect.objectContaining({
+						name: "guest_sessions_token_hash_unique",
+						unique: true,
+						columns: [
+							expect.objectContaining({ name: guestSessions.tokenHash.name }),
+						],
+					}),
+				}),
+			]),
+		);
 		expect(
 			getTableConfig(guestSessions).indexes.map((index) => index.config.name),
 		).toContain("guest_sessions_expires_at_idx");

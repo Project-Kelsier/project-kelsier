@@ -349,6 +349,7 @@ If you cannot run a check locally, say so explicitly in your handoff and explain
 - [`.github/workflows/claude.yml`](.github/workflows/claude.yml) provides on-demand, review-only Claude assistance for maintainers in pull request conversations. Invoke it by mentioning `@claude` in a pull request comment or review.
 - Claude review is intentionally not automatic because CodeRabbit already supplies automatic pull request review. Keep their responsibilities distinct before expanding either workflow.
 - Keep review-assistant actions pinned to reviewed full commit SHAs. Do not grant repository write access unless a separately reviewed workflow explicitly needs Claude to modify code.
+- CI PostgreSQL services use the same reviewed immutable image digest. Review upstream version/source metadata when updating the pin. CI checkouts disable credential persistence because later steps do not need authenticated Git access.
 
 ### TypeScript Paths
 
