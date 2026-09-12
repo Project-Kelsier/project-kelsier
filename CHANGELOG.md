@@ -6,6 +6,10 @@ This project follows semantic versioning while it moves toward MVP. Versions bel
 
 ## [Unreleased]
 
+## [0.4.1] - Public release pending
+
+Dependency and tooling refresh. Version assignment does not authorize deployment or public release.
+
 ### Changed
 
 - Updated the pinned package manager to pnpm 12.4.1 with its registry integrity hash, retaining the existing dependency security policies.
