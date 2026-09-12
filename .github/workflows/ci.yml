@@ -62,6 +62,11 @@ jobs:
       - name: Verify seed is idempotent
         run: pnpm db:seed
 
+      - name: Verify assessment database integrity
+        run: pnpm test src/db/assessmentIntegrity.test.ts
+        env:
+          RUN_DB_TESTS: "true"
+
   validate:
     runs-on: ubuntu-latest
 

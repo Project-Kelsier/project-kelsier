@@ -195,6 +195,8 @@ This repo already has a clear split between unit and end-to-end coverage.
 
 ### Query Helper Tests
 
+`src/db/assessmentIntegrity.test.ts` exercises real PostgreSQL constraints and concurrent attempt creation. It is opt-in with `RUN_DB_TESTS=true` and runs in the CI database job after migration and seed. Locally, set `DATABASE_URL` to the documented `localhost:55432/kelsier_dev` database and run `pnpm test src/db/assessmentIntegrity.test.ts`. The suite refuses non-local hosts and removes only its own fixtures.
+
 When testing Drizzle query helpers, avoid assertions that depend on Drizzle's internal predicate object shape, generated SQL chunk repetition, or magic string counts.
 
 Prefer assertions that verify the intended contract directly:

@@ -159,6 +159,9 @@ export const assessmentAttempts = pgTable(
 	},
 	(table) => [
 		index("assessment_attempts_guest_session_id_idx").on(table.guestSessionId),
+		uniqueIndex("assessment_attempts_guest_version_unfinished_unique")
+			.on(table.guestSessionId, table.assessmentVersionId)
+			.where(sql`${table.completedAt} is null`),
 		index("assessment_attempts_user_id_idx").on(table.userId),
 		index("assessment_attempts_assessment_version_id_idx").on(
 			table.assessmentVersionId,

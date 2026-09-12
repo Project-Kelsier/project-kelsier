@@ -147,7 +147,7 @@ export async function getActiveAssessmentQuestionnaireBySlug(
 			optionLabel: assessmentOptions.label,
 		})
 		.from(assessmentQuestions)
-		.innerJoin(
+		.leftJoin(
 			assessmentOptions,
 			eq(assessmentOptions.questionId, assessmentQuestions.id),
 		)
@@ -161,6 +161,9 @@ export async function getActiveAssessmentQuestionnaireBySlug(
 	>();
 
 	for (const row of rows) {
+		if (row.optionId === null || row.optionLabel === null) {
+			return null;
+		}
 		let question = questionsById.get(row.questionId);
 
 		if (!question) {
@@ -180,10 +183,7 @@ export async function getActiveAssessmentQuestionnaireBySlug(
 		});
 	}
 
-	return {
-		...version,
-		questions,
-	};
+	return questions.length > 0 ? { ...version, questions } : null;
 }
 
 export async function listAssessmentAttemptsForUser(
@@ -458,11 +458,20 @@ export async function createGuestAssessmentAttempt(
 	input: {
 		assessmentVersionId: string;
 		continuationTokenHash: string;
-		guestSessionId?: string;
-		tokenHash?: string;
-		expiresAt?: Date;
-	},
+		expiresAt: Date;
+	} & (
+		| { guestSessionId: string; tokenHash?: never }
+		| { guestSessionId?: never; tokenHash: string }
+	),
 ) {
+	if (
+		!(input.expiresAt instanceof Date) ||
+		!Number.isFinite(input.expiresAt.getTime()) ||
+		(!input.guestSessionId && !input.tokenHash)
+	) {
+		throw new Error("A new guest session requires a token hash and expiry.");
+	}
+
 	return db.transaction(async (transaction) => {
 		let guestSessionId = input.guestSessionId;
 		const expiresAt = input.expiresAt;
@@ -493,16 +502,19 @@ export async function createGuestAssessmentAttempt(
 				assessmentVersionId: input.assessmentVersionId,
 				continuationTokenHash: input.continuationTokenHash,
 			})
+			.onConflictDoNothing({
+				target: [
+					assessmentAttempts.guestSessionId,
+					assessmentAttempts.assessmentVersionId,
+				],
+				where: isNull(assessmentAttempts.completedAt),
+			})
 			.returning({
 				id: assessmentAttempts.id,
 				startedAt: assessmentAttempts.startedAt,
 			});
 
-		if (!attempt || !expiresAt) {
-			throw new Error("The assessment attempt could not be created.");
-		}
-
-		return { ...attempt, expiresAt };
+		return attempt ? { ...attempt, expiresAt } : null;
 	});
 }
 

@@ -1,5 +1,5 @@
 import { eq, gt, isNotNull, isNull } from "drizzle-orm";
-import { describe, expect, it, vi } from "vitest";
+import { beforeEach, describe, expect, it, vi } from "vitest";
 import type { DbClient } from "#/db/client";
 import {
 	assessmentAttempts,
@@ -34,6 +34,53 @@ vi.mock("drizzle-orm", async (importOriginal) => {
 		isNotNull: vi.fn((column: unknown) => ({ column })),
 		isNull: vi.fn((column: unknown) => ({ column })),
 	};
+});
+
+beforeEach(() => vi.clearAllMocks());
+
+describe("attempt creation validation", () => {
+	it.each([undefined, new Date("invalid")])(
+		"rejects invalid expiry before opening a transaction: %s",
+		async (expiresAt) => {
+			const transaction = vi.fn();
+			await expect(
+				createGuestAssessmentAttempt({ transaction } as unknown as DbClient, {
+					assessmentVersionId: "version-1",
+					continuationTokenHash: "continuation",
+					guestSessionId: "session-1",
+					expiresAt: expiresAt as Date,
+				}),
+			).rejects.toThrow("token hash and expiry");
+			expect(transaction).not.toHaveBeenCalled();
+		},
+	);
+
+	it("returns a controlled conflict when another request created the attempt", async () => {
+		const returning = vi.fn().mockResolvedValue([]);
+		const onConflictDoNothing = vi.fn(() => ({ returning }));
+		const insert = vi.fn(() => ({
+			values: vi.fn(() => ({ onConflictDoNothing })),
+		}));
+		const transaction = vi.fn((callback) => callback({ insert }));
+		expect(
+			await createGuestAssessmentAttempt(
+				{ transaction } as unknown as DbClient,
+				{
+					assessmentVersionId: "version-1",
+					continuationTokenHash: "continuation",
+					guestSessionId: "session-1",
+					expiresAt: new Date("2099-01-01"),
+				},
+			),
+		).toBeNull();
+		expect(onConflictDoNothing).toHaveBeenCalledWith({
+			target: [
+				assessmentAttempts.guestSessionId,
+				assessmentAttempts.assessmentVersionId,
+			],
+			where: expect.anything(),
+		});
+	});
 });
 
 describe("assessment service owner visibility", () => {
@@ -136,8 +183,8 @@ describe("active assessment questionnaire", () => {
 			},
 		]);
 		const questionWhere = vi.fn(() => ({ orderBy: questionOrderBy }));
-		const questionInnerJoin = vi.fn(() => ({ where: questionWhere }));
-		const questionFrom = vi.fn(() => ({ innerJoin: questionInnerJoin }));
+		const questionLeftJoin = vi.fn(() => ({ where: questionWhere }));
+		const questionFrom = vi.fn(() => ({ leftJoin: questionLeftJoin }));
 		const db = {
 			select: vi
 				.fn()
@@ -152,7 +199,7 @@ describe("active assessment questionnaire", () => {
 
 		expect(eq).toHaveBeenCalledWith(assessmentVersions.slug, "kelsier-core-v1");
 		expect(eq).toHaveBeenCalledWith(assessmentVersions.status, "active");
-		expect(questionInnerJoin).toHaveBeenCalledWith(
+		expect(questionLeftJoin).toHaveBeenCalledWith(
 			assessmentOptions,
 			expect.anything(),
 		);
@@ -267,7 +314,9 @@ describe("guest assessment ownership", () => {
 			},
 		]);
 		const sessionValues = vi.fn(() => ({ returning: sessionReturning }));
-		const attemptValues = vi.fn(() => ({ returning: attemptReturning }));
+		const attemptValues = vi.fn(() => ({
+			onConflictDoNothing: vi.fn(() => ({ returning: attemptReturning })),
+		}));
 		const transaction = {
 			insert: vi
 				.fn()

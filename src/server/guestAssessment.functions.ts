@@ -140,13 +140,13 @@ export const startGuestAssessment = createServerFn({ method: "POST" }).handler(
 		const existingSession = existingTokenHash
 			? await getActiveGuestSessionByTokenHash(db, existingTokenHash, now)
 			: null;
-		const guestToken = existingSession ? null : generateGuestToken();
+		const guestToken = generateGuestToken();
 		const continuationToken = generateGuestToken();
 		const expiresAt = existingSession?.expiresAt ?? getGuestSessionExpiry(now);
 
-		if (existingSession) {
+		if (existingSession && existingTokenHash) {
 			const existingAttempt = await getGuestIncompleteAssessmentEntry(db, {
-				tokenHash: existingTokenHash as string,
+				tokenHash: existingTokenHash,
 				assessmentVersionId: questionnaire.id,
 				now,
 			});
@@ -162,12 +162,20 @@ export const startGuestAssessment = createServerFn({ method: "POST" }).handler(
 		const attempt = await createGuestAssessmentAttempt(db, {
 			assessmentVersionId: questionnaire.id,
 			continuationTokenHash: await hashGuestCredential(continuationToken),
-			guestSessionId: existingSession?.id,
-			tokenHash: guestToken ? await hashGuestCredential(guestToken) : undefined,
+			...(existingSession
+				? { guestSessionId: existingSession.id }
+				: { tokenHash: await hashGuestCredential(guestToken) }),
 			expiresAt,
 		});
 
-		if (guestToken) {
+		if (!attempt) {
+			setResponseStatus(409);
+			throw new Error(
+				"An unfinished assessment already belongs to this browser session.",
+			);
+		}
+
+		if (!existingSession) {
 			setCookie(GUEST_COOKIE_NAME, guestToken, {
 				httpOnly: true,
 				secure: !isLocalRequest(getRequestUrl()),
