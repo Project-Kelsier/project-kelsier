@@ -15,6 +15,9 @@ import {
 	createGuestAssessmentAttempt,
 	deleteGuestAssessmentAttempt,
 	getActiveAssessmentQuestionnaireBySlug,
+	getGuestAssessmentProgress,
+	getGuestIncompleteAssessmentEntry,
+	getLatestGuestAssessmentResult,
 	replaceGuestAssessmentAttempt,
 	resumeGuestAssessmentAttempt,
 	saveGuestAssessmentAnswer,
@@ -334,6 +337,101 @@ describe.skipIf(process.env.RUN_DB_TESTS !== "true")(
 					.from(assessmentAnswers)
 					.where(eq(assessmentAnswers.attemptId, fixture.identity.attemptId)),
 			).toHaveLength(0);
+		});
+
+		it("rejects another guest across every attempt operation and completed result access", async () => {
+			const fixture = await responseFixture();
+			const otherId = randomUUID();
+			const otherToken = randomUUID();
+			await connection.db
+				.insert(guestSessions)
+				.values({ id: otherId, tokenHash: otherToken, expiresAt });
+			try {
+				const foreign = { ...fixture.identity, tokenHash: otherToken };
+				const lookup = {
+					tokenHash: otherToken,
+					assessmentVersionId: versionId,
+					now: new Date(),
+				};
+				expect(
+					await getGuestAssessmentProgress(connection.db, foreign),
+				).toBeNull();
+				expect(
+					await getGuestIncompleteAssessmentEntry(connection.db, lookup),
+				).toBeNull();
+				expect(await resumeGuestAssessmentAttempt(connection.db, foreign)).toBe(
+					"not-found",
+				);
+				expect(
+					await replaceGuestAssessmentAttempt(connection.db, {
+						...foreign,
+						assessmentVersionId: versionId,
+					}),
+				).toBeNull();
+				expect(
+					await saveGuestAssessmentAnswer(connection.db, {
+						...fixture.first,
+						tokenHash: otherToken,
+					}),
+				).toMatchObject({ status: "not-found" });
+				expect(
+					await completeGuestAssessmentAttempt(connection.db, {
+						...fixture.last,
+						tokenHash: otherToken,
+					}),
+				).toMatchObject({ status: "not-found" });
+				expect(await deleteGuestAssessmentAttempt(connection.db, foreign)).toBe(
+					false,
+				);
+				await saveGuestAssessmentAnswer(connection.db, fixture.first);
+				await completeGuestAssessmentAttempt(connection.db, fixture.last);
+				expect(
+					await getLatestGuestAssessmentResult(connection.db, lookup),
+				).toBeNull();
+				expect(await deleteGuestAssessmentAttempt(connection.db, foreign)).toBe(
+					false,
+				);
+				expect(
+					await getLatestGuestAssessmentResult(connection.db, {
+						...lookup,
+						tokenHash,
+					}),
+				).not.toBeNull();
+			} finally {
+				await connection.db
+					.delete(guestSessions)
+					.where(eq(guestSessions.id, otherId));
+			}
+		});
+
+		it("rejects expired credentials before cleanup has removed the rows", async () => {
+			const fixture = await responseFixture();
+			await saveGuestAssessmentAnswer(connection.db, fixture.first);
+			await connection.db
+				.update(guestSessions)
+				.set({ expiresAt: new Date(0) })
+				.where(eq(guestSessions.id, sessionId));
+			expect(
+				await getGuestAssessmentProgress(connection.db, fixture.identity),
+			).toBeNull();
+			expect(
+				await getGuestIncompleteAssessmentEntry(connection.db, {
+					...fixture.identity,
+					assessmentVersionId: versionId,
+				}),
+			).toBeNull();
+			expect(
+				await resumeGuestAssessmentAttempt(connection.db, fixture.identity),
+			).toBe("not-found");
+			expect(
+				await saveGuestAssessmentAnswer(connection.db, fixture.changed),
+			).toMatchObject({ status: "not-found" });
+			expect(
+				await completeGuestAssessmentAttempt(connection.db, fixture.last),
+			).toMatchObject({ status: "not-found" });
+			expect(
+				await deleteGuestAssessmentAttempt(connection.db, fixture.identity),
+			).toBe(false);
 		});
 
 		it("allows one winner when the same guest creates attempts concurrently", async () => {

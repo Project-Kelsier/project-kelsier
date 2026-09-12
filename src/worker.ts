@@ -4,7 +4,12 @@ import { runAssessmentCleanup } from "#/server/assessmentCleanup";
 
 export default {
 	async fetch(request) {
-		return await startServer.fetch(request);
+		const response = await startServer.fetch(request);
+		// HTML can embed guest results, and RPC errors can precede the handler.
+		// Static assets are served separately by the assets binding.
+		const privateResponse = new Response(response.body, response);
+		privateResponse.headers.set("Cache-Control", "private, no-store");
+		return privateResponse;
 	},
 	async scheduled(controller, env) {
 		await runAssessmentCleanup(getDb(env), {

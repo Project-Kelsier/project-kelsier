@@ -19,6 +19,20 @@ The repository should preserve these defaults unless a reviewed change explicitl
 - Do not let untrusted pull requests save dependency caches used by trusted jobs.
 - Do not grant `id-token: write` to CI jobs that install or execute pull-request-controlled code.
 
+## Guest HTTP Controls
+
+`src/server/guestRateLimit.ts` limits creation/replacement to 10 per minute and questionnaire reads, guest reads, saves, resume, and completion to 120 per minute. Deletion has a separate 120-per-minute key so exhaustion of the activity bucket does not itself block deletion. All keys contain a transient hash of Cloudflare's edge-provided `CF-Connecting-IP`; `X-Forwarded-For` and `X-Forwarded-Host` are not trusted for these decisions. Hosted requests without the edge address and limiter failures return 503 before database queries. Throttled requests return 429 with `Retry-After: 60`. Local development without an edge header uses a shared local-only key.
+
+These [Cloudflare native limits](https://developers.cloudflare.com/workers/runtime-apis/bindings/rate-limit/) are approximate and local to a Cloudflare location. They do not guarantee a global request budget or defeat distributed attackers. Visitors behind one IP share limits; tune them from staging observations. Concurrent first starts before cookie receipt can issue separate guest sessions, bounded by creation throttling rather than the per-session unique index. Do not claim browser-wide uniqueness before a session exists.
+
+Guest cookies are checked for the issued token format before lookup. New cookies are host-only, HttpOnly, SameSite=Lax, and Secure unless the actual request URL is explicitly local; forwarded host headers cannot disable Secure. Existing sessions are not extended by reads or starts. Every service operation still authorizes against the owning, unexpired guest credential, with continuation tokens additionally required for answer writes and completion.
+
+The installed [TanStack default server-function middleware](https://tanstack.com/start/latest/docs/framework/react/guide/middleware) checks same-origin browser metadata. A new custom Start instance must explicitly retain CSRF protection. Browser security tests replay an authenticated request with cross-site and opaque origins (403), without the owner cookie (404), and as a legitimate same-origin retry (200).
+
+Dynamic Worker responses, including server-rendered guest data and errors, use `Cache-Control: private, no-store`. Static assets remain under the assets binding. Questionnaire error logging omits raw database exceptions. The public questionnaire is not cached yet; any later cache must exclude all guest entry, result, credential, and rendered private data.
+
+The new activity binding must accompany the code when deploying. Local tests and generated configuration do not constitute hosted verification or public launch approval.
+
 ## Supply-Chain Controls
 
 ### pnpm

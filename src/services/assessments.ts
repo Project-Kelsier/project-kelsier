@@ -223,7 +223,7 @@ export async function getActiveGuestSessionByTokenHash(
 	db: DbClient,
 	tokenHash: string,
 	now: Date,
-) {
+): Promise<{ id: string; expiresAt: Date } | null> {
 	const [session] = await db
 		.select({
 			id: guestSessions.id,

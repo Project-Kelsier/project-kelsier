@@ -2,9 +2,9 @@ import { env } from "cloudflare:workers";
 import { createServerFn } from "@tanstack/react-start";
 import {
 	getCookie,
-	getRequestIP,
-	getRequestUrl,
+	getRequest,
 	setCookie,
+	setResponseHeader,
 	setResponseStatus,
 } from "@tanstack/react-start/server";
 import { getDb } from "#/db/client.worker";
@@ -31,33 +31,51 @@ import {
 	isLocalRequest,
 } from "./guestCredential";
 
-const ATTEMPT_ID_PATTERN =
+import { enforceGuestRateLimit } from "./guestRateLimit";
+
+const UUID_PATTERN =
 	/^[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i;
 const CONTINUATION_TOKEN_PATTERN = /^[A-Za-z0-9_-]{43}$/;
 
+function privateResponse() {
+	setResponseHeader("Cache-Control", "private, no-store");
+}
+
+function readGuestToken() {
+	const token = getCookie(GUEST_COOKIE_NAME);
+	return token && CONTINUATION_TOKEN_PATTERN.test(token) ? token : null;
+}
+
+function invalidInput(message: string): never {
+	setResponseStatus(400);
+	throw new Error(message);
+}
+
 function validateAttemptInput(input: unknown) {
+	privateResponse();
 	if (
 		typeof input !== "object" ||
 		input === null ||
 		!("attemptId" in input) ||
 		typeof input.attemptId !== "string" ||
-		!ATTEMPT_ID_PATTERN.test(input.attemptId)
+		!UUID_PATTERN.test(input.attemptId)
 	) {
-		throw new Error("A valid assessment attempt ID is required.");
+		invalidInput("A valid assessment attempt ID is required.");
 	}
 
 	return { attemptId: input.attemptId };
 }
 
 function validateAssessmentVersionInput(input: unknown) {
+	privateResponse();
 	if (
 		typeof input !== "object" ||
 		input === null ||
 		!("assessmentVersionId" in input) ||
 		typeof input.assessmentVersionId !== "string" ||
-		!ATTEMPT_ID_PATTERN.test(input.assessmentVersionId)
+		!UUID_PATTERN.test(input.assessmentVersionId)
 	) {
-		throw new Error("A valid assessment version ID is required.");
+		invalidInput("A valid assessment version ID is required.");
 	}
 
 	return { assessmentVersionId: input.assessmentVersionId };
@@ -73,7 +91,7 @@ function validateContinuationInput(input: unknown) {
 		typeof input.continuationToken !== "string" ||
 		!CONTINUATION_TOKEN_PATTERN.test(input.continuationToken)
 	) {
-		throw new Error("A valid assessment continuation token is required.");
+		invalidInput("A valid assessment continuation token is required.");
 	}
 
 	return { ...attempt, continuationToken: input.continuationToken };
@@ -87,13 +105,13 @@ function validateAnswerInput(input: unknown) {
 		input === null ||
 		!("questionId" in input) ||
 		typeof input.questionId !== "string" ||
-		!ATTEMPT_ID_PATTERN.test(input.questionId) ||
+		!UUID_PATTERN.test(input.questionId) ||
 		!("optionId" in input) ||
 		(input.optionId !== null &&
 			(typeof input.optionId !== "string" ||
-				!ATTEMPT_ID_PATTERN.test(input.optionId)))
+				!UUID_PATTERN.test(input.optionId)))
 	) {
-		throw new Error("A valid assessment answer is required.");
+		invalidInput("A valid assessment answer is required.");
 	}
 
 	return {
@@ -103,23 +121,10 @@ function validateAnswerInput(input: unknown) {
 	};
 }
 
-async function enforceAttemptCreationRateLimit() {
-	const requestKey = await hashGuestCredential(
-		getRequestIP() ?? "unavailable-request-ip",
-	);
-	const outcome = await env.ASSESSMENT_ATTEMPT_RATE_LIMITER.limit({
-		key: requestKey,
-	});
-
-	if (!outcome.success) {
-		setResponseStatus(429);
-		throw new Error("Too many assessment starts. Please try again shortly.");
-	}
-}
-
 export const startGuestAssessment = createServerFn({ method: "POST" }).handler(
 	async () => {
-		await enforceAttemptCreationRateLimit();
+		privateResponse();
+		await enforceGuestRateLimit("creation");
 
 		const db = getDb(env);
 		const questionnaire = await getActiveAssessmentQuestionnaireBySlug(
@@ -133,7 +138,7 @@ export const startGuestAssessment = createServerFn({ method: "POST" }).handler(
 		}
 
 		const now = new Date();
-		const existingToken = getCookie(GUEST_COOKIE_NAME);
+		const existingToken = readGuestToken();
 		const existingTokenHash = existingToken
 			? await hashGuestCredential(existingToken)
 			: null;
@@ -178,7 +183,7 @@ export const startGuestAssessment = createServerFn({ method: "POST" }).handler(
 		if (!existingSession) {
 			setCookie(GUEST_COOKIE_NAME, guestToken, {
 				httpOnly: true,
-				secure: !isLocalRequest(getRequestUrl()),
+				secure: !isLocalRequest(new URL(getRequest().url)),
 				sameSite: "lax",
 				path: "/",
 				maxAge: GUEST_SESSION_TTL_SECONDS,
@@ -196,7 +201,8 @@ export const startGuestAssessment = createServerFn({ method: "POST" }).handler(
 export const getGuestAssessmentEntry = createServerFn({ method: "GET" })
 	.validator(validateAssessmentVersionInput)
 	.handler(async ({ data }) => {
-		const guestToken = getCookie(GUEST_COOKIE_NAME);
+		await enforceGuestRateLimit("activity");
+		const guestToken = readGuestToken();
 
 		if (!guestToken) {
 			return null;
@@ -222,7 +228,8 @@ export const getGuestAssessmentEntry = createServerFn({ method: "GET" })
 export const getGuestAssessmentResult = createServerFn({ method: "GET" })
 	.validator(validateAssessmentVersionInput)
 	.handler(async ({ data }) => {
-		const guestToken = getCookie(GUEST_COOKIE_NAME);
+		await enforceGuestRateLimit("activity");
+		const guestToken = readGuestToken();
 
 		if (!guestToken) {
 			return null;
@@ -238,19 +245,21 @@ export const getGuestAssessmentResult = createServerFn({ method: "GET" })
 export const resumeGuestAssessment = createServerFn({ method: "POST" })
 	.validator(validateContinuationInput)
 	.handler(async ({ data }) => {
-		const guestToken = getCookie(GUEST_COOKIE_NAME);
+		await enforceGuestRateLimit("activity");
+		const guestToken = readGuestToken();
 
 		if (!guestToken) {
 			setResponseStatus(404);
 			throw new Error("The assessment attempt is unavailable.");
 		}
 
+		const db = getDb(env);
 		const now = new Date();
 		const tokenHash = await hashGuestCredential(guestToken);
 		const continuationTokenHash = await hashGuestCredential(
 			data.continuationToken,
 		);
-		const outcome = await resumeGuestAssessmentAttempt(getDb(env), {
+		const outcome = await resumeGuestAssessmentAttempt(db, {
 			attemptId: data.attemptId,
 			tokenHash,
 			continuationTokenHash,
@@ -272,7 +281,7 @@ export const resumeGuestAssessment = createServerFn({ method: "POST" })
 			throw new Error("The assessment attempt is unavailable.");
 		}
 
-		const progress = await getGuestAssessmentProgress(getDb(env), {
+		const progress = await getGuestAssessmentProgress(db, {
 			attemptId: data.attemptId,
 			tokenHash,
 			continuationTokenHash,
@@ -298,8 +307,8 @@ export const resumeGuestAssessment = createServerFn({ method: "POST" })
 export const startFreshGuestAssessment = createServerFn({ method: "POST" })
 	.validator(validateContinuationInput)
 	.handler(async ({ data }) => {
-		await enforceAttemptCreationRateLimit();
-		const guestToken = getCookie(GUEST_COOKIE_NAME);
+		await enforceGuestRateLimit("creation");
+		const guestToken = readGuestToken();
 
 		if (!guestToken) {
 			setResponseStatus(404);
@@ -340,7 +349,8 @@ export const startFreshGuestAssessment = createServerFn({ method: "POST" })
 export const saveGuestAnswer = createServerFn({ method: "POST" })
 	.validator(validateAnswerInput)
 	.handler(async ({ data }) => {
-		const guestToken = getCookie(GUEST_COOKIE_NAME);
+		await enforceGuestRateLimit("activity");
+		const guestToken = readGuestToken();
 
 		if (!guestToken) {
 			setResponseStatus(404);
@@ -382,7 +392,8 @@ export const saveGuestAnswer = createServerFn({ method: "POST" })
 export const completeGuestAssessment = createServerFn({ method: "POST" })
 	.validator(validateAnswerInput)
 	.handler(async ({ data }) => {
-		const guestToken = getCookie(GUEST_COOKIE_NAME);
+		await enforceGuestRateLimit("activity");
+		const guestToken = readGuestToken();
 
 		if (!guestToken) {
 			setResponseStatus(404);
@@ -419,7 +430,8 @@ export const completeGuestAssessment = createServerFn({ method: "POST" })
 export const deleteGuestAttempt = createServerFn({ method: "POST" })
 	.validator(validateAttemptInput)
 	.handler(async ({ data }) => {
-		const guestToken = getCookie(GUEST_COOKIE_NAME);
+		await enforceGuestRateLimit("deletion");
+		const guestToken = readGuestToken();
 
 		if (!guestToken) {
 			setResponseStatus(404);
