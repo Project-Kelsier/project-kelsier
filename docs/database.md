@@ -88,6 +88,20 @@ The local seed includes three domain users across two organisations so ownership
 
 The fake auth IDs are stable lookup keys for development and tests. They do not represent real auth-provider records, and the seed remains development-only.
 
+The assessment seed inserts each questionnaire atomically. Repeating identical content preserves row identities and retired status. Any content drift fails instead of rewriting existing questions, options, or scoring weights. Introduce an explicit new questionnaire slug and review the active-questionnaire selector when intentionally changing content; this does not require automatically changing the app release version. The guard protects the seed path, not privileged direct SQL edits.
+
+### Historical migration preflight
+
+Do not rewrite migrations already applied to an environment. The staging evidence in `docs/assessment-mvp.md` records application of the historical migrations on 2026-08-17; it does not prove the provenance of every historical result or the state of another database. Before upgrading an older populated environment, take a recoverable backup and inspect its migration ledger and data:
+
+- `0008` adds a required expiry without a backfill. A database with existing guest sessions needs a separately reviewed expiry backfill before that step; do not discard sessions to make the migration pass.
+- `0008` removes the old result foreign key and `0009` installs the composite replacement. Apply the migration sequence together without serving writes between these steps, and verify the composite constraint afterward.
+- `0010` uses a volatile token default and may rewrite a populated attempts table. Schedule the upgrade with the required lock and storage headroom.
+- `0011` relabels existing `weighted-average-v1` results as `dimension-mean-v1`. Verify that those results were actually computed by that algorithm using trusted historical code/data. If that cannot be established, treat provenance as unverified and design a reviewed repair; do not blindly relabel results again.
+- `0012` deliberately fails if duplicate unfinished guest/version attempts exist. Inspect grouped duplicate counts first and agree a preservation/recovery strategy before applying the unique index.
+
+Local migration and seed checks do not certify a hosted database safe to upgrade. No hosted provenance audit or historical data repair is implied by these checks.
+
 ## Tenant Integrity
 
 Tables that duplicate `organisation_id` for tenant-scoped lookup speed must still enforce that duplicated tenant key at the database level when they also reference a parent row.

@@ -1,6 +1,6 @@
 // @vitest-environment node
 import { randomUUID } from "node:crypto";
-import { eq } from "drizzle-orm";
+import { eq, sql } from "drizzle-orm";
 import {
 	afterAll,
 	afterEach,
@@ -10,6 +10,14 @@ import {
 	expect,
 	it,
 } from "vitest";
+import {
+	type AssessmentSeed,
+	seedAssessmentQuestionnaire,
+} from "../../scripts/assessment-seed";
+import {
+	CLEANUP_BATCH_SIZE,
+	deleteExpiredGuestSessions,
+} from "../services/assessmentCleanup";
 import {
 	completeGuestAssessmentAttempt,
 	createGuestAssessmentAttempt,
@@ -22,6 +30,7 @@ import {
 	resumeGuestAssessmentAttempt,
 	saveGuestAssessmentAnswer,
 } from "../services/assessments";
+import type { DbClient } from "./client";
 import { createDbConnection, type NodeDbConnection } from "./client.node";
 import {
 	assessmentAnswers,
@@ -161,6 +170,256 @@ describe.skipIf(process.env.RUN_DB_TESTS !== "true")(
 				last: { ...identity, questionId: lastId, optionId: lastOptionId },
 			};
 		}
+
+		async function seedFixture() {
+			const definition: AssessmentSeed = {
+				slug: versionId,
+				title: "Seed test",
+				description: "Demonstration",
+				questions: [
+					{
+						dimension: "test",
+						prompt: "Question",
+						required: true,
+						sortOrder: 1,
+						options: [
+							{
+								sortOrder: 1,
+								label: "One",
+								value: "one",
+								scoreWeights: { test: 1 },
+							},
+						],
+					},
+				],
+			};
+			await connection.db
+				.delete(assessmentVersions)
+				.where(eq(assessmentVersions.id, versionId));
+			versionId = await seedAssessmentQuestionnaire(connection.db, definition);
+			return definition;
+		}
+
+		it("seeds identical content without changing row identities or reactivating a retired version", async () => {
+			const definition = await seedFixture();
+			const original = await connection.db
+				.select()
+				.from(assessmentQuestions)
+				.where(eq(assessmentQuestions.versionId, versionId));
+			await connection.db
+				.update(assessmentVersions)
+				.set({ status: "retired" })
+				.where(eq(assessmentVersions.id, versionId));
+			expect(await seedAssessmentQuestionnaire(connection.db, definition)).toBe(
+				versionId,
+			);
+			expect(
+				await connection.db
+					.select()
+					.from(assessmentQuestions)
+					.where(eq(assessmentQuestions.versionId, versionId)),
+			).toEqual(original);
+			const [version] = await connection.db
+				.select()
+				.from(assessmentVersions)
+				.where(eq(assessmentVersions.id, versionId));
+			expect(version.status).toBe("retired");
+		});
+
+		it.each([
+			"prompt",
+			"required",
+			"dimension",
+			"score",
+			"label",
+			"value",
+			"added-question",
+			"removed-option",
+		])(
+			"rejects seed drift (%s) and preserves completed scoring history",
+			async (change) => {
+				const definition = await seedFixture();
+				const [question] = await connection.db
+					.select()
+					.from(assessmentQuestions)
+					.where(eq(assessmentQuestions.versionId, versionId));
+				const [option] = await connection.db
+					.select()
+					.from(assessmentOptions)
+					.where(eq(assessmentOptions.questionId, question.id));
+				const continuationTokenHash = randomUUID();
+				const attempt = await createGuestAssessmentAttempt(connection.db, {
+					guestSessionId: sessionId,
+					assessmentVersionId: versionId,
+					continuationTokenHash,
+					expiresAt,
+				});
+				if (!attempt) throw new Error("Fixture missing");
+				const identity = {
+					attemptId: attempt.id,
+					tokenHash,
+					continuationTokenHash,
+					now: new Date(),
+				};
+				const result = await completeGuestAssessmentAttempt(connection.db, {
+					...identity,
+					questionId: question.id,
+					optionId: option.id,
+				});
+				const changed = structuredClone(definition);
+				const first = changed.questions[0];
+				if (change === "prompt") first.prompt = "Changed";
+				if (change === "required") first.required = false;
+				if (change === "dimension") first.dimension = "changed";
+				if (change === "score") first.options[0].scoreWeights.test = 5;
+				if (change === "label") first.options[0].label = "Changed";
+				if (change === "value") first.options[0].value = "changed";
+				if (change === "added-question")
+					changed.questions.push({ ...first, sortOrder: 2 });
+				if (change === "removed-option") first.options = [];
+				await expect(
+					seedAssessmentQuestionnaire(connection.db, changed),
+				).rejects.toThrow("explicit new assessment version");
+				expect(
+					await seedAssessmentQuestionnaire(connection.db, definition),
+				).toBe(versionId);
+				expect(
+					await completeGuestAssessmentAttempt(connection.db, {
+						...identity,
+						questionId: question.id,
+						optionId: option.id,
+					}),
+				).toEqual(result);
+			},
+		);
+
+		it("rolls back a new incomplete questionnaire rather than publishing partial seed rows", async () => {
+			const definition = await seedFixture();
+			const invalid = {
+				...definition,
+				slug: randomUUID(),
+				questions: [{ ...definition.questions[0], options: [] }],
+			};
+			await expect(
+				seedAssessmentQuestionnaire(connection.db, invalid),
+			).rejects.toThrow("require options");
+			expect(
+				await connection.db
+					.select()
+					.from(assessmentVersions)
+					.where(eq(assessmentVersions.slug, invalid.slug)),
+			).toHaveLength(0);
+		});
+
+		it("bounds cleanup batches and preserves unexpired sessions", async () => {
+			// Use a transaction-local table: no developer sessions can be deleted.
+			await connection.db.transaction(async (transaction) => {
+				await transaction.execute(
+					sql`create temporary table guest_sessions (like public.guest_sessions including all) on commit drop`,
+				);
+				await transaction.execute(
+					sql`insert into guest_sessions (token_hash, expires_at) select 'cleanup-' || value, '2000-01-01'::timestamptz from generate_series(1, ${CLEANUP_BATCH_SIZE + 1}) value`,
+				);
+				await transaction.execute(
+					sql`insert into guest_sessions (token_hash, expires_at) values ('unexpired', '2099-01-01')`,
+				);
+				const isolated = transaction as unknown as DbClient;
+				expect(
+					await deleteExpiredGuestSessions(isolated, new Date("2001-01-01")),
+				).toBe(CLEANUP_BATCH_SIZE);
+				expect(
+					await deleteExpiredGuestSessions(isolated, new Date("2001-01-01")),
+				).toBe(1);
+				expect(
+					await deleteExpiredGuestSessions(isolated, new Date("2001-01-01")),
+				).toBe(0);
+				expect(
+					await transaction.execute(sql`select token_hash from guest_sessions`),
+				).toEqual([expect.objectContaining({ token_hash: "unexpired" })]);
+			});
+		});
+
+		it("cascades expiry through completed answers and results atomically", async () => {
+			const fixture = await responseFixture();
+			await saveGuestAssessmentAnswer(connection.db, fixture.first);
+			expect(
+				await completeGuestAssessmentAttempt(connection.db, fixture.last),
+			).not.toBeNull();
+			const rollback = new Error("Rollback cleanup test");
+			await expect(
+				connection.db.transaction(async (transaction) => {
+					await transaction
+						.update(guestSessions)
+						.set({ expiresAt: new Date("1800-01-01") })
+						.where(eq(guestSessions.id, sessionId));
+					await deleteExpiredGuestSessions(
+						transaction as unknown as DbClient,
+						new Date("1801-01-01"),
+					);
+					for (const table of [assessmentAnswers, assessmentResults]) {
+						expect(
+							await transaction
+								.select()
+								.from(table)
+								.where(eq(table.attemptId, fixture.identity.attemptId)),
+						).toHaveLength(0);
+					}
+					expect(
+						await transaction
+							.select()
+							.from(assessmentAttempts)
+							.where(eq(assessmentAttempts.id, fixture.identity.attemptId)),
+					).toHaveLength(0);
+					throw rollback;
+				}),
+			).rejects.toBe(rollback);
+			// The test rolls back every deletion, including any pre-existing old rows.
+			expect(
+				await connection.db
+					.select()
+					.from(assessmentResults)
+					.where(eq(assessmentResults.attemptId, fixture.identity.attemptId)),
+			).toHaveLength(1);
+		});
+
+		it("times out cleanup contention without partially deleting a session", async () => {
+			const fixture = await responseFixture();
+			await connection.db
+				.update(guestSessions)
+				.set({ expiresAt: new Date("1800-01-01") })
+				.where(eq(guestSessions.id, sessionId));
+			const rollback = new Error("Rollback cleanup test");
+			await connection.db.transaction(async (lock) => {
+				await lock
+					.select()
+					.from(assessmentAttempts)
+					.where(eq(assessmentAttempts.id, fixture.identity.attemptId))
+					.for("update");
+				await expect(
+					connection.db.transaction(async (transaction) => {
+						await deleteExpiredGuestSessions(
+							transaction as unknown as DbClient,
+							new Date("1801-01-01"),
+						);
+						throw rollback;
+					}),
+				).rejects.toMatchObject({
+					cause: expect.objectContaining({ code: "55P03" }),
+				});
+			});
+			expect(
+				await connection.db
+					.select()
+					.from(guestSessions)
+					.where(eq(guestSessions.id, sessionId)),
+			).toHaveLength(1);
+			expect(
+				await connection.db
+					.select()
+					.from(assessmentAttempts)
+					.where(eq(assessmentAttempts.id, fixture.identity.attemptId)),
+			).toHaveLength(1);
+		});
 
 		it("scores the committed answer when completion waits for a concurrent save", async () => {
 			const fixture = await responseFixture();

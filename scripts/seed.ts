@@ -1,15 +1,13 @@
 import "dotenv/config";
 import { createDbConnection } from "#/db/client.node.ts";
 import {
-	assessmentOptions,
-	assessmentQuestions,
-	assessmentVersions,
 	organisationMembers,
 	organisations,
 	teamMembers,
 	teams,
 	users,
 } from "#/db/schema/index.ts";
+import { seedAssessmentQuestionnaire } from "./assessment-seed.ts";
 import {
 	assertSeedTargetIsAllowed,
 	getSeedDatabaseUrl,
@@ -299,83 +297,21 @@ async function seed() {
 			},
 		});
 
-	const [assessmentVersion] = await db
-		.insert(assessmentVersions)
-		.values({
-			slug: "kelsier-core-v1",
-			title: "Kelsier Core V1",
-			description:
-				"Starter assessment for early team communication patterns across ten dimensions.",
-			status: "active",
-		})
-		.onConflictDoUpdate({
-			target: assessmentVersions.slug,
-			set: {
-				title: "Kelsier Core V1",
-				description:
-					"Starter assessment for early team communication patterns across ten dimensions.",
-				status: "active",
-				updatedAt,
-			},
-		})
-		.returning({ id: assessmentVersions.id });
-
-	if (!assessmentVersion) {
-		throw new Error("Failed to seed assessment version.");
-	}
-
-	for (const question of questions) {
-		const [seededQuestion] = await db
-			.insert(assessmentQuestions)
-			.values({
-				versionId: assessmentVersion.id,
-				dimension: question.dimension,
-				required: question.required,
-				sortOrder: question.sortOrder,
-				prompt: question.prompt,
-			})
-			.onConflictDoUpdate({
-				target: [assessmentQuestions.versionId, assessmentQuestions.sortOrder],
-				set: {
-					dimension: question.dimension,
-					prompt: question.prompt,
-					required: question.required,
-					updatedAt,
-				},
-			})
-			.returning({ id: assessmentQuestions.id });
-
-		if (!seededQuestion) {
-			throw new Error(
-				`Failed to seed assessment question ${question.sortOrder}.`,
-			);
-		}
-
-		for (const [optionIndex, option] of optionLabels.entries()) {
-			await db
-				.insert(assessmentOptions)
-				.values({
-					questionId: seededQuestion.id,
-					sortOrder: optionIndex + 1,
-					label: option.label,
-					value: option.value,
-					scoreWeights: {
-						[question.dimension]: option.score,
-					},
-				})
-				.onConflictDoUpdate({
-					target: [assessmentOptions.questionId, assessmentOptions.sortOrder],
-					set: {
-						label: option.label,
-						value: option.value,
-						scoreWeights: {
-							[question.dimension]: option.score,
-						},
-						updatedAt,
-					},
-				});
-		}
-	}
+	await seedAssessmentQuestionnaire(db, {
+		slug: "kelsier-core-v1",
+		title: "Kelsier Core V1",
+		description:
+			"Starter assessment for early team communication patterns across ten dimensions.",
+		questions: questions.map((question) => ({
+			...question,
+			options: optionLabels.map((option, index) => ({
+				sortOrder: index + 1,
+				label: option.label,
+				value: option.value,
+				scoreWeights: { [question.dimension]: option.score },
+			})),
+		})),
+	});
 }
 
 try {

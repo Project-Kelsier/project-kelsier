@@ -336,6 +336,8 @@ If you cannot run a check locally, say so explicitly in your handoff and explain
 - Generate migrations with `pnpm db:generate`; do not hand-write or casually edit generated migration metadata.
 - Apply and seed locally with `pnpm db:migrate` and `pnpm db:seed` after confirming `.env` points at `localhost:55432`.
 - Keep seed data idempotent and useful for frontend/API development. Avoid seed records that imply product behavior not yet supported.
+- `scripts/assessment-seed.ts` inserts new questionnaires atomically and compares existing content without updating it. Changed prompts, options, required flags, or scoring inputs require an explicit new questionnaire version and a reviewed active-questionnaire selection change. This is separate from the app release version. Seeding must not reactivate retired versions.
+- Expiry cleanup commits batches of at most 100 sessions, with database lock/statement timeouts and a per-invocation work limit. Keep partial-progress failure logs free of SQL, credentials, and raw database error messages; failed invocations require operational follow-up.
 
 ### Playwright
 

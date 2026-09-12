@@ -1,4 +1,4 @@
-import { describe, expect, it, vi } from "vitest";
+import { beforeEach, expect, it, vi } from "vitest";
 import type { DbClient } from "#/db/client";
 import { deleteExpiredGuestSessions } from "#/services/assessmentCleanup";
 import { runAssessmentCleanup } from "./assessmentCleanup";
@@ -6,73 +6,70 @@ import { runAssessmentCleanup } from "./assessmentCleanup";
 vi.mock("#/services/assessmentCleanup", () => ({
 	deleteExpiredGuestSessions: vi.fn(),
 }));
-
-const scheduledAt = new Date("2026-08-17T03:17:00.000Z");
-const now = new Date("2026-08-17T03:17:02.000Z");
+beforeEach(() => vi.resetAllMocks());
+const now = new Date("2026-08-17T03:17:02Z");
 const db = {} as DbClient;
+const input = { now, scheduledAt: now, cron: "17 3 * * *", clock: () => 100 };
 
-describe("runAssessmentCleanup", () => {
-	it("logs a structured completion outcome", async () => {
-		vi.mocked(deleteExpiredGuestSessions).mockResolvedValue(3);
-		const logger = { log: vi.fn(), error: vi.fn() };
-		const clock = vi
-			.fn<() => number>()
-			.mockReturnValueOnce(100)
-			.mockReturnValueOnce(125);
-
-		expect(
-			await runAssessmentCleanup(db, {
-				now,
-				scheduledAt,
-				cron: "17 3 * * *",
-				logger,
-				clock,
-			}),
-		).toEqual({
-			event: "assessment_cleanup_completed",
-			cron: "17 3 * * *",
-			scheduledAt: scheduledAt.toISOString(),
-			cutoff: now.toISOString(),
-			deletedGuestSessions: 3,
-			durationMs: 25,
-		});
-		expect(logger.log).toHaveBeenCalledWith(
-			JSON.stringify({
-				event: "assessment_cleanup_completed",
-				cron: "17 3 * * *",
-				scheduledAt: scheduledAt.toISOString(),
-				cutoff: now.toISOString(),
-				deletedGuestSessions: 3,
-				durationMs: 25,
-			}),
-		);
-		expect(logger.error).not.toHaveBeenCalled();
+it("drains batches using one cutoff and logs the total", async () => {
+	vi.mocked(deleteExpiredGuestSessions)
+		.mockResolvedValueOnce(100)
+		.mockResolvedValueOnce(3)
+		.mockResolvedValueOnce(0);
+	const logger = { log: vi.fn(), error: vi.fn() };
+	const outcome = await runAssessmentCleanup(db, { ...input, logger });
+	expect(outcome).toMatchObject({
+		event: "assessment_cleanup_completed",
+		deletedGuestSessions: 103,
+		durationMs: 0,
 	});
+	expect(deleteExpiredGuestSessions).toHaveBeenCalledTimes(3);
+	expect(
+		vi
+			.mocked(deleteExpiredGuestSessions)
+			.mock.calls.every((call) => call[1] === now),
+	).toBe(true);
+	expect(logger.error).not.toHaveBeenCalled();
+});
 
-	it("logs and rethrows failures so the scheduled invocation fails visibly", async () => {
-		const failure = new Error("database unavailable");
-		vi.mocked(deleteExpiredGuestSessions).mockRejectedValue(failure);
-		const logger = { log: vi.fn(), error: vi.fn() };
-
-		await expect(
-			runAssessmentCleanup(db, {
-				now,
-				scheduledAt,
-				cron: "17 3 * * *",
-				logger,
-				clock: () => 100,
-			}),
-		).rejects.toBe(failure);
-		expect(logger.error).toHaveBeenCalledWith(
-			JSON.stringify({
-				event: "assessment_cleanup_failed",
-				cron: "17 3 * * *",
-				scheduledAt: scheduledAt.toISOString(),
-				cutoff: now.toISOString(),
-				durationMs: 0,
-				error: { name: "Error", message: "database unavailable" },
-			}),
+it("logs partial progress and throws a sanitized error on failure", async () => {
+	vi.mocked(deleteExpiredGuestSessions)
+		.mockResolvedValueOnce(100)
+		.mockRejectedValueOnce(
+			new Error("postgres://sensitive:password@private/db"),
 		);
-		expect(logger.log).not.toHaveBeenCalled();
+	const logger = { log: vi.fn(), error: vi.fn() };
+	await expect(runAssessmentCleanup(db, { ...input, logger })).rejects.toThrow(
+		"Assessment cleanup failed; retry required.",
+	);
+	expect(JSON.parse(logger.error.mock.calls[0][0])).toMatchObject({
+		event: "assessment_cleanup_failed",
+		deletedGuestSessions: 100,
+		batches: 1,
 	});
+	expect(logger.error.mock.calls[0][0]).not.toContain("sensitive");
+	expect(logger.log).not.toHaveBeenCalled();
+});
+
+it("fails visibly instead of running an unbounded number of batches", async () => {
+	vi.mocked(deleteExpiredGuestSessions).mockResolvedValue(100);
+	const logger = { log: vi.fn(), error: vi.fn() };
+	await expect(runAssessmentCleanup(db, { ...input, logger })).rejects.toThrow(
+		"retry required",
+	);
+	expect(deleteExpiredGuestSessions).toHaveBeenCalledTimes(100);
+	expect(JSON.parse(logger.error.mock.calls[0][0])).toMatchObject({
+		deletedGuestSessions: 10000,
+		batches: 100,
+	});
+});
+
+it("stops after its elapsed-time budget", async () => {
+	vi.mocked(deleteExpiredGuestSessions).mockResolvedValue(100);
+	const logger = { log: vi.fn(), error: vi.fn() };
+	const clock = vi.fn().mockReturnValueOnce(0).mockReturnValue(60000);
+	await expect(
+		runAssessmentCleanup(db, { ...input, logger, clock }),
+	).rejects.toThrow("retry required");
+	expect(deleteExpiredGuestSessions).toHaveBeenCalledOnce();
 });
