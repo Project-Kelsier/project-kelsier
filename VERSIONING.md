@@ -19,6 +19,8 @@ pnpm version:show
 
 The increase is evaluated across the PR against its base, not required again for every review-fix commit. Unreleased changelog notes may be added without changing the app version; explicit maintainer instructions control when the next bump or release occurs.
 
+Assigning an app version and documenting its changes does not authorize tagging, publishing, or public launch. The assessment MVP and PR 36 hardening remain version `0.4.0`; the maintainer has authorized that version while keeping its public release on hold.
+
 CI enforces this with `pnpm version:check`. The check compares a pull request with the base branch and fails when release-relevant files changed without a version increase and changelog update.
 
 ## Release Checklist

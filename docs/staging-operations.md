@@ -1,6 +1,6 @@
 # Staging operations
 
-The maintainer explicitly placed public launch on hold on 2026-09-12. This checklist covers existing staging only. Completing it does not authorize public launch, promotion, or a version bump. The decision table remains in [assessment-mvp.md](assessment-mvp.md).
+The maintainer explicitly placed public launch on hold on 2026-09-12 while retaining app version `0.4.0`. This checklist covers existing staging only. Completing it does not authorize public launch or promotion. The decision table remains in [assessment-mvp.md](assessment-mvp.md).
 
 ## Cleanup verification
 

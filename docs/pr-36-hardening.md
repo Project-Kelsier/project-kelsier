@@ -2,7 +2,7 @@
 
 Work proceeds in reviewable phases. A phase is complete only after its checks pass; this checklist does not certify the application free of security defects. Hosted changes and launch approval remain separate from local hardening.
 
-Per maintainer instruction, do not change the app version unless explicitly requested. Phase 1's proposed version/changelog bump was removed before commit.
+The maintainer confirmed that the assessment MVP and this hardening work belong to version `0.4.0`; no patch bump is requested. Public release remains on hold. Phase 1's proposed version/changelog bump was removed before commit; the completed hardening notes are now included in the `0.4.0` changelog entry.
 
 ## 1. Database invariants and validation
 
