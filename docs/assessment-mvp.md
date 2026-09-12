@@ -96,6 +96,8 @@ Change the scoring algorithm identifier when arithmetic or interpretation change
 
 The top-level `workers.dev` deployment may remain publicly reachable as staging. Do not present it as production or actively promote it as the public pilot while any row marked **Blocked** remains unresolved. Update this table in place so launch readiness has one source of truth.
 
+The maintainer explicitly confirmed **no public launch yet** on 2026-09-12. Staging-only checks, prepared monitoring queries, access limits, and the independent review procedure are recorded in [staging-operations.md](staging-operations.md). Passing technical checks does not remove that hold.
+
 | Requirement | Status | Evidence or required action | Launch blocker? |
 | --- | --- | --- | --- |
 | Cross-session authorization covers read, answer, completion, deletion, and result access. | Ready | Service and route tests prove that one guest credential cannot operate on another guest's attempt. | No |
