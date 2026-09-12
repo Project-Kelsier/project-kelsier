@@ -32,6 +32,7 @@ Includes the assessment MVP and PR 36 hardening. Version 0.4.0 is deployed to st
 
 ### Security
 
+- Patched Sharp/libheif and JS-YAML through scoped transitive overrides and updated Vitest/coverage to 4.1.11, preserving dependency trust and release-age policies.
 - Protected guest attempt creation with a native Cloudflare Workers rate limiter keyed by a transient hash rather than stored request metadata.
 - Store only a SHA-256 hash of each high-entropy guest token while keeping the raw credential in an HttpOnly, SameSite cookie that is Secure outside local development.
 - Enforced one unfinished guest/version attempt with a partial unique index and serialized concurrent completion/replacement operations.

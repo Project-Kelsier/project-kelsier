@@ -349,6 +349,9 @@ export async function resumeGuestAssessmentAttempt(
 		now: Date;
 	},
 ) {
+	// The owning guest cookie authorizes recovery after reload, which loses the
+	// memory-only continuation token. The supplied hash is the NEW capability:
+	// first resume installs it atomically; retries must match it, and stale saves fail.
 	return db.transaction(async (transaction) => {
 		const [ownedAttempt] = await transaction
 			.select({

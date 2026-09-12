@@ -57,6 +57,7 @@ The five local hardening phases did not deploy or migrate hosted resources. On t
 
 ## Review findings that should not be applied as suggested
 
+- Requiring the previous continuation token for first resume would break reload recovery: that token lives only in page memory. The owning, unexpired guest cookie authorizes recovery; the new token replaces the old one atomically and supports same-token retries. Existing PostgreSQL tests cover stale-save rejection, different-token second-resume rejection, and other-guest denial. The service comment and product decision now state this explicitly.
 - Global database-client caching and disabling prepared statements contradict current [Cloudflare Postgres.js guidance](https://developers.cloudflare.com/hyperdrive/examples/connect-to-postgres/postgres-drivers-and-libraries/postgres-js/).
 - Seven-day deletion of completed guest results and owner-requested deletion are intentional product decisions, not completion-immutability bypasses.
 - Merely changing the incomplete-attempt progress comparison to the final question index can incorrectly display completion before submission; Phase 2 instead removed that completion flag and tested the recovery contract.
@@ -95,3 +96,9 @@ Reviewed PR 36's eight inline CodeRabbit findings, outside-diff/nitpick summary,
 | Completed guest result expiry/deletion | Retained approved seven-day retention and owner-authorized deletion; tested cascade behavior in Phase 4. |
 
 Hosted launch gates remain in `docs/assessment-mvp.md`, including cleanup monitoring/notification evidence. These local changes do not certify all security risks eliminated.
+
+## September review follow-up
+
+CodeRabbit marked seven earlier inline threads resolved after the hardening push. The remaining wording concern is addressed with provisional demonstration language and a clearer deferred-research description. The resume concern is clarified above without changing the approved recovery contract.
+
+Dependency remediation retains app version `0.4.0`: scoped Sharp `0.35.4` and JS-YAML `4.3.2` overrides plus Vitest/coverage `4.1.11`. No install policy was weakened. Frozen install, native rebuilds, signatures (634 verified packages), vulnerability audit (zero findings), version check, Biome, typecheck, 160 tests including PostgreSQL, coverage, and app build passed locally. Coverage remains 86.81% statements and 80.62% branches. Browser and Storybook tests were not repeated for this dependency/comment/documentation-only follow-up; their previous results remain historical. Fresh remote CI and reviewer approval remain required; public release is still on hold.

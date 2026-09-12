@@ -4,7 +4,7 @@ Status: Approved for implementation on 2026-08-11. Decisions marked provisional 
 
 ## Purpose
 
-The first assessment slice exists to prove the product machinery with a disposable questionnaire. The seeded items and their scoring are demonstration content, not validated psychometrics. The implementation should make later refinement possible without pretending that every future response format fits the MVP engine.
+The first assessment slice exists to prove the product machinery with a disposable questionnaire. The seeded items and their scoring are provisional demonstration content with no established measurement claims. The implementation should make later refinement possible without pretending that every future response format fits the MVP engine.
 
 ## Approved Decisions
 
@@ -46,6 +46,7 @@ The assessment should ideally be completed in one sitting so its demonstration o
 - When an owned incomplete attempt is found, offer a clear choice to continue it or start a fresh snapshot. Advise starting fresh if the person’s circumstances, mood, or context have materially changed.
 - An attempt may be explicitly resumed only once. Record the successful resume atomically with a nullable `resumedAt` timestamp; merely viewing the choice or retrying a failed request must not consume the allowance.
 - Each live questionnaire instance uses an opaque continuation capability. Keep the raw value only in client memory, store only its hash on the attempt, and rotate it when the single resume succeeds so a stale page cannot continue writing.
+- The owning, unexpired guest cookie authorizes the first resume after reload. That request supplies a new continuation capability because reload discards the old memory-only value. Retries must use the same new capability; a different guest cookie cannot resume the attempt.
 - After the single resume has been consumed, a later interruption cannot resume that attempt. Starting fresh deletes the old incomplete attempt before creating its replacement so unfinished records do not accumulate.
 - Retention remains fixed from creation and is separate from resume eligibility.
 - Describe the output as a current snapshot. Do not imply that a changed response means the person has a different personality or that the demonstration instrument measures stable traits.
@@ -150,7 +151,7 @@ These decisions are intentionally postponed until evidence or a later phase make
 - How conflicting, expired, already-claimed, or concurrently active claim attempts behave.
 - The signal or threshold that justifies building durable accounts; an explicit product review may be used if no numeric threshold is defensible.
 - The shape and consent model for organisation or team sharing.
-- Validated questionnaire content, scoring interpretation, confidence, and psychometric claims.
+- Evidence-based questionnaire development, scoring interpretation, and uncertainty assessment; the MVP demonstration makes no measurement claims.
 - Additional response formats and the migrations they require.
 - Turnstile or other bot challenges if native rate limits prove insufficient.
 
