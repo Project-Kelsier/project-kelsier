@@ -251,7 +251,7 @@ describe("active assessment questionnaire", () => {
 describe("guest assessment ownership", () => {
 	it("does not complete an attempt owned by another guest credential", async () => {
 		const limit = vi.fn().mockResolvedValue([]);
-		const where = vi.fn(() => ({ limit }));
+		const where = vi.fn(() => ({ for: vi.fn(() => ({ limit })) }));
 		const innerJoin = vi.fn(() => ({ where }));
 		const from = vi.fn(() => ({ innerJoin }));
 		const transaction = {
@@ -348,13 +348,13 @@ describe("guest assessment ownership", () => {
 		expect(attempt).toMatchObject({ id: "attempt-1", expiresAt });
 	});
 
-	it("recognizes final-step submission when every required answer is saved", async () => {
+	it("returns an unfinished final step without claiming submission", async () => {
 		const attemptLimit = vi.fn().mockResolvedValue([
 			{
 				id: "attempt-1",
 				startedAt: new Date("2026-08-11T11:00:00.000Z"),
 				resumedAt: null,
-				currentQuestionIndex: 2,
+				currentQuestionIndex: 1,
 				expiresAt: new Date("2026-08-18T11:00:00.000Z"),
 			},
 		]);
@@ -362,11 +362,6 @@ describe("guest assessment ownership", () => {
 		const attemptWhere = vi.fn(() => ({ orderBy: attemptOrderBy }));
 		const attemptInnerJoin = vi.fn(() => ({ where: attemptWhere }));
 		const attemptFrom = vi.fn(() => ({ innerJoin: attemptInnerJoin }));
-		const questionWhere = vi.fn().mockResolvedValue([
-			{ id: "question-required", required: true },
-			{ id: "question-optional", required: false },
-		]);
-		const questionFrom = vi.fn(() => ({ where: questionWhere }));
 		const answerWhere = vi
 			.fn()
 			.mockResolvedValue([
@@ -377,7 +372,6 @@ describe("guest assessment ownership", () => {
 			select: vi
 				.fn()
 				.mockReturnValueOnce({ from: attemptFrom })
-				.mockReturnValueOnce({ from: questionFrom })
 				.mockReturnValueOnce({ from: answerFrom }),
 		} as unknown as DbClient;
 
@@ -390,7 +384,6 @@ describe("guest assessment ownership", () => {
 		expect(entry).toMatchObject({
 			id: "attempt-1",
 			answeredCount: 1,
-			answersComplete: true,
 			answers: [{ questionId: "question-required", optionId: "option-1" }],
 		});
 	});

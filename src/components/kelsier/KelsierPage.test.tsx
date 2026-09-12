@@ -515,7 +515,6 @@ describe("KelsierPage", () => {
 					startedAt: "2026-08-11T00:00:00.000Z",
 					expiresAt: "2026-08-18T00:00:00.000Z",
 					answeredCount: 1,
-					answersComplete: false,
 					resumeAvailable: true,
 				}}
 				persistenceActions={{
@@ -539,7 +538,7 @@ describe("KelsierPage", () => {
 		expect(screen.getAllByText(/This is its single resume/)).toHaveLength(2);
 	});
 
-	it("restores a submitted response as complete without offering a resume", () => {
+	it("keeps saved answers resumable until a persisted result exists", () => {
 		render(
 			<KelsierPageComponent
 				questionnaire={assessmentQuestionnaireFixture}
@@ -548,11 +547,10 @@ describe("KelsierPage", () => {
 					startedAt: "2026-08-11T00:00:00.000Z",
 					expiresAt: "2026-08-18T00:00:00.000Z",
 					answeredCount: 3,
-					answersComplete: true,
 					answers: {
 						"deadline-response": "restructure",
 						"conflict-style": "common-ground",
-						"support-response": "pair-collaborator",
+						"new-joiner": "pair",
 					},
 					resumeAvailable: true,
 				}}
@@ -561,12 +559,56 @@ describe("KelsierPage", () => {
 		);
 
 		expect(
-			screen.getByRole("heading", { name: "Demonstration result" }),
-		).toBeTruthy();
-		expect(
-			screen.queryByRole("button", { name: "Continue this snapshot" }),
+			screen.queryByRole("heading", { name: "Demonstration result" }),
 		).toBeNull();
-		expect(screen.getByText("100% answered")).toBeTruthy();
+		expect(
+			screen.getByRole("button", { name: "Continue this snapshot" }),
+		).toBeTruthy();
+	});
+
+	it("retains the final answer after submission fails and allows a retry", async () => {
+		const completeAttempt = vi
+			.fn(assessmentPersistenceActionsFixture.completeAttempt)
+			.mockRejectedValueOnce(new Error("offline"));
+		render(
+			<KelsierPageComponent
+				questionnaire={{
+					...assessmentQuestionnaireFixture,
+					questions: [assessmentQuestionnaireFixture.questions[0]],
+				}}
+				persistenceActions={{
+					...assessmentPersistenceActionsFixture,
+					completeAttempt,
+				}}
+			/>,
+		);
+		fireEvent.click(
+			screen.getByRole("button", { name: "Start and save progress" }),
+		);
+		fireEvent.click(
+			await screen.findByRole("radio", { name: "Restructure immediately" }),
+		);
+		fireEvent.click(screen.getByRole("button", { name: "Complete prototype" }));
+		await waitFor(() => expect(completeAttempt).toHaveBeenCalledOnce());
+		await waitFor(() =>
+			expect(
+				screen.getByRole("button", { name: "Complete prototype" }),
+			).toHaveProperty("disabled", false),
+		);
+		expect(
+			screen.queryByRole("heading", { name: "Demonstration result" }),
+		).toBeNull();
+		expect(
+			screen.getByRole("radio", { name: "Restructure immediately" }),
+		).toHaveProperty("checked", true);
+		fireEvent.click(screen.getByRole("button", { name: "Complete prototype" }));
+		expect(
+			await screen.findByRole("heading", { name: "Demonstration result" }),
+		).toBeTruthy();
+		expect(completeAttempt).toHaveBeenCalledTimes(2);
+		expect(completeAttempt.mock.calls[1]).toEqual(
+			completeAttempt.mock.calls[0],
+		);
 	});
 
 	it("keeps the current question available when saving fails", async () => {
@@ -613,7 +655,6 @@ describe("KelsierPage", () => {
 					startedAt: "2026-08-11T00:00:00.000Z",
 					expiresAt: "2026-08-18T00:00:00.000Z",
 					answeredCount: 1,
-					answersComplete: false,
 					resumeAvailable: true,
 				}}
 				persistenceActions={{

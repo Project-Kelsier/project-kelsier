@@ -277,36 +277,16 @@ export async function getGuestIncompleteAssessmentEntry(
 		return null;
 	}
 
-	const [questions, answers] = await Promise.all([
-		db
-			.select({
-				id: assessmentQuestions.id,
-				required: assessmentQuestions.required,
-			})
-			.from(assessmentQuestions)
-			.where(eq(assessmentQuestions.versionId, input.assessmentVersionId)),
-		db
-			.select({
-				questionId: assessmentAnswers.questionId,
-				optionId: assessmentAnswers.optionId,
-			})
-			.from(assessmentAnswers)
-			.where(eq(assessmentAnswers.attemptId, attempt.id)),
-	]);
-	const answeredQuestionIds = new Set(
-		answers.map((answer) => answer.questionId),
-	);
-	const answersComplete =
-		questions.length > 0 &&
-		attempt.currentQuestionIndex >= questions.length &&
-		questions.every(
-			(question) => !question.required || answeredQuestionIds.has(question.id),
-		);
-
+	const answers = await db
+		.select({
+			questionId: assessmentAnswers.questionId,
+			optionId: assessmentAnswers.optionId,
+		})
+		.from(assessmentAnswers)
+		.where(eq(assessmentAnswers.attemptId, attempt.id));
 	return {
 		...attempt,
 		answeredCount: answers.length,
-		answersComplete,
 		answers,
 	};
 }
@@ -548,6 +528,7 @@ export async function replaceGuestAssessmentAttempt(
 					isNull(assessmentAttempts.completedAt),
 				),
 			)
+			.for("update", { of: assessmentAttempts })
 			.limit(1);
 
 		if (!ownedAttempt?.guestSessionId) {
@@ -737,6 +718,8 @@ export async function completeGuestAssessmentAttempt(
 	},
 ) {
 	return db.transaction(async (transaction) => {
+		// Lock before reading answers: a concurrent save must either commit first
+		// or observe completion and stop before changing the scored response.
 		const [attempt] = await transaction
 			.select({
 				id: assessmentAttempts.id,
@@ -760,6 +743,7 @@ export async function completeGuestAssessmentAttempt(
 					gt(guestSessions.expiresAt, input.now),
 				),
 			)
+			.for("update", { of: assessmentAttempts })
 			.limit(1);
 
 		if (!attempt?.guestSessionId) {

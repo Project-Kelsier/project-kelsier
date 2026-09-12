@@ -44,7 +44,8 @@ Per maintainer instruction, do not change the app version unless explicitly requ
 ## Progress
 
 - Phase 1: complete locally on 2026-09-12. Generated and reviewed `0012_furry_shiva.sql`; applied only to `localhost:55432/kelsier_dev`. Local seed succeeded. `RUN_DB_TESTS=true pnpm test` passed 93 tests across 20 files, including four PostgreSQL integrity cases. `pnpm check`, `pnpm typecheck`, `pnpm version:check`, and `git diff --check` passed. The database CI job now enables the PostgreSQL cases.
-- Phases 2–5: pending.
+- Phase 2: complete locally on 2026-09-12. Completion locks the owned attempt before reading answers; replacement locks and rechecks the incomplete attempt before deletion. Removed the incomplete-entry completion flag: only a stored result initializes the completed UI. Added deterministic PostgreSQL lock-wait regressions, concurrent completion and deletion cases, credential-rotation checks, missing-required/optional-final coverage, and a UI submission-retry test. Coverage run passed all 100 tests (20 files); lint, typecheck, version metadata, production build, Storybook build, and all 18 cross-browser tests passed. Version remains 0.4.0. Storybook emitted a non-failing chunk-size warning.
+- Phases 3–5: pending.
 
 Phase 1 changes do not modify UI or Worker configuration. Production/Storybook builds, browser tests, coverage, and Worker dry run are reserved for the later phases and final gate; they have not yet been rerun. No hosted migration, deployment, push, or review-thread resolution was performed. Before hosted application of the unique index, check for existing duplicate unfinished attempts; the migration deliberately fails rather than silently deleting data.
 

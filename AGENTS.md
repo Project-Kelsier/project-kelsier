@@ -174,6 +174,7 @@ The approved guest-first assessment boundaries and phased delivery plan live in 
 - Guest and claimed attempts are personal records; account creation must not implicitly expose them to an organisation or team.
 - The attempt is the authorization boundary for its answers and result. Assessment child rows deliberately derive ownership through the attempt instead of duplicating organisation or user ownership.
 - The initial response engine is explicitly single-select with required and optional questions. Ranking, multi-select, branching, and free text require later design and may require migrations.
+- Completion and replacement lock the owned attempt before reading dependent state. Preserve that transaction boundary so concurrent saves cannot make scoring disagree with persisted answers, and replacement cannot delete a newly completed result. Only a stored result establishes completion in the UI; reaching the final question or saving required answers does not.
 - The seeded questionnaire and dimension-mean output are demonstration content. Do not describe them as validated, predictive, clinical, diagnostic, or suitable for hiring decisions.
 - The top-level `workers.dev` deployment may operate as publicly reachable staging. Do not present it as production or actively promote it as the public pilot until the launch gate in the decision document is satisfied.
 

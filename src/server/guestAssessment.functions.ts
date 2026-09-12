@@ -214,15 +214,6 @@ export const getGuestAssessmentEntry = createServerFn({ method: "GET" })
 					startedAt: entry.startedAt.toISOString(),
 					expiresAt: entry.expiresAt.toISOString(),
 					answeredCount: entry.answeredCount,
-					answersComplete: entry.answersComplete,
-					answers: entry.answersComplete
-						? Object.fromEntries(
-								entry.answers.map((answer) => [
-									answer.questionId,
-									answer.optionId,
-								]),
-							)
-						: undefined,
 					resumeAvailable: entry.resumedAt === null,
 				}
 			: null;

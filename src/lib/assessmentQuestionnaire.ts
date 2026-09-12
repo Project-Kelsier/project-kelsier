@@ -31,7 +31,6 @@ export type GuestAssessmentEntry = {
 	startedAt: string;
 	expiresAt: string;
 	answeredCount: number;
-	answersComplete: boolean;
 	answers?: Record<string, string>;
 	resumeAvailable: boolean;
 };

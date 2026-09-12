@@ -363,16 +363,10 @@ export function KelsierPage({
 }) {
 	const [isHydrated, setIsHydrated] = useState(false);
 	const [isAssessmentStarted, setIsAssessmentStarted] = useState(
-		Boolean(
-			initialGuestAssessmentResult ||
-				initialGuestAssessmentEntry?.answersComplete,
-		),
+		Boolean(initialGuestAssessmentResult),
 	);
 	const [isAssessmentComplete, setIsAssessmentComplete] = useState(
-		Boolean(
-			initialGuestAssessmentResult ||
-				initialGuestAssessmentEntry?.answersComplete,
-		),
+		Boolean(initialGuestAssessmentResult),
 	);
 	const [currentQuestionIndex, setCurrentQuestionIndex] = useState(0);
 	const [answers, setAnswers] = useState<Record<string, string>>(
