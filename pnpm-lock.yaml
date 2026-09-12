@@ -164,8 +164,6 @@ settings:
 
 overrides:
   '@esbuild-kit/core-utils>esbuild': 0.25.12
-  miniflare@5.20260815.0-alpha>sharp: 0.35.4
-  xmlbuilder2@4.0.3>js-yaml: 4.3.2
 
 importers:
 

@@ -48,7 +48,7 @@ Project Kelsier uses pnpm through the `packageManager` field in `package.json`. 
 
 The current pin is pnpm `12.4.1`. Its generated lockfile includes a separate package-manager metadata document before the application dependency graph; retain both documents. The pnpm 12 migration preserved application resolutions and the existing build approvals, strict engine checks, release-age gate, and trust controls.
 
-pnpm v11 reads workspace install policy from `pnpm-workspace.yaml`, not from `package.json#pnpm` or non-registry `.npmrc` settings. Keep build approvals, strict engine/build enforcement, release-age controls, trust policy, exotic-source blocking, and temporary overrides there.
+pnpm v12 reads workspace install policy from `pnpm-workspace.yaml`, not from `package.json#pnpm` or non-registry `.npmrc` settings. Keep build approvals, strict engine/build enforcement, release-age controls, trust policy, exotic-source blocking, and temporary overrides there.
 
 ### Install Scripts
 
@@ -102,8 +102,7 @@ The reviewed overrides and trust exception in `pnpm-workspace.yaml` are:
 - `@esbuild-kit/core-utils>esbuild` is overridden to the compatible patched `0.25.12` release for GHSA-67mh-4wv8-2f99 because Drizzle Kit's deprecated loader chain still requests an older Esbuild range. Remove the override once that parent chain resolves a patched version naturally.
 - `semver@6.3.1` is excluded from trust-downgrade comparison because Babel requires this official security-fixed 6.x release. The registry artifact has a valid signature, but it lacks the legacy trust metadata present on `6.3.0`. Keep this exception exact and remove it once Babel no longer resolves the legacy line.
 
-- `miniflare@5.20260815.0-alpha>sharp` is overridden from its exact `0.35.2` pin to `0.35.4` for [GHSA-rgj7-g3m4-5g8c](https://github.com/advisories/GHSA-rgj7-g3m4-5g8c). Its prebuilt native packages include the patched libheif. Remove this override when Miniflare advances its pin.
-- `xmlbuilder2@4.0.3>js-yaml` is overridden to `4.3.2`, within the parent's `^4.1.1` range, for [GHSA-2883-xcg3-v3hh](https://github.com/advisories/GHSA-2883-xcg3-v3hh). Remove it when the dependency graph retains a patched resolution without it.
+The Sharp and JS-YAML overrides were removed during the September package refresh. Miniflare `5.20260910.0-alpha` pins Sharp `0.35.4` directly, including the patched libheif for [GHSA-rgj7-g3m4-5g8c](https://github.com/advisories/GHSA-rgj7-g3m4-5g8c). The lockfile retains JS-YAML `4.3.2` within xmlbuilder2's `^4.1.1` range without an override, addressing [GHSA-2883-xcg3-v3hh](https://github.com/advisories/GHSA-2883-xcg3-v3hh). Keep both resolved paths patched during future lockfile updates.
 
 The September remediation also updates Vitest and its coverage package together to `4.1.11` for [GHSA-82fw-gwwq-j7x9](https://github.com/advisories/GHSA-82fw-gwwq-j7x9). All selected fixes were published in August and satisfy the existing 24-hour release-age gate; no trust or release-age bypass was added. After remediation on 2026-09-12, the local audit reported no known vulnerabilities and verified registry signatures for all 634 packages. Frozen installation, approved native rebuilds, version metadata, formatting, type checking, all 160 tests (including PostgreSQL), coverage, and the app build passed. A fresh remote CI run is still required before merge.
 

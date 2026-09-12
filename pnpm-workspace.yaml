@@ -26,9 +26,3 @@ blockExoticSubdeps: true
 #   @esbuild-kit/core-utils>esbuild 0.25.12 — GHSA-67mh-4wv8-2f99; parent: drizzle-kit → @esbuild-kit/esm-loader
 overrides:
   "@esbuild-kit/core-utils>esbuild": "0.25.12"
-  # Miniflare pins 0.35.2; use the compatible libheif security patch until its pin advances.
-  # GHSA-rgj7-g3m4-5g8c (published 2026-08-26; no release-age exception).
-  "miniflare@5.20260815.0-alpha>sharp": "0.35.4"
-  # Compatible with xmlbuilder2's ^4.1.1 range; remove when its resolution stays patched.
-  # GHSA-2883-xcg3-v3hh (published 2026-08-26; no release-age exception).
-  "xmlbuilder2@4.0.3>js-yaml": "4.3.2"
