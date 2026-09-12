@@ -4,9 +4,6 @@
 
 ```bash
 pnpm install
-docker compose up -d
-pnpm db:migrate
-pnpm db:seed
 pnpm dev
 pnpm cf-typegen
 ```
@@ -16,6 +13,8 @@ This repo expects:
 - Node `24.x`
 - pnpm `11.22.0`
 - Docker Desktop for local PostgreSQL development
+
+Docker Desktop must be running before `pnpm dev`. The command starts and waits for local PostgreSQL, applies migrations, runs the idempotent seed, and then starts Vite. It refuses to prepare a hosted `DATABASE_URL`. Use `pnpm dev:app` only when the local database is already prepared and you intentionally want to start Vite directly.
 
 Those versions are declared in [`package.json`](./package.json).
 Node `24.x` is also mirrored in [`.nvmrc`](./.nvmrc) for contributors using a Node version manager.
@@ -37,6 +36,7 @@ pnpm typecheck
 pnpm test
 pnpm coverage
 pnpm build
+pnpm worker:check
 pnpm build-storybook
 pnpm test:e2e
 ```
@@ -55,6 +55,7 @@ pnpm build
 ## Testing Notes
 
 - Unit tests use Vitest with [`vitest.config.ts`](./vitest.config.ts).
+- Real PostgreSQL integrity tests require `RUN_DB_TESTS=true` and the local database; the dedicated CI database job runs them after migration and two seed passes. See [`AGENTS.md`](./AGENTS.md#query-helper-tests).
 - E2E tests use Playwright with [`playwright.config.ts`](./playwright.config.ts).
 - Storybook stories use `*.stories.tsx` files next to the components they document. Storybook is a lightweight visual workbench; Vitest and Playwright remain the sources of behavioral test coverage. Run `pnpm storybook` while refining UI and `pnpm build-storybook` to reproduce CI's compilation smoke check.
 - Playwright starts Vite directly instead of `pnpm dev` so the dev server shuts down cleanly on Windows.
@@ -98,7 +99,9 @@ Before sharing logs, PR descriptions, screenshots, or generated docs, redact `DA
 
 - Cloudflare Workers configuration lives in [`wrangler.jsonc`](./wrangler.jsonc).
 - `pnpm preview` is the closest local deployment check before publishing to Cloudflare.
+- `pnpm worker:check` performs a Wrangler deployment dry run without publishing.
 - `pnpm deploy` builds the app and hands deployment to Wrangler.
+- The existing hosted app is staging only. Public launch is on hold; use [`docs/staging-operations.md`](./docs/staging-operations.md) for verification and remaining monitoring/reviewer checks.
 
 ## PR Guidance
 

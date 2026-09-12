@@ -1,0 +1,58 @@
+[
+	{
+		"parameters": {
+			"filters": [
+				{
+					"value": "project-kelsier",
+					"key": "$metadata.service",
+					"type": "string",
+					"operation": "eq"
+				},
+				{
+					"value": "assessment_cleanup_completed",
+					"key": "event",
+					"type": "string",
+					"operation": "eq"
+				}
+			],
+			"datasets": ["cloudflare-workers"],
+			"calculations": [
+				{
+					"alias": "events",
+					"operator": "count"
+				}
+			],
+			"filterCombination": "and"
+		},
+		"description": "Staging cleanup evidence. Saving this query does not enable alerts.",
+		"name": "Kelsier staging assessment_cleanup_completed"
+	},
+	{
+		"parameters": {
+			"filters": [
+				{
+					"value": "project-kelsier",
+					"key": "$metadata.service",
+					"type": "string",
+					"operation": "eq"
+				},
+				{
+					"value": "assessment_cleanup_failed",
+					"key": "event",
+					"type": "string",
+					"operation": "eq"
+				}
+			],
+			"datasets": ["cloudflare-workers"],
+			"calculations": [
+				{
+					"alias": "events",
+					"operator": "count"
+				}
+			],
+			"filterCombination": "and"
+		},
+		"description": "Staging cleanup evidence. Saving this query does not enable alerts.",
+		"name": "Kelsier staging assessment_cleanup_failed"
+	}
+]

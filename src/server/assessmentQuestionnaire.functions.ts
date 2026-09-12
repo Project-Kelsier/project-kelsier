@@ -1,0 +1,31 @@
+import { env } from "cloudflare:workers";
+import { createServerFn } from "@tanstack/react-start";
+import { getDb } from "#/db/client.worker";
+import { ACTIVE_ASSESSMENT_SLUG } from "#/lib/assessmentQuestionnaire";
+import { getActiveAssessmentQuestionnaireBySlug } from "#/services/assessments";
+import { enforceGuestRateLimit } from "./guestRateLimit";
+
+export const getActiveAssessmentQuestionnaire = createServerFn({
+	method: "GET",
+}).handler(async () => {
+	await enforceGuestRateLimit("activity");
+	let questionnaire: Awaited<
+		ReturnType<typeof getActiveAssessmentQuestionnaireBySlug>
+	>;
+
+	try {
+		questionnaire = await getActiveAssessmentQuestionnaireBySlug(
+			getDb(env),
+			ACTIVE_ASSESSMENT_SLUG,
+		);
+	} catch {
+		console.error("Failed to load the active assessment questionnaire.");
+		throw new Error("The assessment questionnaire is temporarily unavailable.");
+	}
+
+	if (!questionnaire || questionnaire.questions.length === 0) {
+		throw new Error("The active assessment questionnaire is unavailable.");
+	}
+
+	return questionnaire;
+});

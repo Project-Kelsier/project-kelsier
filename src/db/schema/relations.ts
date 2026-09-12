@@ -7,6 +7,7 @@ import {
 	assessmentQuestions,
 	assessmentResults,
 	assessmentVersions,
+	guestSessions,
 } from "./assessments";
 import { organisationMembers, teamMembers } from "./memberships";
 import { organisations, pilotRequests } from "./organisations";
@@ -18,7 +19,6 @@ export const usersRelations = relations(users, ({ many }) => ({
 	organisationMemberships: many(organisationMembers),
 	teamMemberships: many(teamMembers),
 	assessmentAttempts: many(assessmentAttempts),
-	assessmentResults: many(assessmentResults),
 	personalityProfiles: many(personalityProfiles),
 	aiInsights: many(aiInsights),
 }));
@@ -27,9 +27,6 @@ export const organisationsRelations = relations(organisations, ({ many }) => ({
 	teams: many(teams),
 	organisationMembers: many(organisationMembers),
 	teamMembers: many(teamMembers),
-	assessmentAttempts: many(assessmentAttempts),
-	assessmentAnswers: many(assessmentAnswers),
-	assessmentResults: many(assessmentResults),
 	personalityProfiles: many(personalityProfiles),
 	pilotRequests: many(pilotRequests),
 	aiInsights: many(aiInsights),
@@ -48,7 +45,6 @@ export const teamsRelations = relations(teams, ({ one, many }) => ({
 		references: [organisations.id],
 	}),
 	teamMembers: many(teamMembers),
-	assessmentAttempts: many(assessmentAttempts),
 	aiInsights: many(aiInsights),
 }));
 
@@ -113,16 +109,16 @@ export const assessmentOptionsRelations = relations(
 	}),
 );
 
+export const guestSessionsRelations = relations(guestSessions, ({ many }) => ({
+	attempts: many(assessmentAttempts),
+}));
+
 export const assessmentAttemptsRelations = relations(
 	assessmentAttempts,
 	({ one, many }) => ({
-		organisation: one(organisations, {
-			fields: [assessmentAttempts.organisationId],
-			references: [organisations.id],
-		}),
-		team: one(teams, {
-			fields: [assessmentAttempts.teamId, assessmentAttempts.organisationId],
-			references: [teams.id, teams.organisationId],
+		guestSession: one(guestSessions, {
+			fields: [assessmentAttempts.guestSessionId],
+			references: [guestSessions.id],
 		}),
 		user: one(users, {
 			fields: [assessmentAttempts.userId],
@@ -140,10 +136,6 @@ export const assessmentAttemptsRelations = relations(
 export const assessmentAnswersRelations = relations(
 	assessmentAnswers,
 	({ one }) => ({
-		organisation: one(organisations, {
-			fields: [assessmentAnswers.organisationId],
-			references: [organisations.id],
-		}),
 		attempt: one(assessmentAttempts, {
 			fields: [assessmentAnswers.attemptId],
 			references: [assessmentAttempts.id],
@@ -162,17 +154,9 @@ export const assessmentAnswersRelations = relations(
 export const assessmentResultsRelations = relations(
 	assessmentResults,
 	({ one }) => ({
-		organisation: one(organisations, {
-			fields: [assessmentResults.organisationId],
-			references: [organisations.id],
-		}),
 		attempt: one(assessmentAttempts, {
 			fields: [assessmentResults.attemptId],
 			references: [assessmentAttempts.id],
-		}),
-		user: one(users, {
-			fields: [assessmentResults.userId],
-			references: [users.id],
 		}),
 		assessmentVersion: one(assessmentVersions, {
 			fields: [assessmentResults.assessmentVersionId],

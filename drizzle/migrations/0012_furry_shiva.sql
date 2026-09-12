@@ -1,0 +1,1 @@
+CREATE UNIQUE INDEX "assessment_attempts_guest_version_unfinished_unique" ON "assessment_attempts" USING btree ("guest_session_id","assessment_version_id") WHERE "assessment_attempts"."completed_at" is null;
