@@ -11,7 +11,7 @@ pnpm cf-typegen
 This repo expects:
 
 - Node `24.x`
-- pnpm `11.22.0`
+- pnpm `12.4.1`
 - Docker Desktop for local PostgreSQL development
 
 Docker Desktop must be running before `pnpm dev`. The command starts and waits for local PostgreSQL, applies migrations, runs the idempotent seed, and then starts Vite. It refuses to prepare a hosted `DATABASE_URL`. Use `pnpm dev:app` only when the local database is already prepared and you intentionally want to start Vite directly.

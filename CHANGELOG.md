@@ -4,6 +4,18 @@ All notable changes to Project Kelsier will be documented in this file.
 
 This project follows semantic versioning while it moves toward MVP. Versions below `1.0.0` may still include breaking product or API changes when they are called out here.
 
+## [Unreleased]
+
+## [0.4.1] - Public release pending
+
+Dependency and tooling refresh. Version assignment does not authorize deployment or public release.
+
+### Changed
+
+- Updated the pinned package manager to pnpm 12.4.1 with its registry integrity hash, retaining the existing dependency security policies.
+- Updated React to 19.3, Vite to 8.3, Storybook to 10.6, Playwright to 1.63, and compatible TanStack, Cloudflare, linting, type and icon packages. Refreshed generated Worker runtime types while preserving deployment bindings and the compatibility date.
+- Removed redundant Sharp and JS-YAML overrides after their patched versions remained in the resolved dependency graph. Retained the Drizzle loader's Esbuild override and deferred the Vitest 5 migration to a separate change.
+
 ## [0.4.0] - Public release pending
 
 Includes the assessment MVP and PR 36 hardening. Version 0.4.0 is deployed to staging; public release remains on hold as of 2026-09-12.
