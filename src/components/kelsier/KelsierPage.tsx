@@ -1105,8 +1105,9 @@ export function KelsierPage({
 								<p className="m-0 text-[var(--k-text-muted)] text-sm leading-[1.65]">
 									Set aside a few uninterrupted minutes to answer{" "}
 									{questions.length} demonstration questions in one sitting.
-									Starting creates a pseudonymous guest attempt that expires
-									seven days after creation.
+									Your guest session lasts up to seven days from its first
+									assessment. Later attempts share that deadline and may have
+									less time remaining. Starting again does not extend it.
 								</p>
 								<div className="rounded-xl border border-[var(--k-border)] bg-[var(--k-accent-glow)] p-4 text-[var(--k-text-muted)] text-xs leading-[1.65]">
 									<p className="m-0">
@@ -1114,7 +1115,9 @@ export function KelsierPage({
 										analytics identifiers to this attempt. An HttpOnly browser
 										cookie lets you return to or delete it. If that cookie is
 										lost, we cannot identify or delete the attempt directly;
-										automatic expiry is the remaining deletion mechanism.
+										scheduled cleanup after session expiry is the remaining
+										deletion mechanism. Access stops at expiry; cleanup deletes
+										the stored data afterward and can be delayed if it fails.
 									</p>
 								</div>
 								<div className="k-cta-action" ref={ctaActionRef}>

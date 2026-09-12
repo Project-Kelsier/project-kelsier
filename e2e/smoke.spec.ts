@@ -219,6 +219,12 @@ test("privacy route renders placeholder page", async ({ page }) => {
 			exact: false,
 		}),
 	).toBeVisible();
+	await expect(
+		page.getByText(/later attempts share that deadline/),
+	).toBeVisible();
+	await expect(
+		page.getByText(/failed cleanup can delay physical deletion/),
+	).toBeVisible();
 });
 
 test("terms route renders placeholder page", async ({ page }) => {

@@ -707,6 +707,49 @@ describe("KelsierPage", () => {
 		).toHaveProperty("checked", true);
 	});
 
+	it("retries a lost fresh-start response with the same replacement capability", async () => {
+		const startFreshAttempt = vi
+			.fn()
+			.mockRejectedValueOnce(new Error("Response lost after commit"))
+			.mockImplementation(
+				assessmentPersistenceActionsFixture.startFreshAttempt,
+			);
+		render(
+			<KelsierPageComponent
+				questionnaire={assessmentQuestionnaireFixture}
+				initialGuestAssessmentEntry={{
+					attemptId: "10000000-0000-4000-8000-000000000001",
+					startedAt: "2026-08-11T00:00:00.000Z",
+					expiresAt: "2026-08-18T00:00:00.000Z",
+					answeredCount: 1,
+					resumeAvailable: true,
+				}}
+				persistenceActions={{
+					...assessmentPersistenceActionsFixture,
+					startFreshAttempt,
+				}}
+			/>,
+		);
+		fireEvent.click(
+			screen.getByRole("button", { name: "Start a fresh snapshot" }),
+		);
+		await within(screen.getByRole("status")).findByText(
+			/couldn’t start a fresh snapshot/,
+		);
+		fireEvent.click(
+			screen.getByRole("button", { name: "Start a fresh snapshot" }),
+		);
+		await screen.findByRole("radio", { name: "Restructure immediately" });
+		expect(startFreshAttempt).toHaveBeenCalledTimes(2);
+		expect(startFreshAttempt.mock.calls[1]).toEqual(
+			startFreshAttempt.mock.calls[0],
+		);
+		expect(startFreshAttempt.mock.calls[0]).toEqual([
+			"10000000-0000-4000-8000-000000000001",
+			expect.stringMatching(/^[A-Za-z0-9_-]{43}$/),
+		]);
+	});
+
 	it("allows a returned guest to delete without consuming the resume", async () => {
 		const deleteAttempt = vi.fn().mockResolvedValue({ deleted: true });
 		render(

@@ -20,7 +20,7 @@ export const Route = createFileRoute("/privacy")({
 
 function PrivacyRoute() {
 	return (
-		<LegalPage title="Privacy Policy" updatedAt="August 17, 2026">
+		<LegalPage title="Privacy Policy" updatedAt="September 12, 2026">
 			<section className="border-[rgba(49,31,76,0.12)] border-t py-6">
 				<h2 className="mt-0 mb-3 text-base">Prototype Notice</h2>
 				<p className="m-0 max-w-[64ch] text-[#584a72] leading-[1.8]">
@@ -33,14 +33,16 @@ function PrivacyRoute() {
 			<section className="border-[rgba(49,31,76,0.12)] border-t py-6">
 				<h2 className="mt-0 mb-3 text-base">Data Collection</h2>
 				<p className="m-0 max-w-[64ch] text-[#584a72] leading-[1.8]">
-					Starting the assessment creates a pseudonymous guest attempt that
-					expires seven days after creation. The service stores a cryptographic
-					hash of an opaque guest credential; the raw credential is kept in an
-					HttpOnly browser cookie. Names, email addresses, analytics
-					identifiers, raw IP addresses, and user-agent strings are not attached
-					to the attempt. Selected answers and the resulting demonstration
-					dimension scores are stored under the attempt until it is deleted or
-					expires.
+					Starting the assessment creates a pseudonymous guest attempt. The
+					guest session expires seven days after it is first created; later
+					attempts share that deadline and may have less time remaining.
+					Activity and starting again do not extend it. The service stores a
+					cryptographic hash of an opaque guest credential; the raw credential
+					is kept in an HttpOnly browser cookie. Names, email addresses,
+					analytics identifiers, raw IP addresses, and user-agent strings are
+					not attached to the attempt. Selected answers and the resulting
+					demonstration dimension scores are stored under the attempt until
+					deletion.
 				</p>
 			</section>
 			<section className="border-[rgba(49,31,76,0.12)] border-t py-6">
@@ -48,8 +50,10 @@ function PrivacyRoute() {
 				<p className="m-0 max-w-[64ch] text-[#584a72] leading-[1.8]">
 					The guest cookie authorizes this browser to access or delete its own
 					attempt. If the cookie is lost, Kelsier cannot identify or delete that
-					attempt directly; automatic expiry is the remaining deletion
-					mechanism.
+					attempt directly. Access stops at session expiry. Scheduled cleanup
+					deletes the stored data afterward; a failed cleanup can delay physical
+					deletion. If the cookie is lost, that cleanup is the remaining
+					deletion mechanism.
 				</p>
 			</section>
 			<section className="border-[rgba(49,31,76,0.12)] border-t py-6">

@@ -49,6 +49,7 @@ The assessment should ideally be completed in one sitting so its demonstration o
 - The owning, unexpired guest cookie authorizes the first resume after reload. That request supplies a new continuation capability because reload discards the old memory-only value. Retries must use the same new capability; a different guest cookie cannot resume the attempt.
 - After the single resume has been consumed, a later interruption cannot resume that attempt. Starting fresh deletes the old incomplete attempt before creating its replacement so unfinished records do not accumulate.
 - Retention remains fixed from creation and is separate from resume eligibility.
+- Fresh-start retries reuse the new continuation capability to recover the owned, unexpired replacement after a lost response. Recovery does not create another attempt or consume resume, and stops after completion, resume, deletion, or expiry.
 - Describe the output as a current snapshot. Do not imply that a changed response means the person has a different personality or that the demonstration instrument measures stable traits.
 
 ### Guest credential and deletion

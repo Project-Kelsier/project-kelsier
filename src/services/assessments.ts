@@ -535,7 +535,38 @@ export async function replaceGuestAssessmentAttempt(
 			.limit(1);
 
 		if (!ownedAttempt?.guestSessionId) {
-			return null;
+			// A committed replacement deletes the original ID. Recover a lost response
+			// using the same new capability, still scoped to its unexpired owner/version.
+			// A rotated, completed, or deleted replacement cannot be recovered this way.
+			const [replacement] = await transaction
+				.select({
+					id: assessmentAttempts.id,
+					startedAt: assessmentAttempts.startedAt,
+					expiresAt: guestSessions.expiresAt,
+				})
+				.from(assessmentAttempts)
+				.innerJoin(
+					guestSessions,
+					eq(guestSessions.id, assessmentAttempts.guestSessionId),
+				)
+				.where(
+					and(
+						eq(guestSessions.tokenHash, input.tokenHash),
+						gt(guestSessions.expiresAt, input.now),
+						eq(
+							assessmentAttempts.assessmentVersionId,
+							input.assessmentVersionId,
+						),
+						eq(
+							assessmentAttempts.continuationTokenHash,
+							input.continuationTokenHash,
+						),
+						isNull(assessmentAttempts.completedAt),
+						isNull(assessmentAttempts.resumedAt),
+					),
+				)
+				.limit(1);
+			return replacement ?? null;
 		}
 
 		const deleted = await transaction

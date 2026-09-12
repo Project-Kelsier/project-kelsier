@@ -540,6 +540,70 @@ describe.skipIf(process.env.RUN_DB_TESTS !== "true")(
 			});
 		});
 
+		it("recovers replacement retries without extending expiry or consuming resume", async () => {
+			const fixture = await responseFixture();
+			const now = new Date();
+			const shortExpiry = new Date(now.getTime() + 3_600_000);
+			await connection.db
+				.update(guestSessions)
+				.set({ expiresAt: shortExpiry })
+				.where(eq(guestSessions.id, sessionId));
+			const request = {
+				...fixture.identity,
+				now,
+				assessmentVersionId: versionId,
+				continuationTokenHash: randomUUID(),
+			};
+			const [first, concurrentRetry] = await Promise.all([
+				replaceGuestAssessmentAttempt(connection.db, request),
+				replaceGuestAssessmentAttempt(connection.db, request),
+			]);
+			expect(first).not.toBeNull();
+			expect(concurrentRetry).toEqual(first);
+			// Simulate a committed response lost in transit: the browser sends exactly
+			// the same old attempt ID and new capability again.
+			expect(
+				await replaceGuestAssessmentAttempt(connection.db, request),
+			).toEqual(first);
+			expect(first?.expiresAt).toEqual(shortExpiry);
+			const rows = await connection.db
+				.select()
+				.from(assessmentAttempts)
+				.where(eq(assessmentAttempts.guestSessionId, sessionId));
+			expect(rows).toHaveLength(1);
+			expect(rows[0]?.resumedAt).toBeNull();
+			for (const invalid of [
+				{ ...request, continuationTokenHash: randomUUID() },
+				{ ...request, tokenHash: randomUUID() },
+				{ ...request, assessmentVersionId: randomUUID() },
+				{ ...request, now: shortExpiry },
+			]) {
+				expect(
+					await replaceGuestAssessmentAttempt(connection.db, invalid),
+				).toBeNull();
+			}
+			await connection.db
+				.update(assessmentAttempts)
+				.set({ resumedAt: now })
+				.where(eq(assessmentAttempts.guestSessionId, sessionId));
+			expect(
+				await replaceGuestAssessmentAttempt(connection.db, request),
+			).toBeNull();
+			await connection.db
+				.update(assessmentAttempts)
+				.set({ resumedAt: null, completedAt: now })
+				.where(eq(assessmentAttempts.guestSessionId, sessionId));
+			expect(
+				await replaceGuestAssessmentAttempt(connection.db, request),
+			).toBeNull();
+			await connection.db
+				.delete(assessmentAttempts)
+				.where(eq(assessmentAttempts.guestSessionId, sessionId));
+			expect(
+				await replaceGuestAssessmentAttempt(connection.db, request),
+			).toBeNull();
+		});
+
 		it("does not replace an attempt that completes while replacement waits", async () => {
 			const fixture = await responseFixture();
 			let replacement:

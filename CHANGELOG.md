@@ -18,6 +18,7 @@ Includes the assessment MVP and PR 36 hardening. Version 0.4.0 is deployed to st
 
 ### Changed
 
+- Made fresh-attempt replacement retries recover a committed response without creating another attempt or consuming resume; corrected session-expiry and scheduled-deletion wording.
 - Replaced organisation-owned assessment attempts with personal guest-session or user ownership enforced by an exactly-one-owner database constraint.
 - Normalized assessment answers and results to derive authorization through their owning attempt, and updated service helpers to enforce user ownership through that boundary.
 - Added explicit question requiredness, fixed guest-session expiry metadata, and result scoring provenance with database-enforced assessment-version consistency.
