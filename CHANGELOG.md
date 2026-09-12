@@ -4,6 +4,12 @@ All notable changes to Project Kelsier will be documented in this file.
 
 This project follows semantic versioning while it moves toward MVP. Versions below `1.0.0` may still include breaking product or API changes when they are called out here.
 
+## [Unreleased]
+
+### Changed
+
+- Updated the pinned package manager to pnpm 12.4.1 with its registry integrity hash, retaining the existing dependency security policies.
+
 ## [0.4.0] - Public release pending
 
 Includes the assessment MVP and PR 36 hardening. Version 0.4.0 is deployed to staging; public release remains on hold as of 2026-09-12.

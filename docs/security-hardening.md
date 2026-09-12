@@ -46,6 +46,8 @@ Project Kelsier uses pnpm through the `packageManager` field in `package.json`. 
 - Regenerate `pnpm-lock.yaml` only when required.
 - Run the validation checklist in this document.
 
+The current pin is pnpm `12.4.1`. Its generated lockfile includes a separate package-manager metadata document before the application dependency graph; retain both documents. The pnpm 12 migration preserved application resolutions and the existing build approvals, strict engine checks, release-age gate, and trust controls.
+
 pnpm v11 reads workspace install policy from `pnpm-workspace.yaml`, not from `package.json#pnpm` or non-registry `.npmrc` settings. Keep build approvals, strict engine/build enforcement, release-age controls, trust policy, exotic-source blocking, and temporary overrides there.
 
 ### Install Scripts
