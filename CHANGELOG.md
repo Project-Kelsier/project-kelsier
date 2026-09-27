@@ -12,7 +12,8 @@ Package-manager maintenance. Version assignment does not authorize deployment or
 
 ### Changed
 
-- Updated the pinned package manager to pnpm 12.6.0 with its registry integrity hash. Application dependency versions and the existing install security policies are unchanged.
+- Updated the pinned package manager to pnpm 12.6.0 with its registry integrity hash, retaining the existing install security policies.
+- Updated Biome and its configuration schema, tsx, Node 24 types, Testing Library DOM, and Lucide while retaining the existing install security policies.
 
 ## [0.4.1] - Public release pending
 
