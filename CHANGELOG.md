@@ -17,6 +17,7 @@ Dependency and tooling maintenance. Version assignment does not authorize deploy
 - Updated jsdom to 30.1.1 for DOM, focus, and style handling fixes while retaining Vitest and its coverage provider at 4.1.11.
 - Updated Vite to 8.3.1 for dependency-optimizer, configuration-merging, and development-server cleanup fixes.
 - Updated the Cloudflare Vite plugin and Wrangler together, refreshing generated Worker types while preserving bindings and the compatibility date.
+- Updated the coordinated TanStack Router, Start, and devtools packages for routing, hydration, server-function transport, and development-panel fixes.
 
 ## [0.4.1] - Public release pending
 
