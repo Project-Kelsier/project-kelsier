@@ -18,6 +18,7 @@ Dependency and tooling maintenance. Version assignment does not authorize deploy
 - Updated Vite to 8.3.1 for dependency-optimizer, configuration-merging, and development-server cleanup fixes.
 - Updated the Cloudflare Vite plugin and Wrangler together, refreshing generated Worker types while preserving bindings and the compatibility date.
 - Updated the coordinated TanStack Router, Start, and devtools packages for routing, hydration, server-function transport, and development-panel fixes.
+- Updated Drizzle ORM and Kit to the latest stable patches, retaining the existing PostgreSQL drivers and schema while validating migration and seed compatibility.
 
 ## [0.4.1] - Public release pending
 
