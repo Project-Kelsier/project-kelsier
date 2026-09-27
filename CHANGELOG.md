@@ -16,6 +16,7 @@ Dependency and tooling maintenance. Version assignment does not authorize deploy
 - Updated Biome and its configuration schema, tsx, Node 24 types, Testing Library DOM, and Lucide while retaining the existing install security policies.
 - Updated jsdom to 30.1.1 for DOM, focus, and style handling fixes while retaining Vitest and its coverage provider at 4.1.11.
 - Updated Vite to 8.3.1 for dependency-optimizer, configuration-merging, and development-server cleanup fixes.
+- Updated the Cloudflare Vite plugin and Wrangler together, refreshing generated Worker types while preserving bindings and the compatibility date.
 
 ## [0.4.1] - Public release pending
 
