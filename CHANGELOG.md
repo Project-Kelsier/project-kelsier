@@ -13,6 +13,7 @@ Dependency and tooling maintenance. Version assignment does not authorize deploy
 ### Changed
 
 - Updated the pinned package manager to pnpm 12.6.0 with its registry integrity hash, retaining the existing install security policies.
+- Aligned the declared Node requirement, CI selection and contributor guidance to Node 24.15.0 or newer within Node 24, matching the existing jsdom engine requirement.
 - Updated Biome and its configuration schema, tsx, Node 24 types, Testing Library DOM, and Lucide while retaining the existing install security policies.
 - Updated jsdom to 30.1.1 for DOM, focus, and style handling fixes while retaining Vitest and its coverage provider at 4.1.11.
 - Updated Vite to 8.3.1 for dependency-optimizer, configuration-merging, and development-server cleanup fixes.

@@ -4,14 +4,14 @@
 
 This repo expects:
 
-- Node `24.x`
+- Node `>=24.15.0 <25.0.0` (jsdom requires at least 24.15.0 on this line)
 - The pnpm version pinned in [`package.json`](./package.json) `packageManager`
 - Docker Desktop for local PostgreSQL development
 
 Docker Desktop must be running before `pnpm dev`. The command starts and waits for local PostgreSQL, applies migrations, runs the idempotent seed, and then starts Vite. It refuses to prepare a hosted `DATABASE_URL`. Use `pnpm dev:app` only when the local database is already prepared and you intentionally want to start Vite directly.
 
 The Node requirement and pnpm pin are declared in [`package.json`](./package.json).
-Node `24.x` is also mirrored in [`.nvmrc`](./.nvmrc) for contributors using a Node version manager.
+[`.nvmrc`](./.nvmrc) selects the Node 24 release line for contributors using a Node version manager. Update an older local Node 24 installation to at least 24.15.0; CI uses the same supported range as `package.json`.
 
 Copy [`.env.example`](./.env.example) to `.env` before running database commands. The local default uses Docker PostgreSQL on `localhost:55432`; do not point `.env` at Neon for daily development, seed testing, or destructive resets.
 

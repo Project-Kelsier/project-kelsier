@@ -83,7 +83,7 @@ pnpm db:seed
 ## Tooling Notes
 
 - Cloudflare Workers deployment is configured through [`wrangler.jsonc`](./wrangler.jsonc) and the Cloudflare Vite plugin in [`vite.config.ts`](./vite.config.ts). [`src/worker.ts`](./src/worker.ts) delegates HTTP requests to TanStack Start and runs the daily expired-assessment cleanup.
-- Node `24.x` is declared in [`package.json`](./package.json) and mirrored in [`.nvmrc`](./.nvmrc) for version managers.
+- Node `>=24.15.0 <25.0.0` is required by [`package.json`](./package.json), matching jsdom's minimum on the Node 24 line. [`.nvmrc`](./.nvmrc) selects that release line; update an older local Node 24 installation before installing dependencies. CI uses the same supported range.
 - Use the pnpm version pinned in [`package.json`](./package.json) `packageManager`. Settings and build-script approvals are declared in [`pnpm-workspace.yaml`](./pnpm-workspace.yaml). Installs enforce approved builds and engines, a strict 24-hour release-age gate, fail-closed publication metadata, trust-downgrade rejection, and transitive exotic-source blocking.
 - [`worker-configuration.d.ts`](./worker-configuration.d.ts) contains Wrangler-generated binding and runtime API types. Refresh it with `pnpm cf-typegen` after changing bindings, compatibility dates/flags, or Wrangler; an upgrade can change runtime declarations without changing bindings.
 - Local Vite serving defaults `WRANGLER_LOG` to `warn` so repeated environment-source notices do not obscure useful startup output. Set `WRANGLER_LOG=log` or `WRANGLER_LOG=debug` explicitly when deeper Wrangler diagnostics are needed.

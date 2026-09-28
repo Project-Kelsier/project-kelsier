@@ -28,7 +28,7 @@ This repo should be easy for a new contributor to understand without private con
 - Testing: Vitest for unit tests, Playwright for end-to-end coverage, and Storybook for isolated UI review.
 - Quality gate: Biome for formatting, linting, and import organization.
 - Package manager: `pnpm`
-- Runtime target: Node `24.x`
+- Runtime target: Node `>=24.15.0 <25.0.0`
 - Node version hint: [`.nvmrc`](.nvmrc)
 - Version source of truth: [`package.json`](package.json)
 
@@ -295,7 +295,7 @@ If you cannot run a check locally, say so explicitly in your handoff and explain
 ### pnpm
 
 - `package.json` pins the project package manager version.
-- [`.nvmrc`](.nvmrc) mirrors the Node `24.x` runtime target for local version managers.
+- [`.nvmrc`](.nvmrc) selects the Node 24 release line for local version managers. Use 24.15.0 or newer within that line, as required by `package.json` and jsdom; CI uses the same supported range.
 - [`pnpm-workspace.yaml`](pnpm-workspace.yaml) owns pnpm 12 dependency build-script approvals and install policy through `allowBuilds`, strict engine/build enforcement, a strict 24-hour release-age gate, trust-downgrade rejection, and transitive exotic-source blocking.
 - Keep trust-policy exceptions exact, evidence-backed, and documented next to the package selector. Do not replace a narrow historical-metadata exception with a broad age-based trust bypass.
 - If a future supply-chain incident needs temporary pnpm overrides, put them in [`pnpm-workspace.yaml`](pnpm-workspace.yaml), document the reason, and remove them once clean upstream versions are available.

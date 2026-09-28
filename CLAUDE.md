@@ -49,7 +49,7 @@ The harm boundary is a hard product rule. The seeded questionnaire and its dimen
 
 **Implemented**, confirmed against tracked configuration:
 
-- **Single-package pnpm application** on Node `24.x` tooling. [`pnpm-workspace.yaml`](pnpm-workspace.yaml) declares `packages: [.]` and exists to own install policy and documented CVE overrides, not to define multiple workspaces.
+- **Single-package pnpm application** on Node `>=24.15.0 <25.0.0` tooling. [`pnpm-workspace.yaml`](pnpm-workspace.yaml) declares `packages: [.]` and exists to own install policy and documented CVE overrides, not to define multiple workspaces.
 - **React 19 with TanStack Start, TanStack Router, and Vite.** Start is the framework, Router its file-based routing layer ([`vite.config.ts`](vite.config.ts)).
 - **TanStack Start server functions are the API boundary** (`createServerFn`, [`src/server`](src/server)). There is no separate HTTP framework.
 - **Production targets Cloudflare Workers** via Wrangler and `@cloudflare/vite-plugin` in SSR mode — the edge runtime, not Node.
