@@ -6,6 +6,14 @@ This project follows semantic versioning while it moves toward MVP. Versions bel
 
 ## [Unreleased]
 
+## [0.4.3] - Public release pending
+
+Environment-loader maintenance. Version assignment does not authorize deployment or public release.
+
+### Changed
+
+- Updated dotenv from 17.4.2 to 18.0.4 while retaining the existing named configuration calls and seed side-effect import. The optional fast parser and CLI are not enabled.
+
 ## [0.4.2] - Public release pending
 
 Dependency and tooling maintenance. Version assignment does not authorize deployment or public release.
