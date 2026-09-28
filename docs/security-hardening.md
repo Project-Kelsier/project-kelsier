@@ -32,7 +32,7 @@ The installed [TanStack default server-function middleware](https://tanstack.com
 
 Dynamic Worker responses, including server-rendered guest data and errors, use `Cache-Control: private, no-store`. Static assets remain under the assets binding. Questionnaire error logging omits raw database exceptions. The public questionnaire is not cached yet; any later cache must exclude all guest entry, result, credential, and rendered private data.
 
-The new activity binding must accompany the code when deploying. Local tests and generated configuration do not constitute hosted verification or public launch approval.
+Both rate-limit bindings must accompany the code when deploying. Local tests and generated configuration do not constitute hosted verification or public launch approval.
 
 ## Supply-Chain Controls
 
@@ -46,7 +46,7 @@ Project Kelsier uses pnpm through the `packageManager` field in `package.json`. 
 - Regenerate `pnpm-lock.yaml` only when required.
 - Run the validation checklist in this document.
 
-The current pin is pnpm `12.4.1`. Its generated lockfile includes a separate package-manager metadata document before the application dependency graph; retain both documents. The pnpm 12 migration preserved application resolutions and the existing build approvals, strict engine checks, release-age gate, and trust controls.
+Read the exact pnpm pin and integrity suffix from [`package.json`](../package.json) `packageManager`. The pnpm 12 lockfile includes a separate package-manager metadata document before the application dependency graph; retain both documents. Package-manager updates must preserve existing build approvals, strict engine checks, release-age gates, and trust controls.
 
 pnpm v12 reads workspace install policy from `pnpm-workspace.yaml`, not from `package.json#pnpm` or non-registry `.npmrc` settings. Keep build approvals, strict engine/build enforcement, release-age controls, trust policy, exotic-source blocking, and temporary overrides there.
 
@@ -95,16 +95,18 @@ When fixing advisories through `pnpm-workspace.yaml` overrides, prefer the narro
 
 ### Current Reviewed Exceptions
 
-The 2026-08-19 audit reported no known vulnerabilities; that is historical evidence, not a current clean bill of health. On 2026-09-12, [CI for commit 97aebb6](https://github.com/Project-Kelsier/project-kelsier/actions/runs/34693462674) failed `pnpm audit --audit-level high`, reporting two high and two moderate findings, including Sharp/libheif and JS-YAML. The database job passed. Dependency remediation and a fresh passing validation job are required before merge; local behavioral tests do not replace this audit gate.
+The 2026-08-19 audit reported no known vulnerabilities. On 2026-09-12, [CI for commit 97aebb6](https://github.com/Project-Kelsier/project-kelsier/actions/runs/34693462674) failed `pnpm audit --audit-level high`, reporting two high and two moderate findings, including Sharp/libheif and JS-YAML. The database job passed. Those failures required dependency remediation and a fresh passing validation job; local behavioral tests did not replace the audit gate. These are historical checkpoints, not the current PR status.
 
 The reviewed overrides and trust exception in `pnpm-workspace.yaml` are:
 
 - `@esbuild-kit/core-utils>esbuild` is overridden to the compatible patched `0.25.12` release for GHSA-67mh-4wv8-2f99 because Drizzle Kit's deprecated loader chain still requests an older Esbuild range. Remove the override once that parent chain resolves a patched version naturally.
 - `semver@6.3.1` is excluded from trust-downgrade comparison because Babel requires this official security-fixed 6.x release. The registry artifact has a valid signature, but it lacks the legacy trust metadata present on `6.3.0`. Keep this exception exact and remove it once Babel no longer resolves the legacy line.
 
-The Sharp and JS-YAML overrides were removed during the September package refresh. Miniflare `5.20260910.0-alpha` pins Sharp `0.35.4` directly, including the patched libheif for [GHSA-rgj7-g3m4-5g8c](https://github.com/advisories/GHSA-rgj7-g3m4-5g8c). The lockfile retains JS-YAML `4.3.2` within xmlbuilder2's `^4.1.1` range without an override, addressing [GHSA-2883-xcg3-v3hh](https://github.com/advisories/GHSA-2883-xcg3-v3hh). Keep both resolved paths patched during future lockfile updates.
+The Sharp and JS-YAML overrides were removed during the September package refresh. As reviewed on 2026-09-28, the lockfile resolves Miniflare `5.20260925.0-alpha`, which pins Sharp `0.35.4` directly, including the patched libheif for [GHSA-rgj7-g3m4-5g8c](https://github.com/advisories/GHSA-rgj7-g3m4-5g8c). The lockfile retains JS-YAML `4.3.2` within xmlbuilder2's `^4.1.1` range without an override, addressing [GHSA-2883-xcg3-v3hh](https://github.com/advisories/GHSA-2883-xcg3-v3hh). Keep both resolved paths patched during future lockfile updates.
 
-The September remediation also updates Vitest and its coverage package together to `4.1.11` for [GHSA-82fw-gwwq-j7x9](https://github.com/advisories/GHSA-82fw-gwwq-j7x9). All selected fixes were published in August and satisfy the existing 24-hour release-age gate; no trust or release-age bypass was added. After remediation on 2026-09-12, the local audit reported no known vulnerabilities and verified registry signatures for all 634 packages. Frozen installation, approved native rebuilds, version metadata, formatting, type checking, all 160 tests (including PostgreSQL), coverage, and the app build passed. A fresh remote CI run is still required before merge.
+The 2026-09-12 remediation also updated Vitest and its coverage package together to `4.1.11` for [GHSA-82fw-gwwq-j7x9](https://github.com/advisories/GHSA-82fw-gwwq-j7x9). The fixes selected at that checkpoint were published in August and satisfied the existing 24-hour release-age gate; no trust or release-age bypass was added. The local audit then reported no known vulnerabilities and verified registry signatures for all 634 packages. Frozen installation, approved native rebuilds, version metadata, formatting, type checking, all 160 tests (including PostgreSQL), coverage, and the app build passed.
+
+The later package refresh passed both database and validation jobs in [CI for commit eb154c6](https://github.com/Project-Kelsier/project-kelsier/actions/runs/36432036634). The 2026-09-28 local audit reported zero known vulnerabilities and verified 663 package signatures. These results apply to that dependency graph and checkpoint; require passing checks on the latest PR commit before merging.
 
 For dependency maintenance PRs, run:
 
@@ -122,6 +124,7 @@ pnpm build
 For meaningful UI, routing, or runtime changes, also run:
 
 ```bash
+pnpm build-storybook
 pnpm coverage
 pnpm test:e2e
 ```
@@ -256,23 +259,13 @@ Keep database clients split by runtime:
 
 If a developer machine or CI runner installed a known malicious dependency version, treat that host as compromised until proven otherwise.
 
-Recommended local cleanup on Windows PowerShell:
+Contain the affected host or runner and preserve logs, the lockfile, package artifacts, and other incident evidence before cleanup. From a trusted environment, revoke or rotate npm, GitHub, Cloudflare, database, SSH, and cloud credentials reachable from the affected system. Follow the investigation and containment guidance in [GitHub's incident-response guide](https://docs.github.com/en/code-security/tutorials/secure-your-organization/respond-to-a-security-incident).
 
-```powershell
-Remove-Item -Recurse -Force node_modules
-Remove-Item -Force pnpm-lock.yaml
-```
+Recover on a clean or rebuilt host using a trusted repository checkout and a fresh dependency store, without restoring suspect caches. Preserve the reviewed lockfile; if it includes an affected package, update the implicated dependency and review the resulting lockfile diff before reinstalling. Deleting the lockfile and resolving everything again obscures the original dependency graph and adds unrelated changes.
 
-Then regenerate from a clean pnpm install path:
+Run `pnpm install --frozen-lockfile --ignore-scripts`, signature and vulnerability audits, and review build approvals before running `pnpm rebuild` and the remaining dependency quality gate. Passing dependency checks does not establish that a compromised host is clean.
 
-```bash
-pnpm store path
-pnpm store prune
-pnpm install --ignore-scripts
-pnpm install --lockfile-only --ignore-scripts
-```
-
-Rotate npm, GitHub, Cloudflare, database, SSH, and cloud credentials that were reachable from the affected machine or runner.
+[`pnpm store prune`](https://pnpm.io/cli/store#prune) removes unreferenced packages; it is not a malware-removal or host-recovery procedure. Do not use it as evidence that an affected store or machine is trustworthy.
 
 ## Historical Incidents
 

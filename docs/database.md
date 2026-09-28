@@ -77,7 +77,7 @@ pnpm db:seed
 
 Review generated SQL before applying it to any hosted database. Initial/fresh database setup must be reproducible from committed migrations, including required extensions such as `pgcrypto`.
 
-CI runs migrations and the seed against a fresh PostgreSQL 17 service in a dedicated database job. It runs the seed twice so loss of idempotency fails before feature tests begin relying on fixture identities. The validation job owns a separate fresh PostgreSQL service for browser tests and overrides the Hyperdrive local connection string to CI's PostgreSQL port.
+CI runs migrations and the seed against a fresh PostgreSQL 17 service in a dedicated database job. Running the seed twice checks that repeated execution succeeds; the PostgreSQL integrity suite separately asserts questionnaire row identity preservation, retired-status preservation, and rejection of content drift. Repeat execution alone does not prove every fixture is unchanged. The validation job owns a separate fresh PostgreSQL service for browser tests and overrides the Hyperdrive local connection string to CI's PostgreSQL port.
 
 Both CI jobs use the same reviewed immutable image digest. The database job also runs the PostgreSQL integrity suite with `RUN_DB_TESTS=true`, covering ownership, concurrent lifecycle operations, seed immutability, and bounded cleanup.
 
