@@ -97,7 +97,7 @@ pnpm dev:app          # Start Vite on port 3000 without database preparation
 pnpm build            # Production build
 pnpm preview          # Build, then run the local deployment preview
 pnpm deploy           # Build and deploy to Cloudflare
-pnpm cf-typegen       # Regenerate Cloudflare binding types
+pnpm cf-typegen       # Regenerate Cloudflare binding and runtime API types
 pnpm worker:check     # Wrangler dry run; validates the bundle without publishing
 
 pnpm check            # Biome lint + format check (the CI gate)

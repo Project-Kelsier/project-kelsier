@@ -1,10 +1,12 @@
 # Staging operations
 
-The maintainer explicitly placed public launch on hold on 2026-09-12 while retaining app version `0.4.0`. This checklist covers existing staging only. Completing it does not authorize public launch or promotion. The decision table remains in [assessment-mvp.md](assessment-mvp.md).
+The maintainer explicitly placed public launch on hold on 2026-09-12. This checklist covers existing staging only. Completing it does not authorize public launch or promotion. The decision table remains in [assessment-mvp.md](assessment-mvp.md#public-launch-gate). The repository version in [`package.json`](../package.json) may be newer than the last recorded staging deployment.
 
 ## Cleanup verification
 
-Worker `project-kelsier` is deployed as `7f3fde5d-777d-438d-afa0-f814ec8b12a5`. The daily cron is `17 3 * * *` (UTC). Its first scheduled invocation after deployment is due **2026-09-13 at 03:17 UTC**. Allow a 15-minute investigation window for execution and log ingestion; do not report a missed run before it is due.
+Last recorded deployment evidence (2026-09-12): Worker `project-kelsier`, app version `0.4.0`, was deployed as `7f3fde5d-777d-438d-afa0-f814ec8b12a5`. Its first scheduled invocation was due 2026-09-13 at 03:17 UTC; verification of that run has not been recorded here. This historical snapshot does not establish the currently deployed version or ongoing cleanup health.
+
+Before each check, identify the active Worker version and its deployed schedule. The repository config specifies `17 3 * * *` (daily at 03:17 UTC). Check a recent expected invocation and allow a 15-minute investigation window for execution and log ingestion; do not report a missed run before it is due.
 
 The definitions in [staging-monitoring.json](staging-monitoring.json) are saved-query creation bodies for `POST /accounts/{account_id}/workers/observability/queries`. Check existing names before creating duplicates. For read-only verification, pass a definition's `parameters` to `POST /accounts/{account_id}/workers/observability/telemetry/query`, with `dry: true`, `view: "events"`, a query ID, and explicit `timeframe.from`/`timeframe.to` Unix milliseconds. Account ID: `91a80a519a166e4f74105b8868ab2c4f`. Use an authenticated connector or approved credential store; never commit tokens.
 
@@ -22,7 +24,7 @@ Proposed staging conditions to configure once supported access is available:
 
 A notification destination does not define an alert condition. A saved query does not schedule evaluation or deliver alerts. A provider test email proves delivery only; a controlled rule test is also required. Use a synthetic test isolated from real cleanup rather than causing a hosted database error. Enabling delivery and sending a test require explicit authorization to send messages; none were sent during this preparation.
 
-On 2026-09-12 the runtime available-alerts response exposed `workers_observability_alert` with `FIRING_FAILED` and `NORMAL` statuses, but the public OpenAPI notification enum omitted that type and exposed no Workers alert-rule creation endpoint. Verify the supported dashboard workflow before enabling a destination. No connected browser was available in this session. Do not substitute an unfiltered account-wide policy for a Worker-specific rule.
+On 2026-09-12 the runtime available-alerts response exposed `workers_observability_alert` with `FIRING_FAILED` and `NORMAL` statuses, but the public OpenAPI notification enum omitted that type and exposed no Workers alert-rule creation endpoint. This is a dated access finding; verify the currently supported dashboard or API workflow before enabling a destination. Do not substitute an unfiltered account-wide policy for a Worker-specific rule.
 
 ## Independent deletion exercise
 

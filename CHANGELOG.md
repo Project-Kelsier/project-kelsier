@@ -19,6 +19,7 @@ Dependency and tooling maintenance. Version assignment does not authorize deploy
 - Updated the Cloudflare Vite plugin and Wrangler together, refreshing generated Worker types while preserving bindings and the compatibility date.
 - Updated the coordinated TanStack Router, Start, and devtools packages for routing, hydration, server-function transport, and development-panel fixes.
 - Updated Drizzle ORM and Kit to the latest stable patches, retaining the existing PostgreSQL drivers and schema while validating migration and seed compatibility.
+- Aligned contributor and security guidance with the pinned toolchain, clarified generated Worker types and seed checks, and separated historical staging evidence from current verification requirements. Corrected incident recovery guidance to preserve evidence and the reviewed lockfile.
 
 ## [0.4.1] - Public release pending
 
