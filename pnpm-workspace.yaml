@@ -24,5 +24,9 @@ blockExoticSubdeps: true
 # Temporary overrides for transitive CVEs.
 # Remove each entry once the dependency graph resolves a patched version without it:
 #   @esbuild-kit/core-utils>esbuild 0.25.12 — GHSA-67mh-4wv8-2f99; parent: drizzle-kit → @esbuild-kit/esm-loader
+#   miniflare@5.20260925.0-alpha>undici 7.29.1 — GHSA-3wwx-pv8p-q78v;
+#   Wrangler and the Cloudflare Vite plugin share this parent, which pins vulnerable 7.29.0.
+#   Remove when their Miniflare dependency resolves a patched Undici without this override.
 overrides:
   "@esbuild-kit/core-utils>esbuild": "0.25.12"
+  "miniflare@5.20260925.0-alpha>undici": "7.29.1"
