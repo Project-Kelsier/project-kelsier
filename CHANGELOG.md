@@ -6,6 +6,14 @@ This project follows semantic versioning while it moves toward MVP. Versions bel
 
 ## [Unreleased]
 
+## [0.4.4] - Public release pending
+
+Local development tooling security maintenance. Version assignment does not authorize deployment or public release.
+
+### Security
+
+- Pinned Miniflare's Undici dependency to 7.29.1 with an exact parent-scoped override to address the WebSocket decompression denial-of-service advisory GHSA-3wwx-pv8p-q78v. Remove the override when the upstream dependency resolves a patched release; the separate jsdom dependency remains unchanged.
+
 ## [0.4.3] - Public release pending
 
 Environment-loader maintenance. Version assignment does not authorize deployment or public release.
