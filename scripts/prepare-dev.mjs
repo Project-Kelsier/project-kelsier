@@ -23,6 +23,11 @@ if (!pnpmCli) {
 	process.exit(1);
 }
 
+// pnpm 12 may expose a native binary; older/Corepack launchers can be JS files.
+const pnpmIsScript = /\.(?:c|m)?js$/i.test(pnpmCli);
+const pnpmExecutable = pnpmIsScript ? process.execPath : pnpmCli;
+const pnpmPrefix = pnpmIsScript ? [pnpmCli] : [];
+
 run("docker", ["compose", "up", "-d", "--wait", "postgres"], {
 	failureMessage:
 		"Docker PostgreSQL could not start. Confirm Docker Desktop is running, then run pnpm dev again.",
@@ -32,11 +37,11 @@ run("docker", ["compose", "up", "-d", "--wait", "postgres"], {
 	successMessage: "PostgreSQL is healthy",
 	windowsExecutable: "docker.exe",
 });
-run(process.execPath, [pnpmCli, "db:migrate"], {
+run(pnpmExecutable, [...pnpmPrefix, "db:migrate"], {
 	quiet: true,
 	successMessage: "Migrations are applied",
 });
-run(process.execPath, [pnpmCli, "db:seed"], {
+run(pnpmExecutable, [...pnpmPrefix, "db:seed"], {
 	quiet: true,
 	successMessage: "Seed data is ready",
 });
