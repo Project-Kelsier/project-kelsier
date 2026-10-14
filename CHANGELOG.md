@@ -20,7 +20,7 @@ Node 26 tooling compatibility and dependency security maintenance. Version assig
 
 - Pinned Miniflare's Undici dependency to 7.29.1 with an exact parent-scoped override to address the WebSocket decompression denial-of-service advisory GHSA-3wwx-pv8p-q78v. Remove the override when the upstream dependency resolves a patched release; the separate jsdom dependency remains unchanged.
 - Patched Miniflare's Sharp dependency to 0.35.5 for GHSA-wq5f-xc86-pv6w, and refreshed compatible transitive Solid/Seroval, brace-expansion, source-map-js and shell-quote resolutions for newly reported advisories.
-- Documented the remaining moderate postcss-selector-parser advisory and Tailwind Typography's exact upstream pin in `docs/security-hardening.md`; no audit suppression or unsupported parser-major override was added.
+- Removed the unused Tailwind Typography plugin and its vulnerable postcss-selector-parser dependency for GHSA-rj75-hqrm-r3gf. Existing pages use authored styles and Tailwind utilities; no parser-major override or audit suppression is needed.
 
 ## [0.4.3] - Public release pending
 
