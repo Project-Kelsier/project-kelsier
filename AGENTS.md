@@ -28,7 +28,7 @@ This repo should be easy for a new contributor to understand without private con
 - Testing: Vitest for unit tests, Playwright for end-to-end coverage, and Storybook for isolated UI review.
 - Quality gate: Biome for formatting, linting, and import organization.
 - Package manager: `pnpm`
-- Runtime target: Node `>=24.15.0 <25.0.0`
+- Runtime target: Node `>=26.11.1 <27.0.0` for development and CI; Cloudflare Workers use the platform runtime.
 - Node version hint: [`.nvmrc`](.nvmrc)
 - Version source of truth: [`package.json`](package.json)
 
@@ -295,7 +295,8 @@ If you cannot run a check locally, say so explicitly in your handoff and explain
 ### pnpm
 
 - `package.json` pins the project package manager version.
-- [`.nvmrc`](.nvmrc) selects the Node 24 release line for local version managers. Use 24.15.0 or newer within that line, as required by `package.json` and jsdom; CI uses the same supported range.
+- [`.nvmrc`](.nvmrc) pins the tested Node 26.11.1 baseline for local version managers. `package.json` and CI support `>=26.11.1 <27.0.0`; keep these declarations and contributor guidance aligned when changing the runtime.
+- Node 26 does not bundle Corepack. [`CONTRIBUTING.md`](CONTRIBUTING.md#local-setup) documents manual Corepack setup and stale Windows pnpm launcher recovery. Preserve the repository's `packageManager` pin and integrity checks; do not bypass engine enforcement to compensate for a broken launcher.
 - [`pnpm-workspace.yaml`](pnpm-workspace.yaml) owns pnpm 12 dependency build-script approvals and install policy through `allowBuilds`, strict engine/build enforcement, a strict 24-hour release-age gate, trust-downgrade rejection, and transitive exotic-source blocking.
 - Keep trust-policy exceptions exact, evidence-backed, and documented next to the package selector. Do not replace a narrow historical-metadata exception with a broad age-based trust bypass.
 - If a future supply-chain incident needs temporary pnpm overrides, put them in [`pnpm-workspace.yaml`](pnpm-workspace.yaml), document the reason, and remove them once clean upstream versions are available.
@@ -311,6 +312,7 @@ If you cannot run a check locally, say so explicitly in your handoff and explain
 ### Vite And Vitest
 
 - [`vitest.config.ts`](vitest.config.ts) intentionally does not reuse the full Vite app plugin stack.
+- Vitest 4 workers disable Node's experimental Web Storage so jsdom owns `localStorage` and `sessionStorage`. Reassess this workaround during the Vitest 5 upgrade; do not replace browser storage with a shared Node storage file.
 - [`vite.config.ts`](vite.config.ts) is configured for TanStack Start on Cloudflare Workers.
 - Local Vite serving defaults Wrangler logging to `warn` to suppress duplicate environment-source notices while preserving warnings and errors. Respect an explicitly supplied `WRANGLER_LOG` when deeper diagnostics are needed.
 - Do not pull the full TanStack Start or Cloudflare Workers runtime plugin stack into Vitest config unless there is a proven test need.

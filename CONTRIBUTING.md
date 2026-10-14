@@ -4,14 +4,24 @@
 
 This repo expects:
 
-- Node `>=24.15.0 <25.0.0` (jsdom requires at least 24.15.0 on this line)
+- Node `>=26.11.1 <27.0.0`
 - The pnpm version pinned in [`package.json`](./package.json) `packageManager`
 - Docker Desktop for local PostgreSQL development
 
 Docker Desktop must be running before `pnpm dev`. The command starts and waits for local PostgreSQL, applies migrations, runs the idempotent seed, and then starts Vite. It refuses to prepare a hosted `DATABASE_URL`. Use `pnpm dev:app` only when the local database is already prepared and you intentionally want to start Vite directly.
 
 The Node requirement and pnpm pin are declared in [`package.json`](./package.json).
-[`.nvmrc`](./.nvmrc) selects the Node 24 release line for contributors using a Node version manager. Update an older local Node 24 installation to at least 24.15.0; CI uses the same supported range as `package.json`.
+[`.nvmrc`](./.nvmrc) pins Node 26.11.1, the tested local baseline. CI uses the same supported Node 26 range as `package.json`. Node 26 is a Current release as of October 14, 2026; it is the chosen development/CI runtime, while deployed Workers use Cloudflare's runtime.
+
+Node 26 no longer bundles Corepack. Install the reviewed Corepack release and enable pnpm before installing project dependencies:
+
+```bash
+npm install --global corepack@0.36.0
+corepack enable pnpm
+pnpm --version
+```
+
+Run the version check from the repository so Corepack selects the `packageManager` pin. If a Windows Node upgrade leaves `pnpm` pointing at a removed `corepack/dist/pnpm.js`, inspect `Get-Command pnpm -All` and `Get-Command corepack -All`. Regenerate the stale shims with `corepack enable pnpm --install-directory "<directory containing the stale pnpm launcher>"`; a protected installation directory may require an elevated terminal. Do not disable engine or integrity checks to work around launcher failures. CI installs pnpm with `pnpm/action-setup` and does not depend on bundled Corepack.
 
 Copy [`.env.example`](./.env.example) to `.env` before running database commands. The local default uses Docker PostgreSQL on `localhost:55432`; do not point `.env` at Neon for daily development, seed testing, or destructive resets.
 

@@ -8,11 +8,19 @@ This project follows semantic versioning while it moves toward MVP. Versions bel
 
 ## [0.4.4] - Public release pending
 
-Local development tooling security maintenance. Version assignment does not authorize deployment or public release.
+Node 26 tooling compatibility and dependency security maintenance. Version assignment does not authorize deployment or public release.
+
+### Changed
+
+- Moved development and CI to Node 26.11.1 or newer within Node 26, pinned the local baseline in `.nvmrc`, and aligned Node type definitions with the runtime.
+- Documented manual Corepack installation for Node 26 and recovery from stale Windows pnpm launchers after a Node upgrade.
+- Disabled Node's experimental Web Storage only in Vitest 4 workers so jsdom supplies browser storage on Node 26; revisit this compatibility workaround with Vitest 5.
 
 ### Security
 
 - Pinned Miniflare's Undici dependency to 7.29.1 with an exact parent-scoped override to address the WebSocket decompression denial-of-service advisory GHSA-3wwx-pv8p-q78v. Remove the override when the upstream dependency resolves a patched release; the separate jsdom dependency remains unchanged.
+- Patched Miniflare's Sharp dependency to 0.35.5 for GHSA-wq5f-xc86-pv6w, and refreshed compatible transitive Solid/Seroval, brace-expansion, source-map-js and shell-quote resolutions for newly reported advisories.
+- Documented the remaining moderate postcss-selector-parser advisory and Tailwind Typography's exact upstream pin in `docs/security-hardening.md`; no audit suppression or unsupported parser-major override was added.
 
 ## [0.4.3] - Public release pending
 
