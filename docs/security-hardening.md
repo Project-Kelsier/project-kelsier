@@ -128,7 +128,6 @@ pnpm build
 For meaningful UI, routing, or runtime changes, also run:
 
 ```bash
-pnpm build-storybook
 pnpm coverage
 pnpm test:e2e
 ```

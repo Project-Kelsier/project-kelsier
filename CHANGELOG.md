@@ -15,6 +15,7 @@ Node 26 tooling compatibility and dependency security maintenance. Version assig
 - Moved development and CI to Node 26.11.1 or newer within Node 26, pinned the local baseline in `.nvmrc`, and aligned Node type definitions with the runtime.
 - Documented manual Corepack installation for Node 26 and recovery from stale Windows pnpm launchers after a Node upgrade.
 - Disabled Node's experimental Web Storage only in Vitest 4 workers so jsdom supplies browser storage on Node 26; revisit this compatibility workaround with Vitest 5.
+- Removed Storybook packages, configuration, stories, commands and the CI compilation step. UI validation uses the app, Vitest and Playwright; shared assessment test fixtures remain.
 
 ### Security
 
