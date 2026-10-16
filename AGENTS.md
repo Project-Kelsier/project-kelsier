@@ -245,6 +245,7 @@ pnpm test:e2e
 pnpm install --frozen-lockfile --ignore-scripts
 pnpm audit signatures
 pnpm audit --audit-level high
+pnpm rebuild
 pnpm version:check
 pnpm check
 pnpm typecheck
