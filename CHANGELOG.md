@@ -6,6 +6,15 @@ This project follows semantic versioning while it moves toward MVP. Versions bel
 
 ## [Unreleased]
 
+## [0.4.5] - Public release pending
+
+GitHub Actions maintenance and a stable CI runner baseline. Version assignment does not authorize deployment or public release.
+
+### Changed
+
+- Pinned GitHub Actions jobs to Ubuntu 24.04 and refreshed reviewed action commit pins for checkout, Node/pnpm setup, caches and on-demand Claude review.
+- Explicitly disabled setup-action caching to preserve trusted-main-only cache writes, and documented why the theming sync alone retains checkout credentials for its push.
+
 ## [0.4.4] - Public release pending
 
 Node 26 tooling compatibility and dependency security maintenance. Version assignment does not authorize deployment or public release.
