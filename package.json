@@ -41,14 +41,14 @@
 		"@tanstack/react-start": "1.168.60",
 		"@tanstack/router-plugin": "1.168.42",
 		"drizzle-orm": "^0.45.3",
-		"lucide-react": "^1.48.0",
+		"lucide-react": "^1.57.0",
 		"postgres": "^3.4.9",
 		"react": "^19.3.0",
 		"react-dom": "^19.3.0",
 		"tailwindcss": "^4.3.3"
 	},
 	"devDependencies": {
-		"@biomejs/biome": "2.5.14",
+		"@biomejs/biome": "2.5.15",
 		"@cloudflare/vite-plugin": "^1.60.2",
 		"@playwright/test": "^1.63.0",
 		"@tanstack/devtools-vite": "0.8.5",
