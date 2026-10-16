@@ -10,6 +10,9 @@ export default defineConfig({
 	},
 	test: {
 		environment: "jsdom",
+		// Let jsdom own storage on Node 26; Vitest 4 otherwise keeps Node's globals.
+		// Revisit with Vitest 5: https://github.com/vitest-dev/vitest/issues/10867
+		execArgv: ["--no-experimental-webstorage"],
 		globals: true,
 		include: ["src/**/*.test.{ts,tsx}"],
 		exclude: ["e2e/**", "playwright.config.ts", "src/routeTree.gen.ts"],

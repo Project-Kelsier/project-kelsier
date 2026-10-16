@@ -25,10 +25,10 @@ This repo should be easy for a new contributor to understand without private con
 - Deployment target: Cloudflare Workers via Wrangler and the Cloudflare Vite plugin.
 - Styling: Tailwind CSS v4, global baseline CSS in [`src/styles.css`](src/styles.css), and Kelsier-specific authored CSS in [`src/styles/kelsier.css`](src/styles/kelsier.css).
 - Database: Drizzle ORM with PostgreSQL. Local development uses Docker Compose PostgreSQL on `localhost:55432`; Neon remains the hosted staging/production database target.
-- Testing: Vitest for unit tests, Playwright for end-to-end coverage, and Storybook for isolated UI review.
+- Testing: Vitest for unit tests and Playwright for end-to-end coverage. Review UI through the running app.
 - Quality gate: Biome for formatting, linting, and import organization.
 - Package manager: `pnpm`
-- Runtime target: Node `>=24.15.0 <25.0.0`
+- Runtime target: Node `>=26.11.1 <27.0.0` for development and CI; Cloudflare Workers use the platform runtime.
 - Node version hint: [`.nvmrc`](.nvmrc)
 - Version source of truth: [`package.json`](package.json)
 
@@ -81,7 +81,6 @@ Use the current layout as the baseline and expand it with these responsibilities
 - [`scripts`](scripts): Local operational scripts such as database seed setup.
 - [`src/router.tsx`](src/router.tsx): Router creation only.
 - [`e2e`](e2e): End-to-end tests that validate cross-page user-visible behavior.
-- [`.storybook`](.storybook): Storybook configuration for isolated UI review, shared preview styling, and app-specific Vite defines used by stories.
 - [`public`](public): Static assets that should be served directly.
 
 When the app grows, prefer adding these folders rather than overloading existing files:
@@ -217,16 +216,6 @@ For organisation-scoped helpers, tests should prove that `organisations.deletedA
 - Prefer stable role- and text-based selectors over brittle implementation selectors.
 - Keep smoke coverage fast and focused. Add deeper scenarios only when a feature introduces real interaction risk.
 
-### Storybook
-
-- Put stories next to the component they document using `*.stories.tsx`.
-- Add a story when isolated rendering makes UI development meaningfully easier, such as for a reused component, a visually distinct state, or a state that is cumbersome to reach through normal navigation. Do not create stories for every wrapper or incidental component.
-- Use Storybook as a lightweight workbench for isolated visual review of component states. It is not a separate source of behavioral test coverage.
-- Keep important product contracts covered by Vitest or Playwright even when a Storybook story illustrates the same state.
-- Keep Storybook decorators and app-wide preview setup in [`.storybook`](.storybook), including CSS imports, font links, and Vite defines such as `__APP_VERSION__`.
-- Run `pnpm storybook` for local review. CI runs `pnpm build-storybook` as a compilation smoke check, not as an interaction, accessibility, or visual-regression test suite.
-- Do not add automated Storybook testing infrastructure unless growth in reusable components or story-only states creates a concrete maintenance need.
-
 ## Quality Gates
 
 Before handing off substantial work, run the smallest relevant set of checks.
@@ -247,7 +236,6 @@ pnpm typecheck
 pnpm test
 pnpm coverage
 pnpm build
-pnpm build-storybook
 pnpm test:e2e
 ```
 
@@ -257,6 +245,7 @@ pnpm test:e2e
 pnpm install --frozen-lockfile --ignore-scripts
 pnpm audit signatures
 pnpm audit --audit-level high
+pnpm rebuild
 pnpm version:check
 pnpm check
 pnpm typecheck
@@ -295,7 +284,8 @@ If you cannot run a check locally, say so explicitly in your handoff and explain
 ### pnpm
 
 - `package.json` pins the project package manager version.
-- [`.nvmrc`](.nvmrc) selects the Node 24 release line for local version managers. Use 24.15.0 or newer within that line, as required by `package.json` and jsdom; CI uses the same supported range.
+- [`.nvmrc`](.nvmrc) pins the tested Node 26.11.1 baseline for local version managers. `package.json` and CI support `>=26.11.1 <27.0.0`; keep these declarations and contributor guidance aligned when changing the runtime.
+- Node 26 does not bundle Corepack. [`CONTRIBUTING.md`](CONTRIBUTING.md#local-setup) documents manual Corepack setup and stale Windows pnpm launcher recovery. Preserve the repository's `packageManager` pin and integrity checks; do not bypass engine enforcement to compensate for a broken launcher.
 - [`pnpm-workspace.yaml`](pnpm-workspace.yaml) owns pnpm 12 dependency build-script approvals and install policy through `allowBuilds`, strict engine/build enforcement, a strict 24-hour release-age gate, trust-downgrade rejection, and transitive exotic-source blocking.
 - Keep trust-policy exceptions exact, evidence-backed, and documented next to the package selector. Do not replace a narrow historical-metadata exception with a broad age-based trust bypass.
 - If a future supply-chain incident needs temporary pnpm overrides, put them in [`pnpm-workspace.yaml`](pnpm-workspace.yaml), document the reason, and remove them once clean upstream versions are available.
@@ -311,6 +301,7 @@ If you cannot run a check locally, say so explicitly in your handoff and explain
 ### Vite And Vitest
 
 - [`vitest.config.ts`](vitest.config.ts) intentionally does not reuse the full Vite app plugin stack.
+- Vitest 4 workers disable Node's experimental Web Storage so jsdom owns `localStorage` and `sessionStorage`. Reassess this workaround during the Vitest 5 upgrade; do not replace browser storage with a shared Node storage file.
 - [`vite.config.ts`](vite.config.ts) is configured for TanStack Start on Cloudflare Workers.
 - Local Vite serving defaults Wrangler logging to `warn` to suppress duplicate environment-source notices while preserving warnings and errors. Respect an explicitly supplied `WRANGLER_LOG` when deeper diagnostics are needed.
 - Do not pull the full TanStack Start or Cloudflare Workers runtime plugin stack into Vitest config unless there is a proven test need.
@@ -370,7 +361,7 @@ Some files are generated or tool-owned. Treat them according to their owner and 
 | `.env` | Developer-local config | No | Local secrets/config only. Document names and safe defaults in [`.env.example`](.env.example). |
 | `node_modules/`, `.pnpm-store/` | pnpm | No | Local dependency install/cache output. |
 | `dist/`, `.output/`, `.wrangler/`, `.tanstack/`, `.nitro/`, `.vinxi/` | Build/runtime tools | No | Local generated build, preview, and tool state. |
-| `coverage/`, `playwright-report/`, `test-results/`, `storybook-static/` | Test and UI review tools | No | Local test, coverage, and Storybook build output. |
+| `coverage/`, `playwright-report/`, `test-results/` | Test tools | No | Local test and coverage output. |
 
 Keep PR-specific plans, review reports, and speed comparisons untracked under `.wrangler/` or the ignored `docs/pr-*.md` pattern. Lasting workflow and architecture guidance belongs in the tracked documentation.
 

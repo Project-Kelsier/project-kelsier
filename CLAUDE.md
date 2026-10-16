@@ -49,13 +49,13 @@ The harm boundary is a hard product rule. The seeded questionnaire and its dimen
 
 **Implemented**, confirmed against tracked configuration:
 
-- **Single-package pnpm application** on Node `>=24.15.0 <25.0.0` tooling. [`pnpm-workspace.yaml`](pnpm-workspace.yaml) declares `packages: [.]` and exists to own install policy and documented CVE overrides, not to define multiple workspaces.
+- **Single-package pnpm application** on Node `>=26.11.1 <27.0.0` tooling. [`pnpm-workspace.yaml`](pnpm-workspace.yaml) declares `packages: [.]` and exists to own install policy and documented CVE overrides, not to define multiple workspaces.
 - **React 19 with TanStack Start, TanStack Router, and Vite.** Start is the framework, Router its file-based routing layer ([`vite.config.ts`](vite.config.ts)).
 - **TanStack Start server functions are the API boundary** (`createServerFn`, [`src/server`](src/server)). There is no separate HTTP framework.
 - **Production targets Cloudflare Workers** via Wrangler and `@cloudflare/vite-plugin` in SSR mode — the edge runtime, not Node.
 - **Drizzle ORM over PostgreSQL.** Local development uses Docker PostgreSQL on `localhost:55432`; hosted access is Neon reached through the Cloudflare **Hyperdrive** binding.
 - **Cloudflare Cron Triggers perform scheduled cleanup** (`17 3 * * *` in [`wrangler.jsonc`](wrangler.jsonc) → the `scheduled` export in [`src/worker.ts`](src/worker.ts)). No queue system or external job runner.
-- Native Workers rate limiting (`ASSESSMENT_ATTEMPT_RATE_LIMITER` and `ASSESSMENT_ACTIVITY_RATE_LIMITER`), Tailwind v4, Biome, Vitest, Playwright, Storybook.
+- Native Workers rate limiting (`ASSESSMENT_ATTEMPT_RATE_LIMITER` and `ASSESSMENT_ACTIVITY_RATE_LIMITER`), Tailwind v4, Biome, Vitest, Playwright.
 
 **Not part of the current architecture.** Bun, Hono, Braintrust, Inngest, and a multi-package workspace layout are not installed dependencies, implemented services, or part of the tracked architecture — they appear in this repository only as named exclusions. If a task assumes any of them, verify against `package.json` and tracked source before building, and confirm the intent before introducing one. A comment in [`src/db/schema/aiInsights.ts`](src/db/schema/aiInsights.ts) records the intended background-job direction as Cloudflare Queues or Workflows, keeping that path platform-native.
 
@@ -108,8 +108,6 @@ pnpm typecheck        # tsc --noEmit
 pnpm test             # Vitest unit tests
 pnpm coverage         # Vitest with v8 coverage
 pnpm test:e2e         # Playwright
-pnpm storybook        # Storybook workbench on port 6006
-pnpm build-storybook  # Compile Storybook as CI does
 
 pnpm db:generate      # Generate a Drizzle migration from schema changes
 pnpm db:migrate       # Apply migrations to DATABASE_URL; verify the target first
@@ -117,7 +115,7 @@ pnpm db:seed          # Seed the configured database; non-local targets require 
 
 pnpm version:show     # Print the current app version
 pnpm version:check    # Verify version + CHANGELOG metadata (CI gate)
-pnpm run ci           # check + typecheck + test + app and Storybook builds
+pnpm run ci           # check + typecheck + test + app build
 ```
 
 Non-obvious safety behaviour:

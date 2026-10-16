@@ -16,6 +16,7 @@ todos.json
 coverage
 playwright-report
 test-results
+# Legacy local output from the removed Storybook tooling
 storybook-static
 
 # Local PR plans and review notes

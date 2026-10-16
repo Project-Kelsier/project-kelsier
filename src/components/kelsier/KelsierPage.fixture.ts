@@ -44,7 +44,7 @@ export const assessmentQuestionnaireFixture: AssessmentQuestionnaire = {
 	id: "questionnaire-fixture",
 	slug: "questionnaire-fixture",
 	title: "Questionnaire fixture",
-	description: "Stable component and Storybook fixture.",
+	description: "Stable component test fixture.",
 	questions: [
 		{
 			id: "deadline-response",

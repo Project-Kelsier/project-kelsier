@@ -95,14 +95,20 @@ When fixing advisories through `pnpm-workspace.yaml` overrides, prefer the narro
 
 ### Current Reviewed Exceptions
 
+The 2026-10-16 CI audit identified [GHSA-qx66-fv34-fjm8](https://github.com/advisories/GHSA-qx66-fv34-fjm8), a critical reflected XSS vulnerability in TanStack Start server-function responses. The advisory entered GitHub's advisory database on 2026-10-15, after the previous passing audit. TanStack Start `1.168.60` resolves patched `@tanstack/start-server-core@1.169.39`; matching Router and router-plugin updates keep the framework graph aligned. This remediation uses upstream patches without new overrides or audit exceptions. Repository updates do not patch an existing hosted deployment; apply the tested update to staging separately before considering that deployment remediated.
+
 The 2026-08-19 audit reported no known vulnerabilities. On 2026-09-12, [CI for commit 97aebb6](https://github.com/Project-Kelsier/project-kelsier/actions/runs/34693462674) failed `pnpm audit --audit-level high`, reporting two high and two moderate findings, including Sharp/libheif and JS-YAML. The database job passed. Those failures required dependency remediation and a fresh passing validation job; local behavioral tests did not replace the audit gate. These are historical checkpoints, not the current PR status.
 
 The reviewed overrides and trust exception in `pnpm-workspace.yaml` are:
 
 - `@esbuild-kit/core-utils>esbuild` is overridden to the compatible patched `0.25.12` release for GHSA-67mh-4wv8-2f99 because Drizzle Kit's deprecated loader chain still requests an older Esbuild range. Remove the override once that parent chain resolves a patched version naturally.
+- `miniflare@5.20260925.0-alpha>undici` is overridden to `7.29.1` for [GHSA-3wwx-pv8p-q78v](https://github.com/advisories/GHSA-3wwx-pv8p-q78v). Updating Node's bundled Undici does not update this separately installed dependency. Remove the override when the selected Cloudflare tooling resolves a patched version naturally.
+- `miniflare@5.20260925.0-alpha>sharp` is overridden to `0.35.5` for the librsvg issue [GHSA-wq5f-xc86-pv6w](https://github.com/advisories/GHSA-wq5f-xc86-pv6w). Remove the override when that upstream parent no longer pins vulnerable Sharp `0.35.4`.
 - `semver@6.3.1` is excluded from trust-downgrade comparison because Babel requires this official security-fixed 6.x release. The registry artifact has a valid signature, but it lacks the legacy trust metadata present on `6.3.0`. Keep this exception exact and remove it once Babel no longer resolves the legacy line.
 
-The Sharp and JS-YAML overrides were removed during the September package refresh. As reviewed on 2026-09-28, the lockfile resolves Miniflare `5.20260925.0-alpha`, which pins Sharp `0.35.4` directly, including the patched libheif for [GHSA-rgj7-g3m4-5g8c](https://github.com/advisories/GHSA-rgj7-g3m4-5g8c). The lockfile retains JS-YAML `4.3.2` within xmlbuilder2's `^4.1.1` range without an override, addressing [GHSA-2883-xcg3-v3hh](https://github.com/advisories/GHSA-2883-xcg3-v3hh). Keep both resolved paths patched during future lockfile updates.
+The earlier Sharp and JS-YAML overrides were removed during the September package refresh. Sharp `0.35.4` addressed the earlier libheif advisory [GHSA-rgj7-g3m4-5g8c](https://github.com/advisories/GHSA-rgj7-g3m4-5g8c); the October librsvg finding requires the new Sharp override above. The lockfile retains JS-YAML `4.3.2` within xmlbuilder2's `^4.1.1` range without an override, addressing [GHSA-2883-xcg3-v3hh](https://github.com/advisories/GHSA-2883-xcg3-v3hh). Keep both resolved paths patched during future lockfile updates.
+
+The 2026-10-14 review identified [GHSA-rj75-hqrm-r3gf](https://github.com/advisories/GHSA-rj75-hqrm-r3gf) in `postcss-selector-parser@6.0.10`, pinned exactly by `@tailwindcss/typography@0.5.20`. The plugin was registered but no app route, component or story used its `prose` classes. Removing that unused plugin and its CSS registration removes the vulnerable parser from the dependency graph without forcing its fixed `7.1.6` major across the parent's pin. Tailwind CSS and the app's authored typography remain in use. If rich-text typography is needed later, review the plugin and its dependency advisories before reintroducing it.
 
 The 2026-09-12 remediation also updated Vitest and its coverage package together to `4.1.11` for [GHSA-82fw-gwwq-j7x9](https://github.com/advisories/GHSA-82fw-gwwq-j7x9). The fixes selected at that checkpoint were published in August and satisfied the existing 24-hour release-age gate; no trust or release-age bypass was added. The local audit then reported no known vulnerabilities and verified registry signatures for all 634 packages. Frozen installation, approved native rebuilds, version metadata, formatting, type checking, all 160 tests (including PostgreSQL), coverage, and the app build passed.
 
@@ -114,6 +120,7 @@ For dependency maintenance PRs, run:
 pnpm install --frozen-lockfile --ignore-scripts
 pnpm audit signatures
 pnpm audit --audit-level high
+pnpm rebuild
 pnpm version:check
 pnpm check
 pnpm typecheck
@@ -124,7 +131,6 @@ pnpm build
 For meaningful UI, routing, or runtime changes, also run:
 
 ```bash
-pnpm build-storybook
 pnpm coverage
 pnpm test:e2e
 ```
