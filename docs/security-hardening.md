@@ -95,6 +95,8 @@ When fixing advisories through `pnpm-workspace.yaml` overrides, prefer the narro
 
 ### Current Reviewed Exceptions
 
+The 2026-10-16 CI audit identified [GHSA-qx66-fv34-fjm8](https://github.com/advisories/GHSA-qx66-fv34-fjm8), a critical reflected XSS vulnerability in TanStack Start server-function responses. The advisory entered GitHub's advisory database on 2026-10-15, after the previous passing audit. TanStack Start `1.168.60` resolves patched `@tanstack/start-server-core@1.169.39`; matching Router and router-plugin updates keep the framework graph aligned. This remediation uses upstream patches without new overrides or audit exceptions. Repository updates do not patch an existing hosted deployment; apply the tested update to staging separately before considering that deployment remediated.
+
 The 2026-08-19 audit reported no known vulnerabilities. On 2026-09-12, [CI for commit 97aebb6](https://github.com/Project-Kelsier/project-kelsier/actions/runs/34693462674) failed `pnpm audit --audit-level high`, reporting two high and two moderate findings, including Sharp/libheif and JS-YAML. The database job passed. Those failures required dependency remediation and a fresh passing validation job; local behavioral tests did not replace the audit gate. These are historical checkpoints, not the current PR status.
 
 The reviewed overrides and trust exception in `pnpm-workspace.yaml` are:
