@@ -15,6 +15,7 @@ Development tooling and dependency maintenance. Version assignment does not auth
 - Refreshed the pinned package manager to pnpm 12.14.0 while preserving install security policies and the application dependency graph.
 - Pinned the tested Node baseline to 26.12.0 in `.nvmrc` and made CI read that file directly. The supported range remains `>=26.11.1 <27.0.0`.
 - Updated Biome to 2.5.15 with its matching configuration schema and Lucide React to 1.57.0.
+- Updated dotenv to 18.0.8, retaining explicit environment-loading boundaries, inherited-variable precedence and quiet logging.
 
 ### Fixed
 
