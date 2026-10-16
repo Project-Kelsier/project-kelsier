@@ -1,10 +1,42 @@
-# Staging operations
+# Hosted staging and dummy-production operations
 
-The maintainer explicitly placed public launch on hold on 2026-09-12. This checklist covers existing staging only. Completing it does not authorize public launch or promotion. The decision table remains in [assessment-mvp.md](assessment-mvp.md#public-launch-gate). The repository version in [`package.json`](../package.json) may be newer than the last recorded staging deployment.
+The maintainer explicitly placed public launch on hold on 2026-09-12. These operations cover staging and dummy production; neither label authorizes public launch or promotion. The decision table remains in [assessment-mvp.md](assessment-mvp.md#public-launch-gate). The repository version in [`package.json`](../package.json) may be newer than the last recorded hosted deployment.
+
+## Hosted targets
+
+The maintainer confirmed these roles and approved temporarily sharing the existing Neon database on 2026-10-16. See [the database decision and separation triggers](database.md#temporary-shared-hosted-database). Worker names are `project-kelsier` in both accounts; always select the account explicitly.
+
+| Target | URL | Cloudflare account ID | Hyperdrive ID | Scheduled cleanup |
+| --- | --- | --- | --- | --- |
+| Staging | <https://project-kelsier.mindphreak.workers.dev/> | `91a80a519a166e4f74105b8868ab2c4f` | `280a2e296ce34b2796b63a6ed11f568a` | `17 3 * * *` for the shared database |
+| Dummy production | <https://project-kelsier.curiousphreak.workers.dev/> | `6015d7a8e1e0a004f327dc612cdd50b1` | `fb35dd8042e34e078d63b3f15f315c07` | None; staging owns cleanup |
+
+Both Hyperdrive configurations disable query caching. Dummy production uses an origin connection limit of five to limit its additional pool demand. No credentials belong in this table or a committed deployment config.
+
+Deployment evidence on 2026-10-16: merged commit `1b369ae` (app `0.4.4`) is active at 100% on staging as Worker version `93095658-3eec-44c4-8d14-7e7050a043a0` and dummy production as `272b20c5-89d6-4df3-ae2b-9986e249d5fc`. Both sites passed hosted checks for page responses, no-store headers, secure guest cookies, cross-site/anonymous write rejection, completion and reload, exactly one resume, and deletion. Disposable test attempts were removed. The shared database already had all 13 reviewed migrations; no hosted migration or seed was needed. API verification confirmed staging's daily cron and an empty dummy-production schedule. This verifies configuration, not execution of the next scheduled cleanup or the independent reviewer launch gate.
+
+### Deploying the same build to both accounts
+
+`wrangler.jsonc` remains the staging configuration. Build once with `pnpm build`, then validate with `pnpm worker:check` and preview the result. After verifying the authenticated account, deploy staging with `CLOUDFLARE_ACCOUNT_ID` set to its ID. Preserve dashboard variables with `--keep-vars`.
+
+Dummy production needs a derived config because Hyperdrive IDs belong to their Cloudflare account and it must not duplicate the shared cleanup cron. After every build, regenerate an ignored config from `dist/server/wrangler.json`, retaining the built Worker/module settings and rate-limit bindings. The following Node command works from the repository root:
+
+```bash
+node --input-type=module -e "import fs from 'node:fs'; import path from 'node:path'; const c=JSON.parse(fs.readFileSync('dist/server/wrangler.json','utf8')); c.account_id='6015d7a8e1e0a004f327dc612cdd50b1'; c.main=path.resolve('dist/server',c.main); c.assets.directory=path.resolve('dist/server',c.assets.directory); c.hyperdrive=[{binding:'HYPERDRIVE',id:'fb35dd8042e34e078d63b3f15f315c07'}]; c.triggers={crons:[]}; c.workers_dev=true; delete c.configPath; delete c.userConfigPath; fs.mkdirSync('.wrangler/dummy-production',{recursive:true}); fs.writeFileSync('.wrangler/dummy-production/wrangler.json',JSON.stringify(c,null,2));"
+```
+
+Use a Wrangler login with access to the dummy-production account. Locally, the `curiousphreak` auth profile holds that login; profile credentials remain in Wrangler's credential store. Clear any staging `CLOUDFLARE_ACCOUNT_ID` override before running:
+
+```bash
+pnpm exec wrangler deploy --profile curiousphreak --config .wrangler/dummy-production/wrangler.json --dry-run
+pnpm exec wrangler deploy --profile curiousphreak --config .wrangler/dummy-production/wrangler.json --keep-vars
+```
+
+Do not deploy the unmodified staging build config to the second account. Record the previous and new Worker version IDs, verify the active deployment and bindings, and smoke-test each hostname using only disposable guest attempts. Check pages, secure cookies, persistence, deletion, and cross-site/anonymous write rejection. Apply any reviewed shared-schema migration once, not once per account. Do not promote either site publicly through this procedure.
 
 ## Cleanup verification
 
-Last recorded deployment evidence (2026-09-12): Worker `project-kelsier`, app version `0.4.0`, was deployed as `7f3fde5d-777d-438d-afa0-f814ec8b12a5`. Its first scheduled invocation was due 2026-09-13 at 03:17 UTC; verification of that run has not been recorded here. This historical snapshot does not establish the currently deployed version or ongoing cleanup health.
+Historical deployment evidence (2026-09-12): Worker `project-kelsier`, app version `0.4.0`, was deployed as `7f3fde5d-777d-438d-afa0-f814ec8b12a5`. Its first scheduled invocation was due 2026-09-13 at 03:17 UTC; verification of that run has not been recorded here. This historical snapshot does not establish the currently deployed version or ongoing cleanup health; the latest deployment checkpoint is under [hosted targets](#hosted-targets).
 
 Before each check, identify the active Worker version and its deployed schedule. The repository config specifies `17 3 * * *` (daily at 03:17 UTC). Check a recent expected invocation and allow a 15-minute investigation window for execution and log ingestion; do not report a missed run before it is due.
 
