@@ -144,7 +144,7 @@ pnpm test:e2e
 - Privileged deployment and publishing workflows should run only on protected branches, protected environments, or explicit maintainer approval.
 - Add `github.repository_owner` and branch guards to privileged jobs when a workflow could run in forks or mirrors.
 - Pin third-party actions to full commit SHAs. Keep a comment with the readable version tag for maintenance.
-- Workflows use `ubuntu-24.04` as an explicit runner baseline. Review image upgrades independently and validate PostgreSQL, native tooling and all Playwright browsers before switching.
+- Workflows use `ubuntu-26.04` as an explicit runner baseline. Review image upgrades independently and validate PostgreSQL, native tooling and all Playwright browsers before switching.
 - Validation and review checkouts disable credential persistence. The theming sync job retains credentials because its purpose includes pushing the merge back to `experiment/theming`.
 
 SHA pinning prevents a moved tag from changing executed workflow code. Version tags are easier to update but trust the action maintainer and GitHub tag state at every run. For this project, use SHA pinning for CI and deployment workflows, then update pins through reviewed maintenance PRs.
@@ -155,6 +155,7 @@ SHA pinning prevents a moved tag from changing executed workflow code. Version t
 - Prefer separate restore and save steps.
 - Allow cache saves only from trusted `push` runs on `refs/heads/main` or another protected branch.
 - Disable automatic caching in both pnpm/action-setup (`cache: false`) and setup-node (`package-manager-cache: false`) so those actions cannot bypass the explicit save-step conditions.
+- Include the Ubuntu baseline and runner architecture in cache keys and restore prefixes; `runner.os` alone does not distinguish Ubuntu releases with different native libraries.
 - Treat dependency stores as executable inputs. A poisoned package store can be equivalent to code execution.
 - If a privileged workflow is suspected of restoring a poisoned cache, delete repository Actions caches before rerunning release or deploy jobs.
 

@@ -12,8 +12,9 @@ GitHub Actions maintenance and a stable CI runner baseline. Version assignment d
 
 ### Changed
 
-- Pinned GitHub Actions jobs to Ubuntu 24.04 and refreshed reviewed action commit pins for checkout, Node/pnpm setup, caches and on-demand Claude review.
+- Pinned GitHub Actions jobs to Ubuntu 26.04 and refreshed reviewed action commit pins for checkout, Node/pnpm setup, caches and on-demand Claude review.
 - Explicitly disabled setup-action caching to preserve trusted-main-only cache writes, and documented why the theming sync alone retains checkout credentials for its push.
+- Scoped dependency and browser caches to the Ubuntu release and runner architecture to avoid restoring native artifacts across runner platforms.
 
 ## [0.4.4] - Public release pending
 

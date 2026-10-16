@@ -15,7 +15,7 @@ env:
 jobs:
   database:
     # Keep browser/native-tooling validation stable during runner image rollouts.
-    runs-on: ubuntu-24.04
+    runs-on: ubuntu-26.04
 
     services:
       postgres:
@@ -74,7 +74,7 @@ jobs:
           RUN_DB_TESTS: "true"
 
   validate:
-    runs-on: ubuntu-24.04
+    runs-on: ubuntu-26.04
 
     services:
       postgres:
@@ -120,9 +120,9 @@ jobs:
         uses: actions/cache/restore@55cc8345863c7cc4c66a329aec7e433d2d1c52a9 # v6.1.0
         with:
           path: .pnpm-store
-          key: ${{ runner.os }}-pnpm-${{ hashFiles('pnpm-lock.yaml') }}
+          key: ${{ runner.os }}-ubuntu-26.04-${{ runner.arch }}-pnpm-${{ hashFiles('pnpm-lock.yaml') }}
           restore-keys: |
-            ${{ runner.os }}-pnpm-
+            ${{ runner.os }}-ubuntu-26.04-${{ runner.arch }}-pnpm-
 
       - name: Install dependencies
         run: pnpm install --frozen-lockfile --ignore-scripts
@@ -145,16 +145,16 @@ jobs:
         uses: actions/cache/save@55cc8345863c7cc4c66a329aec7e433d2d1c52a9 # v6.1.0
         with:
           path: .pnpm-store
-          key: ${{ runner.os }}-pnpm-${{ hashFiles('pnpm-lock.yaml') }}
+          key: ${{ runner.os }}-ubuntu-26.04-${{ runner.arch }}-pnpm-${{ hashFiles('pnpm-lock.yaml') }}
 
       - name: Restore Playwright browsers
         id: restore-playwright-browsers
         uses: actions/cache/restore@55cc8345863c7cc4c66a329aec7e433d2d1c52a9 # v6.1.0
         with:
           path: ~/.cache/ms-playwright
-          key: ${{ runner.os }}-playwright-${{ hashFiles('pnpm-lock.yaml') }}
+          key: ${{ runner.os }}-ubuntu-26.04-${{ runner.arch }}-playwright-${{ hashFiles('pnpm-lock.yaml') }}
           restore-keys: |
-            ${{ runner.os }}-playwright-
+            ${{ runner.os }}-ubuntu-26.04-${{ runner.arch }}-playwright-
 
       - name: Install Playwright browsers
         run: pnpm exec playwright install --with-deps chromium firefox webkit
@@ -164,7 +164,7 @@ jobs:
         uses: actions/cache/save@55cc8345863c7cc4c66a329aec7e433d2d1c52a9 # v6.1.0
         with:
           path: ~/.cache/ms-playwright
-          key: ${{ runner.os }}-playwright-${{ hashFiles('pnpm-lock.yaml') }}
+          key: ${{ runner.os }}-ubuntu-26.04-${{ runner.arch }}-playwright-${{ hashFiles('pnpm-lock.yaml') }}
 
       - name: Lint and format checks
         run: pnpm check
