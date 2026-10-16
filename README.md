@@ -81,7 +81,7 @@ pnpm db:seed
 ## Tooling Notes
 
 - Cloudflare Workers deployment is configured through [`wrangler.jsonc`](./wrangler.jsonc) and the Cloudflare Vite plugin in [`vite.config.ts`](./vite.config.ts). [`src/worker.ts`](./src/worker.ts) delegates HTTP requests to TanStack Start and runs the daily expired-assessment cleanup.
-- Node `>=26.11.1 <27.0.0` is required by [`package.json`](./package.json). [`.nvmrc`](./.nvmrc) pins the tested baseline, 26.11.1; CI uses the same supported Node 26 range. Node is used for local tooling and CI; deployed Workers run on Cloudflare's runtime.
+- Node `>=26.11.1 <27.0.0` is supported by [`package.json`](./package.json). [`.nvmrc`](./.nvmrc) pins the tested baseline, 26.12.0; CI reads that same pin. Node is used for local tooling and CI; deployed Workers run on Cloudflare's runtime.
 - Node 26 does not bundle Corepack. See [local package-manager setup](./CONTRIBUTING.md#local-setup) to install Corepack and enable the repository's pinned pnpm version, including recovery from stale Windows launchers after a Node upgrade.
 - Use the pnpm version pinned in [`package.json`](./package.json) `packageManager`. Settings and build-script approvals are declared in [`pnpm-workspace.yaml`](./pnpm-workspace.yaml). Installs enforce approved builds and engines, a strict 24-hour release-age gate, fail-closed publication metadata, trust-downgrade rejection, and transitive exotic-source blocking.
 - [`worker-configuration.d.ts`](./worker-configuration.d.ts) contains Wrangler-generated binding and runtime API types. Refresh it with `pnpm cf-typegen` after changing bindings, compatibility dates/flags, or Wrangler; an upgrade can change runtime declarations without changing bindings.

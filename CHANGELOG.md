@@ -6,6 +6,15 @@ This project follows semantic versioning while it moves toward MVP. Versions bel
 
 ## [Unreleased]
 
+## [0.4.6] - Public release pending
+
+Node and pnpm maintenance. Version assignment does not authorize deployment or public release.
+
+### Changed
+
+- Refreshed the pinned package manager to pnpm 12.14.0 while preserving install security policies and the application dependency graph.
+- Pinned the tested Node baseline to 26.12.0 in `.nvmrc` and made CI read that file directly. The supported range remains `>=26.11.1 <27.0.0`.
+
 ## [0.4.5] - Public release pending
 
 GitHub Actions maintenance and a stable CI runner baseline. Version assignment does not authorize deployment or public release.

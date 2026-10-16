@@ -11,7 +11,7 @@ This repo expects:
 Docker Desktop must be running before `pnpm dev`. The command starts and waits for local PostgreSQL, applies migrations, runs the idempotent seed, and then starts Vite. It refuses to prepare a hosted `DATABASE_URL`. Use `pnpm dev:app` only when the local database is already prepared and you intentionally want to start Vite directly.
 
 The Node requirement and pnpm pin are declared in [`package.json`](./package.json).
-[`.nvmrc`](./.nvmrc) pins Node 26.11.1, the tested local baseline. CI uses the same supported Node 26 range as `package.json`. Node 26 is a Current release as of October 14, 2026; it is the chosen development/CI runtime, while deployed Workers use Cloudflare's runtime.
+[`.nvmrc`](./.nvmrc) pins Node 26.12.0, the tested baseline used by local version managers and CI. `package.json` retains support for `>=26.11.1 <27.0.0`; existing 26.11.1 installations remain supported. Node 26 is a Current release as of October 16, 2026; it is the chosen development/CI runtime, while deployed Workers use Cloudflare's runtime.
 
 Node 26 no longer bundles Corepack. Install the reviewed Corepack release and enable pnpm before installing project dependencies:
 
