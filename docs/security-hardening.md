@@ -34,6 +34,10 @@ Dynamic Worker responses, including server-rendered guest data and errors, use `
 
 Both rate-limit bindings must accompany the code when deploying. Local tests and generated configuration do not constitute hosted verification or public launch approval.
 
+Local Playwright projects simulate separate client addresses through `CF-Connecting-IP` so their journeys do not exhaust one shared creation bucket. This leaves rate limits enabled and changes only local test metadata; hosted requests still rely on Cloudflare's edge-provided address.
+
+Staging and dummy production currently share the same Neon database and database role. Host-only cookies separate normal browser sessions, but the hostname does not add an authorization boundary for a valid guest credential. Schema changes, credentials, and cleanup affect both targets. See the [shared-database decision and separation triggers](database.md#temporary-shared-hosted-database).
+
 ## Supply-Chain Controls
 
 ### pnpm

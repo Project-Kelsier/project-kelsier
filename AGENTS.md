@@ -166,6 +166,7 @@ The UI combines the authored Kelsier landing experience with an interactive, Pos
 - When a table stores a duplicated `organisationId` for tenant-scoped lookup speed and also references a parent row, enforce that tenant relationship at the database level with composite unique keys/foreign keys where practical. Do not rely only on service-layer predicates to prevent cross-tenant rows.
 - Keep external auth decoupled from domain users. `users.authUserId` is the bridge to managed auth identity; do not add foreign keys to provider-owned auth tables.
 - Local database work should use Docker PostgreSQL through `DATABASE_URL=postgres://kelsier:kelsier@localhost:55432/kelsier_dev`. Do not run destructive development commands against Neon.
+- Hosted staging (`mindphreak`) and dummy production (`curiousphreak`) temporarily share one Neon database, with separate account-specific Hyperdrive bindings. Staging alone owns scheduled expiry cleanup. Follow [the shared-database decision](docs/database.md#temporary-shared-hosted-database) and [hosted deployment instructions](docs/staging-operations.md#hosted-targets); these hostnames do not provide database isolation.
 
 ### Assessment MVP Direction
 
@@ -177,7 +178,7 @@ The approved guest-first assessment boundaries and phased delivery plan live in 
 - Completion and replacement lock the owned attempt before reading dependent state. Preserve that transaction boundary so concurrent saves cannot make scoring disagree with persisted answers, and replacement cannot delete a newly completed result. Only a stored result establishes completion in the UI; reaching the final question or saving required answers does not.
 - Guest HTTP functions share `src/server/guestRateLimit.ts`: hosted requests use only Cloudflare's `CF-Connecting-IP`; missing edge metadata or limiter failures reject requests before database access. Creation has a 10/minute bucket, activity (including questionnaire reads) has a 120/minute bucket, and deletion uses a separate 120/minute bucket. These are approximate per-IP, per-location abuse controls, not global quotas. Preserve TanStack's default server-function CSRF middleware; adding `src/start.ts` requires explicitly retaining that middleware. Dynamic Worker responses are `private, no-store` because rendered HTML can contain guest data.
 - The seeded questionnaire and dimension-mean output are demonstration content. Do not describe them as validated, predictive, clinical, diagnostic, or suitable for hiring decisions.
-- The top-level `workers.dev` deployment may operate as publicly reachable staging. Do not present it as production or actively promote it as the public pilot until the launch gate in the decision document is satisfied.
+- The `workers.dev` deployments may operate as publicly reachable staging and dummy production. Neither label authorizes a real public production launch or promotion as the pilot until the launch gate in the decision document is satisfied.
 
 Default bias: start local, then extract when reuse or complexity justifies it.
 
