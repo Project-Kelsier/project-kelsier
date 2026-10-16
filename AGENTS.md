@@ -150,6 +150,7 @@ Every user-facing change should maintain or improve baseline accessibility.
 - Prefer visible text over icon-only controls unless there is a strong UI reason.
 - Preserve color contrast when extending the palette.
 - Verify keyboard access for new navigation or form interactions.
+- Assessment question transitions settle scrolling and focus the mounted heading before paint. Preserve this ordering: overlapping smooth scrolling can move an answer label between pointer-down and pointer-up, losing its native click activation.
 
 ## State And Data
 

@@ -219,8 +219,8 @@ describe("KelsierPage", () => {
 
 		await waitFor(() => {
 			expect(HTMLElement.prototype.scrollIntoView).toHaveBeenCalledWith({
-				behavior: "auto",
-				block: "start",
+				behavior: "instant",
+				block: "nearest",
 			});
 		});
 	});
