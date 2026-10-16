@@ -17,7 +17,7 @@ Development tooling and dependency maintenance. Version assignment does not auth
 - Updated Biome to 2.5.15 with its matching configuration schema and Lucide React to 1.57.0.
 - Updated dotenv to 18.0.8, retaining explicit environment-loading boundaries, inherited-variable precedence and quiet logging.
 - Updated jsdom to 30.1.3 for DOM, focus-performance and cross-origin XHR fixes while retaining Vitest 4's isolated browser-storage workaround.
-- Updated Playwright to 1.64.1 and validated its matching Chromium, Firefox and WebKit browsers with the existing test configuration.
+- Updated Playwright to 1.64.1 and validated its matching Chromium, Firefox and WebKit browsers, including assessment interaction regressions.
 
 ### Fixed
 
