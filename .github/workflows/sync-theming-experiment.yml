@@ -15,14 +15,16 @@ concurrency:
 
 jobs:
   merge-main:
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-26.04
 
     steps:
       - name: Checkout theming experiment
-        uses: actions/checkout@34e114876b0b11c390a56381ad16ebd13914f8d5 # v4
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
         with:
           ref: experiment/theming
           fetch-depth: 0
+          # This job pushes the merge; validation/review jobs disable credentials.
+          persist-credentials: true
 
       - name: Merge main into theming experiment
         run: |

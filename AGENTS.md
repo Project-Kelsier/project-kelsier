@@ -340,6 +340,9 @@ If you cannot run a check locally, say so explicitly in your handoff and explain
 - Claude review is intentionally not automatic because CodeRabbit already supplies automatic pull request review. Keep their responsibilities distinct before expanding either workflow.
 - Keep review-assistant actions pinned to reviewed full commit SHAs. Do not grant repository write access unless a separately reviewed workflow explicitly needs Claude to modify code.
 - CI PostgreSQL services use the same reviewed immutable image digest. Review upstream version/source metadata when updating the pin. CI checkouts disable credential persistence because later steps do not need authenticated Git access.
+- Workflows pin `ubuntu-26.04` so runner-image transitions are reviewed separately from dependency updates. Validate database and all Playwright browsers before changing that baseline. Action-internal Node runtimes are independent of the project's Node 26 requirement.
+- CI uses explicit cache restore/save actions with writes restricted to trusted main-branch pushes. Keep automatic caching disabled in both pnpm/action-setup and setup-node. The theming sync workflow intentionally retains checkout credentials for its authenticated push; validation and review jobs do not.
+- Cache keys and restore prefixes include the Ubuntu baseline and runner architecture. Update both when changing runners so native dependencies and browser binaries are not restored across incompatible platforms.
 
 ### TypeScript Paths
 
