@@ -39,7 +39,6 @@ pnpm test
 pnpm coverage
 pnpm build
 pnpm worker:check
-pnpm build-storybook
 pnpm test:e2e
 ```
 
