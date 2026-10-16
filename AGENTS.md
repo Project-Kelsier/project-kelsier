@@ -165,6 +165,7 @@ The UI combines the authored Kelsier landing experience with an interactive, Pos
 - When a table stores a duplicated `organisationId` for tenant-scoped lookup speed and also references a parent row, enforce that tenant relationship at the database level with composite unique keys/foreign keys where practical. Do not rely only on service-layer predicates to prevent cross-tenant rows.
 - Keep external auth decoupled from domain users. `users.authUserId` is the bridge to managed auth identity; do not add foreign keys to provider-owned auth tables.
 - Local database work should use Docker PostgreSQL through `DATABASE_URL=postgres://kelsier:kelsier@localhost:55432/kelsier_dev`. Do not run destructive development commands against Neon.
+- Hosted staging (`mindphreak`) and dummy production (`curiousphreak`) temporarily share one Neon database, with separate account-specific Hyperdrive bindings. Staging alone owns scheduled expiry cleanup. Follow [the shared-database decision](docs/database.md#temporary-shared-hosted-database) and [hosted deployment instructions](docs/staging-operations.md#hosted-targets); these hostnames do not provide database isolation.
 
 ### Assessment MVP Direction
 

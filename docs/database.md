@@ -6,6 +6,14 @@ Kelsier uses PostgreSQL on Neon as the primary hosted database target and Drizzl
 
 The app deploys to Cloudflare Workers, so runtime database access must be Workers-compatible. Plain Node TCP clients must not be imported into the Worker bundle.
 
+### Temporary shared hosted database
+
+On 2026-10-16 the maintainer approved sharing the existing Neon database between `project-kelsier.mindphreak.workers.dev` (staging) and `project-kelsier.curiousphreak.workers.dev` (dummy production). This avoids a second database while both deployments remain pre-launch. Each Cloudflare account has its own Hyperdrive configuration with query caching disabled; account IDs, bindings, deployment instructions, and cleanup ownership are recorded in [hosted operations](staging-operations.md#hosted-targets).
+
+This is one shared data environment, not database isolation. Both Workers use the same schema, questionnaire content, guest records, and database role. Migrations and credential changes affect both; do not run destructive test resets against either hosted target. Host-only guest cookies are not automatically sent to the other hostname, but a valid credential is checked against the same database in both deployments. The hostname is not an additional authorization boundary. Staging owns the scheduled expiry-cleanup job for all shared records; dummy production has no cron trigger.
+
+Separate the databases when independent migrations, test-data resets, access controls, retention rules, or resource contention become necessary, and revisit this decision before a real public production launch. Until then, keep schema changes compatible with both deployed versions. When splitting, provision a separate database and role, apply reviewed migrations and the immutable questionnaire seed, decide explicitly whether to retain any dummy-production attempts, repoint its Hyperdrive binding, enable its own cleanup schedule, and verify assessment persistence and deletion. Existing rows have no deployment-origin label, so they cannot be reliably partitioned by hostname after the fact; do not copy all shared records by default.
+
 ## Runtime Boundaries
 
 | Runtime | Driver | Purpose |
