@@ -22,6 +22,7 @@ Development tooling and dependency maintenance. Version assignment does not auth
 ### Fixed
 
 - Settled assessment scrolling before questions become interactive so an answer label cannot move away during the first click, including in Firefox.
+- Isolated the local browser projects' simulated client addresses so expanded assessment coverage does not exhaust a shared creation-rate bucket.
 - Made the save-error accessibility test wait for keyboard focus to reach the error message after React's focus effect runs.
 
 ## [0.4.5] - Public release pending

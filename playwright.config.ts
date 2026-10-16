@@ -24,17 +24,28 @@ export default defineConfig({
 		timeout: 120_000,
 	},
 	projects: [
+		// Local Vite has no edge client IP. Give each browser its own simulated
+		// client so parallel journeys do not exhaust one shared creation bucket.
 		{
 			name: "chromium",
-			use: { ...devices["Desktop Chrome"] },
+			use: {
+				...devices["Desktop Chrome"],
+				extraHTTPHeaders: { "CF-Connecting-IP": "192.0.2.1" },
+			},
 		},
 		{
 			name: "firefox",
-			use: { ...devices["Desktop Firefox"] },
+			use: {
+				...devices["Desktop Firefox"],
+				extraHTTPHeaders: { "CF-Connecting-IP": "192.0.2.2" },
+			},
 		},
 		{
 			name: "webkit",
-			use: { ...devices["Desktop Safari"] },
+			use: {
+				...devices["Desktop Safari"],
+				extraHTTPHeaders: { "CF-Connecting-IP": "192.0.2.3" },
+			},
 		},
 	],
 });

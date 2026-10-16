@@ -334,6 +334,7 @@ If you cannot run a check locally, say so explicitly in your handoff and explain
 
 - [`playwright.config.ts`](playwright.config.ts) starts Vite directly for Windows-friendly cleanup.
 - Preserve that behavior unless you have validated a replacement across local and CI execution.
+- The local browser projects simulate distinct client IPs with reserved `192.0.2.x` addresses so concurrent projects do not consume one shared creation-rate bucket. Keep the real rate limits enabled; these headers belong only to the local Playwright setup.
 
 ### GitHub Review Assistants
 
