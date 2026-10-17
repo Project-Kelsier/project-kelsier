@@ -101,6 +101,7 @@ TanStack Router file-based routing is the organizing backbone of the app.
 - Keep route files focused on route concerns: page composition, route metadata, loaders, and route-local state.
 - If a route grows past a reasonable reading size, move repeated or dense UI blocks into `src/components`.
 - Keep shared document-level concerns in [`src/routes/__root.tsx`](src/routes/__root.tsx), not duplicated across routes.
+- Retry loader failures with `router.invalidate()` so data reloads and the error boundary resets together; a boundary-only `reset()` does not rerun the failed loader.
 
 ### Generated Route Tree
 
@@ -177,6 +178,7 @@ The approved guest-first assessment boundaries and phased delivery plan live in 
 - The initial response engine is explicitly single-select with required and optional questions. Ranking, multi-select, branching, and free text require later design and may require migrations.
 - Completion and replacement lock the owned attempt before reading dependent state. Preserve that transaction boundary so concurrent saves cannot make scoring disagree with persisted answers, and replacement cannot delete a newly completed result. Only a stored result establishes completion in the UI; reaching the final question or saving required answers does not.
 - Guest HTTP functions share `src/server/guestRateLimit.ts`: hosted requests use only Cloudflare's `CF-Connecting-IP`; missing edge metadata or limiter failures reject requests before database access. Creation has a 10/minute bucket, activity (including questionnaire reads) has a 120/minute bucket, and deletion uses a separate 120/minute bucket. These are approximate per-IP, per-location abuse controls, not global quotas. Preserve TanStack's default server-function CSRF middleware; adding `src/start.ts` requires explicitly retaining that middleware. Dynamic Worker responses are `private, no-store` because rendered HTML can contain guest data.
+- Guest assessment handlers use `src/server/assessmentErrors.ts` to redact unexpected errors before RPC serialization. Only explicitly authored `AssessmentRequestError` messages may pass through; pair them with the intended response status. Never mark raw database errors or user-provided text as public errors. Preserve generic logging and no-store headers for unexpected failures.
 - The seeded questionnaire and dimension-mean output are demonstration content. Do not describe them as validated, predictive, clinical, diagnostic, or suitable for hiring decisions.
 - The `workers.dev` deployments may operate as publicly reachable staging and dummy production. Neither label authorizes a real public production launch or promotion as the pilot until the launch gate in the decision document is satisfied.
 

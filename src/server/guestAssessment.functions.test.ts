@@ -45,17 +45,34 @@ vi.mock("@tanstack/react-start/server", () => ({
 }));
 // Exercise our validators and handlers; real transport/CSRF runs in Playwright.
 vi.mock("@tanstack/react-start", () => ({
+	createMiddleware: () => ({
+		server: (middleware: unknown) => middleware,
+	}),
 	createServerFn: () => {
 		let validate = (value: unknown) => value;
+		type Middleware = (input: {
+			next: () => Promise<unknown>;
+		}) => Promise<unknown>;
+		let middleware: Middleware[] = [];
 		const builder = {
+			middleware: (items: Middleware[]) => {
+				middleware = items;
+				return builder;
+			},
 			validator: (validator: typeof validate) => {
 				validate = validator;
 				return builder;
 			},
 			handler:
 				(handler: (input: { data: unknown }) => unknown) =>
-				async (input: { data?: unknown } = {}) =>
-					handler({ data: validate(input.data) }),
+				async (input: { data?: unknown } = {}) => {
+					let next = async () => handler({ data: validate(input.data) });
+					for (const run of [...middleware].reverse()) {
+						const downstream = next;
+						next = () => run({ next: downstream });
+					}
+					return next();
+				},
 		};
 		return builder;
 	},
@@ -265,6 +282,56 @@ describe("guest HTTP boundary", () => {
 		await resumeGuestAssessment({ data });
 		expect(mocks.db).toHaveBeenCalledOnce();
 	});
+});
+
+describe("unexpected failure redaction", () => {
+	it.each([
+		["creation", () => startGuestAssessment()],
+		["replacement", () => startFreshGuestAssessment({ data })],
+		["resume", () => resumeGuestAssessment({ data })],
+		["save", () => saveGuestAnswer({ data })],
+		["completion", () => completeGuestAssessment({ data })],
+		["deletion", () => deleteGuestAttempt({ data })],
+		["entry", () => getGuestAssessmentEntry(versionInput)],
+		["result", () => getGuestAssessmentResult(versionInput)],
+	])("redacts unexpected failures from %s", async (_name, run) => {
+		const log = vi.spyOn(console, "error").mockImplementation(() => {});
+		mocks.db.mockImplementation(() => {
+			throw new Error("SELECT private_data; password=synthetic-secret");
+		});
+		try {
+			await expect(run()).rejects.toThrow(
+				"The assessment request is temporarily unavailable.",
+			);
+			expect(mocks.status).toHaveBeenCalledWith(500);
+			expect(mocks.header).toHaveBeenCalledWith(
+				"Cache-Control",
+				"private, no-store",
+			);
+			expect(log.mock.calls).toEqual([["Assessment request failed."]]);
+		} finally {
+			log.mockRestore();
+		}
+	});
+
+	it.each([new Error("Failed query: SELECT private_data"), undefined, 0])(
+		"redacts rejected query errors including falsy thrown values",
+		async (failure) => {
+			const log = vi.spyOn(console, "error").mockImplementation(() => {});
+			vi.mocked(
+				service.getActiveAssessmentQuestionnaireBySlug,
+			).mockRejectedValue(failure);
+			try {
+				await expect(startGuestAssessment()).rejects.toThrow(
+					"The assessment request is temporarily unavailable.",
+				);
+				expect(mocks.status).toHaveBeenCalledWith(500);
+				expect(log.mock.calls).toEqual([["Assessment request failed."]]);
+			} finally {
+				log.mockRestore();
+			}
+		},
+	);
 });
 
 describe("abuse controls", () => {

@@ -20,8 +20,12 @@ Development tooling and dependency maintenance. Version assignment does not auth
 - Updated Playwright to 1.64.1 and validated its matching Chromium, Firefox and WebKit browsers, including assessment interaction regressions.
 - Updated Vite to 8.3.4 and its React plugin to 6.1.2 for preload, development-server and hot-reload fixes; React Compiler remains disabled.
 - Updated Drizzle ORM to 0.45.4 for the Postgres.js named prepared-query fix, preserving database client settings and the existing schema.
+- Migrated to stable TanStack Start 1.169.2 with Router 1.170.44 and router-plugin 1.168.46, retaining guest ownership, default CSRF protection and private response caching rules.
 
 ### Fixed
+
+- Made the assessment retry action rerun its failed route loader so a temporary request failure can recover without a page refresh.
+- Redacted unexpected guest-assessment errors before server-function serialization, returning a private generic 500 response instead of exposing database query details.
 
 - Settled assessment scrolling before questions become interactive so an answer label cannot move away during the first click, including in Firefox.
 - Isolated the local browser projects' simulated client addresses so expanded assessment coverage does not exhaust a shared creation-rate bucket.
