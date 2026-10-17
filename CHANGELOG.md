@@ -18,6 +18,7 @@ Development tooling and dependency maintenance. Version assignment does not auth
 - Updated dotenv to 18.0.8, retaining explicit environment-loading boundaries, inherited-variable precedence and quiet logging.
 - Updated jsdom to 30.1.3 for DOM, focus-performance and cross-origin XHR fixes while retaining Vitest 4's isolated browser-storage workaround.
 - Updated Playwright to 1.64.1 and validated its matching Chromium, Firefox and WebKit browsers, including assessment interaction regressions.
+- Updated Vite to 8.3.4 and its React plugin to 6.1.2 for preload, development-server and hot-reload fixes; React Compiler remains disabled.
 
 ### Fixed
 
