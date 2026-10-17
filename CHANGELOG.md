@@ -14,7 +14,7 @@ Development tooling and dependency maintenance. Version assignment does not auth
 
 - Refreshed the pinned package manager to pnpm 12.14.0 while preserving install security policies and the application dependency graph.
 - Pinned the tested Node baseline to 26.12.0 in `.nvmrc` and made CI read that file directly. The supported range remains `>=26.11.1 <27.0.0`.
-- Updated Biome to 2.5.15 with its matching configuration schema and Lucide React to 1.57.0.
+- Updated Biome to 2.5.15 with its matching configuration schema and Lucide React to 1.58.0.
 - Updated dotenv to 18.0.8, retaining explicit environment-loading boundaries, inherited-variable precedence and quiet logging.
 - Updated jsdom to 30.1.3 for DOM, focus-performance and cross-origin XHR fixes while retaining Vitest 4's isolated browser-storage workaround.
 - Updated Playwright to 1.64.1 and validated its matching Chromium, Firefox and WebKit browsers, including assessment interaction regressions.
@@ -26,7 +26,6 @@ Development tooling and dependency maintenance. Version assignment does not auth
 
 - Made the assessment retry action rerun its failed route loader so a temporary request failure can recover without a page refresh.
 - Redacted unexpected guest-assessment errors before server-function serialization, returning a private generic 500 response instead of exposing database query details.
-
 - Settled assessment scrolling before questions become interactive so an answer label cannot move away during the first click, including in Firefox.
 - Isolated the local browser projects' simulated client addresses so expanded assessment coverage does not exhaust a shared creation-rate bucket.
 - Made the save-error accessibility test wait for keyboard focus to reach the error message after React's focus effect runs.
