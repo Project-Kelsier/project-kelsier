@@ -28,11 +28,17 @@ These [Cloudflare native limits](https://developers.cloudflare.com/workers/runti
 
 Guest cookies are checked for the issued token format before lookup. New cookies are host-only, HttpOnly, SameSite=Lax, and Secure unless the actual request URL is explicitly local; forwarded host headers cannot disable Secure. Existing sessions are not extended by reads or starts. Every service operation still authorizes against the owning, unexpired guest credential, with continuation tokens additionally required for answer writes and completion.
 
-The installed [TanStack default server-function middleware](https://tanstack.com/start/latest/docs/framework/react/guide/middleware) checks same-origin browser metadata. A new custom Start instance must explicitly retain CSRF protection. Browser security tests replay an authenticated request with cross-site and opaque origins (403), without the owner cookie (404), and as a legitimate same-origin retry (200).
+The installed [TanStack default server-function middleware](https://tanstack.com/start/latest/docs/framework/react/guide/middleware) checks same-origin browser metadata. A new custom Start instance must explicitly retain CSRF protection. Browser security tests replay an authenticated request with cross-site and opaque origins (403), missing or incorrect owner cookies (404), invalid input (400), and a legitimate same-origin retry (200). They also exhaust a separate local creation bucket to verify 429, `Retry-After: 60`, no-store headers, and successful deletion while creation is throttled.
 
 Dynamic Worker responses, including server-rendered guest data and errors, use `Cache-Control: private, no-store`. Static assets remain under the assets binding. Questionnaire error logging omits raw database exceptions. The public questionnaire is not cached yet; any later cache must exclude all guest entry, result, credential, and rendered private data.
 
+Guest assessment handlers apply a function middleware boundary before TanStack serializes errors. Only authored `AssessmentRequestError` messages are public; unexpected database and runtime failures become a generic HTTP 500 with no-store headers and a generic log event. Do not pass raw database errors or user-provided text into that public-error class. An October 2026 local fault test reproduced SQL text in a creation failure before this boundary and verified redaction afterwards. CI preserves this contract with `pnpm test:transport`: the built app's creation request is replayed against an isolated failing local database connection, checking status, no-store headers, and SQL/secret redaction. This repository fix requires a later authorized deployment to protect hosted copies.
+
 Both rate-limit bindings must accompany the code when deploying. Local tests and generated configuration do not constitute hosted verification or public launch approval.
+
+Local Playwright projects simulate separate client addresses through `CF-Connecting-IP` so their journeys do not exhaust one shared creation bucket. This leaves rate limits enabled and changes only local test metadata; hosted requests still rely on Cloudflare's edge-provided address.
+
+Staging and dummy production currently share the same Neon database and database role. Host-only cookies separate normal browser sessions, but the hostname does not add an authorization boundary for a valid guest credential. Schema changes, credentials, and cleanup affect both targets. See the [shared-database decision and separation triggers](database.md#temporary-shared-hosted-database).
 
 ## Supply-Chain Controls
 

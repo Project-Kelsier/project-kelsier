@@ -8,6 +8,7 @@ import {
 	type RefObject,
 	useCallback,
 	useEffect,
+	useLayoutEffect,
 	useMemo,
 	useRef,
 	useState,
@@ -468,7 +469,6 @@ export function KelsierPage({
 			setIsAssessmentStarted(true);
 			setIsAssessmentComplete(false);
 			setPersistenceMessage("Your private attempt is ready.");
-			scrollToAssessment();
 		} catch {
 			setPersistenceMessage(
 				"We couldn’t start a saved attempt. Please try again shortly.",
@@ -476,7 +476,7 @@ export function KelsierPage({
 		} finally {
 			setIsStarting(false);
 		}
-	}, [isStarting, persistenceActions, scrollToAssessment]);
+	}, [isStarting, persistenceActions]);
 
 	const resumeAssessment = useCallback(async () => {
 		if (!guestAssessmentEntry || isResuming) {
@@ -505,7 +505,6 @@ export function KelsierPage({
 			setPersistenceMessage(
 				"Your snapshot has been resumed. This is its single resume.",
 			);
-			scrollToAssessment();
 		} catch {
 			setPersistenceMessage(
 				"We couldn’t resume this snapshot. Start fresh if it has already used its single resume.",
@@ -513,13 +512,7 @@ export function KelsierPage({
 		} finally {
 			setIsResuming(false);
 		}
-	}, [
-		guestAssessmentEntry,
-		isResuming,
-		persistenceActions,
-		questions.length,
-		scrollToAssessment,
-	]);
+	}, [guestAssessmentEntry, isResuming, persistenceActions, questions.length]);
 
 	const startFreshAssessment = useCallback(async () => {
 		if (!guestAssessmentEntry || isStartingFresh) {
@@ -543,7 +536,6 @@ export function KelsierPage({
 			setIsAssessmentStarted(true);
 			setIsAssessmentComplete(false);
 			setPersistenceMessage("A fresh private snapshot is ready.");
-			scrollToAssessment();
 		} catch {
 			setPersistenceMessage(
 				"We couldn’t start a fresh snapshot. Please try again shortly.",
@@ -551,12 +543,7 @@ export function KelsierPage({
 		} finally {
 			setIsStartingFresh(false);
 		}
-	}, [
-		guestAssessmentEntry,
-		isStartingFresh,
-		persistenceActions,
-		scrollToAssessment,
-	]);
+	}, [guestAssessmentEntry, isStartingFresh, persistenceActions]);
 
 	const handleDeleteAttempt = useCallback(async () => {
 		const attemptId =
@@ -743,9 +730,15 @@ export function KelsierPage({
 		setIsHydrated(true);
 	}, []);
 
-	useEffect(() => {
+	useLayoutEffect(() => {
 		if (assessmentFocusStep !== null) {
-			questionHeadingRef.current?.focus();
+			// Settle navigation scrolling after the question mounts, before it can
+			// move an answer between pointer-down and pointer-up (notably Firefox).
+			questionHeadingRef.current?.scrollIntoView({
+				behavior: "instant",
+				block: "nearest",
+			});
+			questionHeadingRef.current?.focus({ preventScroll: true });
 		}
 	}, [assessmentFocusStep]);
 

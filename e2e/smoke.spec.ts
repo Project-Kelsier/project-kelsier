@@ -43,7 +43,10 @@ test("home page renders the Kelsier hero and interactive questionnaire", async (
 		httpOnly: true,
 		secure: false,
 	});
-	await page.getByText("Strongly disagree", { exact: true }).click();
+	// A held pointer exposes scrolling that would move the label before release.
+	await page
+		.getByText("Strongly disagree", { exact: true })
+		.click({ delay: 200 });
 	await expect(
 		page.getByRole("radio", { name: "Strongly disagree" }),
 	).toBeChecked();
@@ -156,6 +159,12 @@ test("saves progress and allows exactly one explicit resume", async ({
 			name: "Important concerns are raised directly and respectfully.",
 		}),
 	).toBeVisible();
+	await page
+		.getByText("Strongly disagree", { exact: true })
+		.click({ delay: 200 });
+	await expect(
+		page.getByRole("radio", { name: "Strongly disagree" }),
+	).toBeChecked();
 	await page.getByRole("button", { name: "Back" }).click();
 	await expect(
 		page.getByRole("radio", { name: "Strongly disagree" }),
@@ -177,6 +186,17 @@ test("saves progress and allows exactly one explicit resume", async ({
 	await expect(
 		page.getByRole("button", { name: "Start a fresh snapshot" }),
 	).toBeVisible();
+	await page.getByRole("button", { name: "Start a fresh snapshot" }).click();
+	await expect(page.getByText("Question 1 of 10")).toBeVisible();
+	await expect(
+		page.getByRole("radio", { name: "Strongly disagree" }),
+	).not.toBeChecked();
+	await page
+		.getByText("Strongly disagree", { exact: true })
+		.click({ delay: 200 });
+	await expect(
+		page.getByRole("radio", { name: "Strongly disagree" }),
+	).toBeChecked();
 	await page.getByRole("button", { name: "Delete saved attempt" }).click();
 	await page.getByRole("button", { name: "Confirm deletion" }).click();
 	await expect(

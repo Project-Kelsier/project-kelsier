@@ -28,7 +28,7 @@ This repo should be easy for a new contributor to understand without private con
 - Testing: Vitest for unit tests and Playwright for end-to-end coverage. Review UI through the running app.
 - Quality gate: Biome for formatting, linting, and import organization.
 - Package manager: `pnpm`
-- Runtime target: Node `>=26.11.1 <27.0.0` for development and CI; Cloudflare Workers use the platform runtime.
+- Runtime support: Node `>=26.11.1 <27.0.0`; `.nvmrc` and CI pin the tested Node 26.12.0 baseline. Cloudflare Workers use the platform runtime.
 - Node version hint: [`.nvmrc`](.nvmrc)
 - Version source of truth: [`package.json`](package.json)
 
@@ -101,6 +101,7 @@ TanStack Router file-based routing is the organizing backbone of the app.
 - Keep route files focused on route concerns: page composition, route metadata, loaders, and route-local state.
 - If a route grows past a reasonable reading size, move repeated or dense UI blocks into `src/components`.
 - Keep shared document-level concerns in [`src/routes/__root.tsx`](src/routes/__root.tsx), not duplicated across routes.
+- Retry loader failures with `router.invalidate()` so data reloads and the error boundary resets together; a boundary-only `reset()` does not rerun the failed loader.
 
 ### Generated Route Tree
 
@@ -150,6 +151,7 @@ Every user-facing change should maintain or improve baseline accessibility.
 - Prefer visible text over icon-only controls unless there is a strong UI reason.
 - Preserve color contrast when extending the palette.
 - Verify keyboard access for new navigation or form interactions.
+- Assessment question transitions settle scrolling and focus the mounted heading before paint. Preserve this ordering: overlapping smooth scrolling can move an answer label between pointer-down and pointer-up, losing its native click activation.
 
 ## State And Data
 
@@ -165,6 +167,7 @@ The UI combines the authored Kelsier landing experience with an interactive, Pos
 - When a table stores a duplicated `organisationId` for tenant-scoped lookup speed and also references a parent row, enforce that tenant relationship at the database level with composite unique keys/foreign keys where practical. Do not rely only on service-layer predicates to prevent cross-tenant rows.
 - Keep external auth decoupled from domain users. `users.authUserId` is the bridge to managed auth identity; do not add foreign keys to provider-owned auth tables.
 - Local database work should use Docker PostgreSQL through `DATABASE_URL=postgres://kelsier:kelsier@localhost:55432/kelsier_dev`. Do not run destructive development commands against Neon.
+- Hosted staging (`mindphreak`) and dummy production (`curiousphreak`) temporarily share one Neon database, with separate account-specific Hyperdrive bindings. Staging alone owns scheduled expiry cleanup. Follow [the shared-database decision](docs/database.md#temporary-shared-hosted-database) and [hosted deployment instructions](docs/staging-operations.md#hosted-targets); these hostnames do not provide database isolation.
 
 ### Assessment MVP Direction
 
@@ -175,8 +178,9 @@ The approved guest-first assessment boundaries and phased delivery plan live in 
 - The initial response engine is explicitly single-select with required and optional questions. Ranking, multi-select, branching, and free text require later design and may require migrations.
 - Completion and replacement lock the owned attempt before reading dependent state. Preserve that transaction boundary so concurrent saves cannot make scoring disagree with persisted answers, and replacement cannot delete a newly completed result. Only a stored result establishes completion in the UI; reaching the final question or saving required answers does not.
 - Guest HTTP functions share `src/server/guestRateLimit.ts`: hosted requests use only Cloudflare's `CF-Connecting-IP`; missing edge metadata or limiter failures reject requests before database access. Creation has a 10/minute bucket, activity (including questionnaire reads) has a 120/minute bucket, and deletion uses a separate 120/minute bucket. These are approximate per-IP, per-location abuse controls, not global quotas. Preserve TanStack's default server-function CSRF middleware; adding `src/start.ts` requires explicitly retaining that middleware. Dynamic Worker responses are `private, no-store` because rendered HTML can contain guest data.
+- Guest assessment handlers use `src/server/assessmentErrors.ts` to redact unexpected errors before RPC serialization. Only explicitly authored `AssessmentRequestError` messages may pass through; pair them with the intended response status. Never mark raw database errors or user-provided text as public errors. Preserve generic logging and no-store headers for unexpected failures.
 - The seeded questionnaire and dimension-mean output are demonstration content. Do not describe them as validated, predictive, clinical, diagnostic, or suitable for hiring decisions.
-- The top-level `workers.dev` deployment may operate as publicly reachable staging. Do not present it as production or actively promote it as the public pilot until the launch gate in the decision document is satisfied.
+- The `workers.dev` deployments may operate as publicly reachable staging and dummy production. Neither label authorizes a real public production launch or promotion as the pilot until the launch gate in the decision document is satisfied.
 
 Default bias: start local, then extract when reuse or complexity justifies it.
 
@@ -215,6 +219,7 @@ For organisation-scoped helpers, tests should prove that `organisations.deletedA
 - Put browser tests under [`e2e`](e2e).
 - Prefer stable role- and text-based selectors over brittle implementation selectors.
 - Keep smoke coverage fast and focused. Add deeper scenarios only when a feature introduces real interaction risk.
+- `pnpm test:transport` uses `playwright.transport.config.ts` for production-preview RPC error coverage after `pnpm build`. Keep `*.transport.spec.ts` excluded from the normal development-server suite. The test owns and closes its preview, refuses hosted databases, and changes database environment variables only inside its isolated test worker. Preserve real transport and security controls; do not add production fault-injection endpoints.
 
 ## Quality Gates
 
@@ -237,6 +242,7 @@ pnpm test
 pnpm coverage
 pnpm build
 pnpm test:e2e
+pnpm test:transport
 ```
 
 ### Required For Dependency Or Install-Path Changes
@@ -284,7 +290,7 @@ If you cannot run a check locally, say so explicitly in your handoff and explain
 ### pnpm
 
 - `package.json` pins the project package manager version.
-- [`.nvmrc`](.nvmrc) pins the tested Node 26.11.1 baseline for local version managers. `package.json` and CI support `>=26.11.1 <27.0.0`; keep these declarations and contributor guidance aligned when changing the runtime.
+- [`.nvmrc`](.nvmrc) pins the tested Node 26.12.0 baseline for local version managers and CI (`node-version-file`). `package.json` permits `>=26.11.1 <27.0.0`; the supported minimum remains compatible and does not need to rise for every baseline refresh. Keep the baseline, supported range and contributor guidance consistent when changing the runtime.
 - Node 26 does not bundle Corepack. [`CONTRIBUTING.md`](CONTRIBUTING.md#local-setup) documents manual Corepack setup and stale Windows pnpm launcher recovery. Preserve the repository's `packageManager` pin and integrity checks; do not bypass engine enforcement to compensate for a broken launcher.
 - [`pnpm-workspace.yaml`](pnpm-workspace.yaml) owns pnpm 12 dependency build-script approvals and install policy through `allowBuilds`, strict engine/build enforcement, a strict 24-hour release-age gate, trust-downgrade rejection, and transitive exotic-source blocking.
 - Keep trust-policy exceptions exact, evidence-backed, and documented next to the package selector. Do not replace a narrow historical-metadata exception with a broad age-based trust bypass.
@@ -333,6 +339,7 @@ If you cannot run a check locally, say so explicitly in your handoff and explain
 
 - [`playwright.config.ts`](playwright.config.ts) starts Vite directly for Windows-friendly cleanup.
 - Preserve that behavior unless you have validated a replacement across local and CI execution.
+- The local browser projects simulate distinct client IPs with reserved `192.0.2.x` addresses so concurrent projects do not consume one shared creation-rate bucket. Keep the real rate limits enabled; these headers belong only to the local Playwright setup.
 
 ### GitHub Review Assistants
 

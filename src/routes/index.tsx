@@ -1,4 +1,4 @@
-import { createFileRoute } from "@tanstack/react-router";
+import { createFileRoute, useRouter } from "@tanstack/react-router";
 import { KelsierAssessmentUnavailablePage } from "../components/kelsier/KelsierAssessmentUnavailablePage";
 import { KelsierPage } from "../components/kelsier/KelsierPage";
 import { getActiveAssessmentQuestionnaire } from "../server/assessmentQuestionnaire.functions";
@@ -40,10 +40,20 @@ export const Route = createFileRoute("/")({
 		],
 	}),
 	component: HomeRoute,
-	errorComponent: ({ reset }) => (
-		<KelsierAssessmentUnavailablePage onRetry={reset} />
-	),
+	errorComponent: HomeError,
 });
+
+function HomeError() {
+	const router = useRouter();
+	return (
+		<KelsierAssessmentUnavailablePage
+			onRetry={() => {
+				// A loader failure needs a reload as well as an error-boundary reset.
+				void router.invalidate();
+			}}
+		/>
+	);
+}
 
 function HomeRoute() {
 	const { questionnaire, guestAssessmentEntry, guestAssessmentResult } =

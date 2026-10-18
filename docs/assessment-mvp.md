@@ -96,22 +96,24 @@ Change the scoring algorithm identifier when arithmetic or interpretation change
 
 ### Public launch gate
 
-The top-level `workers.dev` deployment may remain publicly reachable as staging. Do not present it as production or actively promote it as the public pilot while any row marked **Blocked** remains unresolved. Update this table in place so launch readiness has one source of truth.
+The `workers.dev` deployments may remain publicly reachable for staging and dummy-production verification. Neither is approved for a public production launch or promotion as the pilot while any row marked **Blocked** remains unresolved. Their shared database and distinct operational roles are documented in [hosted targets](staging-operations.md#hosted-targets). Update this table in place so launch readiness has one source of truth.
 
-The maintainer explicitly confirmed **no public launch yet** on 2026-09-12. Staging-only checks, prepared monitoring queries, access limits, and the independent review procedure are recorded in [staging-operations.md](staging-operations.md). Passing technical checks does not remove that hold.
+The maintainer explicitly confirmed **no public launch yet** on 2026-09-12. Hosted verification checks, prepared monitoring queries, access limits, and the independent review procedure are recorded in [staging-operations.md](staging-operations.md). Passing technical checks does not remove that hold.
 
 | Requirement | Status | Evidence or required action | Launch blocker? |
 | --- | --- | --- | --- |
 | Cross-session authorization covers read, answer, completion, deletion, and result access. | Ready | Service and route tests prove that one guest credential cannot operate on another guest's attempt. | No |
 | Cookie-authorized deletion is independently exercised end to end. | Blocked | A reviewer other than the implementer must complete and record the deletion exercise. | Yes |
 | Native rate limiting protects the first public write endpoint. | Ready | `ASSESSMENT_ATTEMPT_RATE_LIMITER` is configured and its fail-closed creation path is covered by tests. | No |
-| Scheduled expiry cleanup is deployed and monitored. | Blocked | Hosted logs confirm successful runs on 2026-09-11 and 2026-09-12 under the previous Worker. The bounded-cleanup Worker was deployed 2026-09-12; subsequent scheduled-run verification has not been recorded. Verify a recent 03:17 UTC invocation against the active Worker version and establish ongoing monitoring. | Yes |
+| Scheduled expiry cleanup is deployed and monitored. | Blocked | The 2026-10-16 deployment check confirmed staging's daily cron and no cron on dummy production. Successful scheduled executions are recorded only for 2026-09-11 and 2026-09-12 under an older Worker. Verify a recent 03:17 UTC invocation against the active staging version and establish ongoing monitoring. | Yes |
 | Cleanup failure notifications reach a responsible person. | Blocked | `curiousphreak@gmail.com` is the approved recipient. The Cloudflare policy list was empty on 2026-09-12; configure and test notification delivery before production promotion. | Yes |
 | The pre-persistence notice, privacy wording, retention period, and contact details are approved. | Blocked | `curiousphreak@gmail.com` and seven-day fixed retention are approved; complete the remaining privacy-wording review before public launch. Staging deployment was separately authorized. | Yes |
-| Production cookie behavior, bindings, and absence of development bypasses are verified. | Ready for staging | Hosted Chromium checks on 2026-09-12 verified Secure/HttpOnly/SameSite=Lax cookies with seven-day expiry, no-store responses, and rejected cross-site/anonymous writes. Live version metadata contains only Hyperdrive and the two rate-limit bindings, with no demo identity binding. Repeat if promoting a different environment. | No |
+| Production cookie behavior, bindings, and absence of development bypasses are verified. | Ready for hosted verification | Checks on both targets on 2026-10-16 verified secure cookies, no-store responses, cross-site/anonymous write rejection, persistence, resume, and deletion. Hyperdrive and rate-limit bindings were preserved, with staging alone owning cron. See the recorded versions in hosted operations; repeat checks for any later promoted build or environment. | No |
 | Save failures, reload/resume behavior, keyboard operation, focus management, disabled states, and live announcements have proportionate coverage. | Ready | Vitest and cross-browser Playwright coverage exercise the critical questionnaire states and the single-resume contract. | No |
 
 ## Phased Delivery
+
+Current recorded checkpoint (2026-10-16): both hosted targets were verified on app `0.4.4`; the repository's newer maintenance version is not a deployment record. The historical implementation notes below retain their original dates. See [hosted operations](staging-operations.md#hosted-targets) for the latest recorded versions, shared-database decision, and outstanding monitoring/reviewer gates.
 
 1. Record these decisions and keep the hardcoded questionnaire running.
 2. Add PostgreSQL-backed CI infrastructure and useful multi-owner fixtures as a standalone tooling change.
