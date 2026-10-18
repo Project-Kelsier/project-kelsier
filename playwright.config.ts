@@ -7,6 +7,7 @@ const webServerCommand =
 
 export default defineConfig({
 	testDir: "./e2e",
+	testIgnore: "**/*.transport.spec.ts",
 	timeout: 30_000,
 	expect: {
 		timeout: 5_000,

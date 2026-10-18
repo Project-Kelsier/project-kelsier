@@ -219,6 +219,7 @@ For organisation-scoped helpers, tests should prove that `organisations.deletedA
 - Put browser tests under [`e2e`](e2e).
 - Prefer stable role- and text-based selectors over brittle implementation selectors.
 - Keep smoke coverage fast and focused. Add deeper scenarios only when a feature introduces real interaction risk.
+- `pnpm test:transport` uses `playwright.transport.config.ts` for production-preview RPC error coverage after `pnpm build`. Keep `*.transport.spec.ts` excluded from the normal development-server suite. The test owns and closes its preview, refuses hosted databases, and changes database environment variables only inside its isolated test worker. Preserve real transport and security controls; do not add production fault-injection endpoints.
 
 ## Quality Gates
 

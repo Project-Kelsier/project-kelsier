@@ -189,3 +189,6 @@ jobs:
 
       - name: E2E tests
         run: pnpm test:e2e
+
+      - name: Verify production RPC error redaction
+        run: pnpm test:transport

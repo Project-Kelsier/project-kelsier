@@ -66,6 +66,7 @@ pnpm build
 - Unit tests use Vitest with [`vitest.config.ts`](./vitest.config.ts).
 - Real PostgreSQL integrity tests require `RUN_DB_TESTS=true` and the local database; the dedicated CI database job runs them after migration and two seed passes. See [`AGENTS.md`](./AGENTS.md#query-helper-tests).
 - E2E tests use Playwright with [`playwright.config.ts`](./playwright.config.ts).
+- After building with `pnpm build`, run `pnpm test:transport` to verify unexpected database errors through the production RPC transport. This separate Chromium test requires a seeded local `kelsier_dev` database (`DATABASE_URL`, defaulting to `localhost:55432`) and an available loopback port 4191. It captures and aborts a creation request, then replays it against its own preview with an unreachable local database; no attempt is created. Hosted database URLs are refused. CI runs it after build and database preparation.
 - Review UI through the running app with `pnpm dev`. Keep component behavior covered by Vitest and user journeys covered by Playwright.
 - Playwright starts Vite directly instead of `pnpm dev` so the dev server shuts down cleanly on Windows.
 - Before browser tests, start Docker PostgreSQL and apply migrations and seed data (`docker compose up -d`, `pnpm db:migrate`, `pnpm db:seed`) with the documented local database configuration. Direct Vite startup does not prepare the database. Install matching browser binaries with `pnpm exec playwright install chromium firefox webkit` after a Playwright upgrade.

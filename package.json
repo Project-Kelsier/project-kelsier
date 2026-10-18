@@ -25,6 +25,7 @@
 		"test": "vitest run --config vitest.config.ts",
 		"coverage": "vitest run --config vitest.config.ts --coverage",
 		"test:e2e": "playwright test",
+		"test:transport": "playwright test --config playwright.transport.config.ts",
 		"db:generate": "drizzle-kit generate",
 		"db:migrate": "drizzle-kit migrate",
 		"db:seed": "tsx scripts/seed.ts",

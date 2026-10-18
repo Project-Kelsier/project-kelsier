@@ -26,6 +26,7 @@ Development tooling and dependency maintenance. Version assignment does not auth
 
 - Made the assessment retry action rerun its failed route loader so a temporary request failure can recover without a page refresh.
 - Redacted unexpected guest-assessment errors before server-function serialization, returning a private generic 500 response instead of exposing database query details.
+- Added a production-preview RPC regression test to CI for HTTP 500 status, private caching headers, and database-error redaction.
 - Settled assessment scrolling before questions become interactive so an answer label cannot move away during the first click, including in Firefox.
 - Isolated the local browser projects' simulated client addresses so expanded assessment coverage does not exhaust a shared creation-rate bucket.
 - Made the save-error accessibility test wait for keyboard focus to reach the error message after React's focus effect runs.
