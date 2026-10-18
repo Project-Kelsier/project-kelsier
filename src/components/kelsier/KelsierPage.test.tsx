@@ -219,8 +219,8 @@ describe("KelsierPage", () => {
 
 		await waitFor(() => {
 			expect(HTMLElement.prototype.scrollIntoView).toHaveBeenCalledWith({
-				behavior: "auto",
-				block: "start",
+				behavior: "instant",
+				block: "nearest",
 			});
 		});
 	});
@@ -689,13 +689,12 @@ describe("KelsierPage", () => {
 		);
 		fireEvent.click(screen.getByRole("button", { name: "Next question" }));
 
-		expect(
-			await within(screen.getByRole("status")).findByText(
-				/Your answer wasn’t saved/,
-			),
-		).toBeTruthy();
-		expect(document.activeElement?.textContent).toContain(
-			"Your answer wasn’t saved",
+		const saveError = await within(screen.getByRole("status")).findByText(
+			/Your answer wasn’t saved/,
+		);
+		// The live announcement renders before the effect focuses its visible copy.
+		await waitFor(() =>
+			expect(document.activeElement?.textContent).toBe(saveError.textContent),
 		);
 		expect(
 			screen.getByRole("heading", {

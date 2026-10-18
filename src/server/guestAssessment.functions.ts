@@ -23,6 +23,10 @@ import {
 	saveGuestAssessmentAnswer,
 } from "#/services/assessments";
 import {
+	AssessmentRequestError,
+	assessmentErrorMiddleware,
+} from "./assessmentErrors";
+import {
 	GUEST_COOKIE_NAME,
 	GUEST_SESSION_TTL_SECONDS,
 	generateGuestToken,
@@ -30,7 +34,6 @@ import {
 	hashGuestCredential,
 	isLocalRequest,
 } from "./guestCredential";
-
 import { enforceGuestRateLimit } from "./guestRateLimit";
 
 const UUID_PATTERN =
@@ -48,7 +51,7 @@ function readGuestToken() {
 
 function invalidInput(message: string): never {
 	setResponseStatus(400);
-	throw new Error(message);
+	throw new AssessmentRequestError(message);
 }
 
 function validateAttemptInput(input: unknown) {
@@ -121,8 +124,9 @@ function validateAnswerInput(input: unknown) {
 	};
 }
 
-export const startGuestAssessment = createServerFn({ method: "POST" }).handler(
-	async () => {
+export const startGuestAssessment = createServerFn({ method: "POST" })
+	.middleware([assessmentErrorMiddleware])
+	.handler(async () => {
 		privateResponse();
 		await enforceGuestRateLimit("creation");
 
@@ -134,7 +138,9 @@ export const startGuestAssessment = createServerFn({ method: "POST" }).handler(
 
 		if (!questionnaire) {
 			setResponseStatus(503);
-			throw new Error("The active assessment questionnaire is unavailable.");
+			throw new AssessmentRequestError(
+				"The active assessment questionnaire is unavailable.",
+			);
 		}
 
 		const now = new Date();
@@ -158,7 +164,7 @@ export const startGuestAssessment = createServerFn({ method: "POST" }).handler(
 
 			if (existingAttempt) {
 				setResponseStatus(409);
-				throw new Error(
+				throw new AssessmentRequestError(
 					"An unfinished assessment already belongs to this browser session.",
 				);
 			}
@@ -175,7 +181,7 @@ export const startGuestAssessment = createServerFn({ method: "POST" }).handler(
 
 		if (!attempt) {
 			setResponseStatus(409);
-			throw new Error(
+			throw new AssessmentRequestError(
 				"An unfinished assessment already belongs to this browser session.",
 			);
 		}
@@ -195,10 +201,10 @@ export const startGuestAssessment = createServerFn({ method: "POST" }).handler(
 			expiresAt: attempt.expiresAt.toISOString(),
 			continuationToken,
 		};
-	},
-);
+	});
 
 export const getGuestAssessmentEntry = createServerFn({ method: "GET" })
+	.middleware([assessmentErrorMiddleware])
 	.validator(validateAssessmentVersionInput)
 	.handler(async ({ data }) => {
 		await enforceGuestRateLimit("activity");
@@ -226,6 +232,7 @@ export const getGuestAssessmentEntry = createServerFn({ method: "GET" })
 	});
 
 export const getGuestAssessmentResult = createServerFn({ method: "GET" })
+	.middleware([assessmentErrorMiddleware])
 	.validator(validateAssessmentVersionInput)
 	.handler(async ({ data }) => {
 		await enforceGuestRateLimit("activity");
@@ -243,6 +250,7 @@ export const getGuestAssessmentResult = createServerFn({ method: "GET" })
 	});
 
 export const resumeGuestAssessment = createServerFn({ method: "POST" })
+	.middleware([assessmentErrorMiddleware])
 	.validator(validateContinuationInput)
 	.handler(async ({ data }) => {
 		await enforceGuestRateLimit("activity");
@@ -250,7 +258,9 @@ export const resumeGuestAssessment = createServerFn({ method: "POST" })
 
 		if (!guestToken) {
 			setResponseStatus(404);
-			throw new Error("The assessment attempt is unavailable.");
+			throw new AssessmentRequestError(
+				"The assessment attempt is unavailable.",
+			);
 		}
 
 		const db = getDb(env);
@@ -268,17 +278,23 @@ export const resumeGuestAssessment = createServerFn({ method: "POST" })
 
 		if (outcome === "resume-unavailable") {
 			setResponseStatus(409);
-			throw new Error("This assessment has already used its single resume.");
+			throw new AssessmentRequestError(
+				"This assessment has already used its single resume.",
+			);
 		}
 
 		if (outcome === "response-complete") {
 			setResponseStatus(409);
-			throw new Error("This assessment response is already complete.");
+			throw new AssessmentRequestError(
+				"This assessment response is already complete.",
+			);
 		}
 
 		if (outcome === "not-found") {
 			setResponseStatus(404);
-			throw new Error("The assessment attempt is unavailable.");
+			throw new AssessmentRequestError(
+				"The assessment attempt is unavailable.",
+			);
 		}
 
 		const progress = await getGuestAssessmentProgress(db, {
@@ -290,7 +306,9 @@ export const resumeGuestAssessment = createServerFn({ method: "POST" })
 
 		if (!progress) {
 			setResponseStatus(404);
-			throw new Error("The assessment attempt is unavailable.");
+			throw new AssessmentRequestError(
+				"The assessment attempt is unavailable.",
+			);
 		}
 
 		return {
@@ -305,6 +323,7 @@ export const resumeGuestAssessment = createServerFn({ method: "POST" })
 	});
 
 export const startFreshGuestAssessment = createServerFn({ method: "POST" })
+	.middleware([assessmentErrorMiddleware])
 	.validator(validateContinuationInput)
 	.handler(async ({ data }) => {
 		await enforceGuestRateLimit("creation");
@@ -312,7 +331,9 @@ export const startFreshGuestAssessment = createServerFn({ method: "POST" })
 
 		if (!guestToken) {
 			setResponseStatus(404);
-			throw new Error("The assessment attempt is unavailable.");
+			throw new AssessmentRequestError(
+				"The assessment attempt is unavailable.",
+			);
 		}
 
 		const db = getDb(env);
@@ -323,7 +344,9 @@ export const startFreshGuestAssessment = createServerFn({ method: "POST" })
 
 		if (!questionnaire) {
 			setResponseStatus(503);
-			throw new Error("The active assessment questionnaire is unavailable.");
+			throw new AssessmentRequestError(
+				"The active assessment questionnaire is unavailable.",
+			);
 		}
 
 		const attempt = await replaceGuestAssessmentAttempt(db, {
@@ -336,7 +359,9 @@ export const startFreshGuestAssessment = createServerFn({ method: "POST" })
 
 		if (!attempt) {
 			setResponseStatus(404);
-			throw new Error("The assessment attempt is unavailable.");
+			throw new AssessmentRequestError(
+				"The assessment attempt is unavailable.",
+			);
 		}
 
 		return {
@@ -347,6 +372,7 @@ export const startFreshGuestAssessment = createServerFn({ method: "POST" })
 	});
 
 export const saveGuestAnswer = createServerFn({ method: "POST" })
+	.middleware([assessmentErrorMiddleware])
 	.validator(validateAnswerInput)
 	.handler(async ({ data }) => {
 		await enforceGuestRateLimit("activity");
@@ -354,7 +380,9 @@ export const saveGuestAnswer = createServerFn({ method: "POST" })
 
 		if (!guestToken) {
 			setResponseStatus(404);
-			throw new Error("The assessment attempt is unavailable.");
+			throw new AssessmentRequestError(
+				"The assessment attempt is unavailable.",
+			);
 		}
 
 		const result = await saveGuestAssessmentAnswer(getDb(env), {
@@ -368,28 +396,37 @@ export const saveGuestAnswer = createServerFn({ method: "POST" })
 
 		if (result.status === "invalid-answer") {
 			setResponseStatus(400);
-			throw new Error("The selected answer is not valid for this assessment.");
+			throw new AssessmentRequestError(
+				"The selected answer is not valid for this assessment.",
+			);
 		}
 
 		if (result.status === "response-complete") {
 			setResponseStatus(409);
-			throw new Error("This assessment response is already complete.");
+			throw new AssessmentRequestError(
+				"This assessment response is already complete.",
+			);
 		}
 
 		if (result.status === "completion-required") {
 			setResponseStatus(409);
-			throw new Error("The final answer must complete the assessment.");
+			throw new AssessmentRequestError(
+				"The final answer must complete the assessment.",
+			);
 		}
 
 		if (result.status === "not-found") {
 			setResponseStatus(404);
-			throw new Error("The assessment attempt is unavailable.");
+			throw new AssessmentRequestError(
+				"The assessment attempt is unavailable.",
+			);
 		}
 
 		return { currentQuestionIndex: result.currentQuestionIndex };
 	});
 
 export const completeGuestAssessment = createServerFn({ method: "POST" })
+	.middleware([assessmentErrorMiddleware])
 	.validator(validateAnswerInput)
 	.handler(async ({ data }) => {
 		await enforceGuestRateLimit("activity");
@@ -397,7 +434,9 @@ export const completeGuestAssessment = createServerFn({ method: "POST" })
 
 		if (!guestToken) {
 			setResponseStatus(404);
-			throw new Error("The assessment attempt is unavailable.");
+			throw new AssessmentRequestError(
+				"The assessment attempt is unavailable.",
+			);
 		}
 
 		const outcome = await completeGuestAssessmentAttempt(getDb(env), {
@@ -411,23 +450,30 @@ export const completeGuestAssessment = createServerFn({ method: "POST" })
 
 		if (outcome.status === "invalid-answer") {
 			setResponseStatus(400);
-			throw new Error("The selected final answer is not valid.");
+			throw new AssessmentRequestError(
+				"The selected final answer is not valid.",
+			);
 		}
 
 		if (outcome.status === "missing-required") {
 			setResponseStatus(409);
-			throw new Error("Answer every required question before completing.");
+			throw new AssessmentRequestError(
+				"Answer every required question before completing.",
+			);
 		}
 
 		if (outcome.status === "not-found") {
 			setResponseStatus(404);
-			throw new Error("The assessment attempt is unavailable.");
+			throw new AssessmentRequestError(
+				"The assessment attempt is unavailable.",
+			);
 		}
 
 		return outcome.result;
 	});
 
 export const deleteGuestAttempt = createServerFn({ method: "POST" })
+	.middleware([assessmentErrorMiddleware])
 	.validator(validateAttemptInput)
 	.handler(async ({ data }) => {
 		await enforceGuestRateLimit("deletion");

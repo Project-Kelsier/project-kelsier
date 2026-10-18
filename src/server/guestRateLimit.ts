@@ -4,6 +4,7 @@ import {
 	setResponseHeader,
 	setResponseStatus,
 } from "@tanstack/react-start/server";
+import { AssessmentRequestError } from "./assessmentErrors";
 import { hashGuestCredential, isLocalRequest } from "./guestCredential";
 
 export async function enforceGuestRateLimit(
@@ -17,7 +18,9 @@ export async function enforceGuestRateLimit(
 		(isLocalRequest(new URL(request.url)) ? "local-development" : null);
 	if (!ip) {
 		setResponseStatus(503);
-		throw new Error("Assessment requests are temporarily unavailable.");
+		throw new AssessmentRequestError(
+			"Assessment requests are temporarily unavailable.",
+		);
 	}
 	const requestKey = await hashGuestCredential(ip);
 	let outcome: { success: boolean };
@@ -29,12 +32,16 @@ export async function enforceGuestRateLimit(
 		outcome = await limiter.limit({ key: `${kind}:${requestKey}` });
 	} catch {
 		setResponseStatus(503);
-		throw new Error("Assessment requests are temporarily unavailable.");
+		throw new AssessmentRequestError(
+			"Assessment requests are temporarily unavailable.",
+		);
 	}
 
 	if (!outcome.success) {
 		setResponseStatus(429);
 		setResponseHeader("Retry-After", "60");
-		throw new Error("Too many assessment requests. Please try again shortly.");
+		throw new AssessmentRequestError(
+			"Too many assessment requests. Please try again shortly.",
+		);
 	}
 }
