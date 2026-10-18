@@ -25,7 +25,7 @@ CI enforces this with `pnpm version:check`. The check compares a pull request wi
 
 ## Release Checklist
 
-Before tagging a release:
+Before tagging a release, prepare the seeded local database and matching Playwright browsers using [the testing notes](./CONTRIBUTING.md#testing-notes), then run:
 
 ```bash
 pnpm install --frozen-lockfile --ignore-scripts
@@ -40,6 +40,7 @@ pnpm coverage
 pnpm build
 pnpm worker:check
 pnpm test:e2e
+pnpm test:transport
 ```
 
 Then create a tag that matches the package version:

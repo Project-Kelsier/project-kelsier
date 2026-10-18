@@ -34,6 +34,7 @@ pnpm cf-typegen
 pnpm worker:check
 pnpm deploy
 pnpm test:e2e
+pnpm test:transport
 pnpm db:generate
 pnpm db:migrate
 pnpm db:seed

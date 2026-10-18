@@ -33,7 +33,7 @@ pnpm dev
 
 ## Before Opening A PR
 
-Run the same checks CI runs:
+Run the same validation checks CI runs. Prepare the seeded local database and matching Playwright browsers first, as described in [Testing Notes](#testing-notes):
 
 ```bash
 pnpm install --frozen-lockfile --ignore-scripts
@@ -48,6 +48,7 @@ pnpm coverage
 pnpm build
 pnpm worker:check
 pnpm test:e2e
+pnpm test:transport
 ```
 
 Release-relevant changes must update both [`package.json`](./package.json) `version` and [`CHANGELOG.md`](./CHANGELOG.md). See [`VERSIONING.md`](./VERSIONING.md) for the policy CI enforces.

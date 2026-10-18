@@ -108,6 +108,7 @@ pnpm typecheck        # tsc --noEmit
 pnpm test             # Vitest unit tests
 pnpm coverage         # Vitest with v8 coverage
 pnpm test:e2e         # Playwright
+pnpm test:transport   # Built-preview RPC error checks; build and seed locally first
 
 pnpm db:generate      # Generate a Drizzle migration from schema changes
 pnpm db:migrate       # Apply migrations to DATABASE_URL; verify the target first

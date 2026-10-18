@@ -242,6 +242,7 @@ pnpm test
 pnpm coverage
 pnpm build
 pnpm test:e2e
+pnpm test:transport
 ```
 
 ### Required For Dependency Or Install-Path Changes
