@@ -6,6 +6,15 @@ This project follows semantic versioning while it moves toward MVP. Versions bel
 
 ## [Unreleased]
 
+## [0.4.8] - Public release pending
+
+Routine stack maintenance. Version assignment does not authorize deployment or public release.
+
+### Changed
+
+- Updated the compatible TanStack Router, Start, router-plugin and development tools together, retaining exact dependency pins and the existing React runtime. The router plugin now requires Vite 6 or later and a Node release supporting require(esm); the repository's Vite 8 and Node 26 baselines satisfy those requirements.
+- Updated Biome to 2.6.8 with its matching configuration schema, dotenv to 18.0.10, Tailwind CSS and its Vite plugin to 4.3.5, and Lucide React to 1.73.0.
+
 ## [0.4.7] - Public release pending
 
 Security baseline maintenance. Version assignment does not authorize deployment or public release.

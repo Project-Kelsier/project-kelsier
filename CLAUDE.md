@@ -14,14 +14,14 @@ This file deliberately does **not** restate those rules. It adds only what `AGEN
 
 Every architectural or product claim below carries one label. Do not promote a claim to a stronger label without evidence of that specific kind.
 
-| Label | Meaning |
-| --- | --- |
-| **Implemented** | Present in tracked code or configuration. |
-| **DB-enforced** | A database constraint makes violation impossible. |
+| Label             | Meaning                                                                            |
+| ----------------- | ---------------------------------------------------------------------------------- |
+| **Implemented**   | Present in tracked code or configuration.                                          |
+| **DB-enforced**   | A database constraint makes violation impossible.                                  |
 | **Test-enforced** | A test fails on violation, so CI blocks it. Not structurally prevented at runtime. |
-| **Convention** | Current service or process practice. Not structurally prevented. |
-| **Direction** | Approved intent recorded in a public repository document. |
-| **Proposed** | No accepted public record. Must not guide implementation as binding architecture. |
+| **Convention**    | Current service or process practice. Not structurally prevented.                   |
+| **Direction**     | Approved intent recorded in a public repository document.                          |
+| **Proposed**      | No accepted public record. Must not guide implementation as binding architecture.  |
 
 This file is documentation, not a decision record. It cannot itself promote a proposal to approved direction; only an accepted public repository document can do that.
 
@@ -35,13 +35,13 @@ Parts of that commitment are already load-bearing in the schema:
 
 - **DB-enforced** — a result cannot disagree with the attempt that produced it. `assessment_results_attempt_version_fk` is a composite foreign key onto `(assessmentAttempts.id, assessmentAttempts.assessmentVersionId)`.
 - **DB-enforced** — at most one result row per attempt (`assessment_results_attempt_id_unique`).
-- **Convention** — results are treated as immutable. The service layer only inserts and reads them; there is no update path. The database does *not* prevent updates: `assessmentResults` carries an `updatedAt` column and no trigger or rule blocks `UPDATE`. Do not describe results as structurally immutable, and do not add an update path without revisiting the product decision.
+- **Convention** — results are treated as immutable. The service layer only inserts and reads them; there is no update path. The database does _not_ prevent updates: `assessmentResults` carries an `updatedAt` column and no trigger or rule blocks `UPDATE`. Do not describe results as structurally immutable, and do not add an update path without revisiting the product decision.
 - **Implemented** — scoring is versioned independently of the app release. `dimension-mean-v1` is stored per result ([`src/lib/assessmentScoring.ts`](src/lib/assessmentScoring.ts)); changed arithmetic or dimension meaning requires a new identifier so incomparable scores are never silently compared.
 - **Implemented** — `assessmentResults.confidence` is nullable and stays `null` until there is a defensible way to compute it. The schema declines to fabricate precision.
 - **Implemented** — result traceability comes from the full persisted chain: result → attempt → answers → versioned questions and options. Every answer records its question and chosen option, so a score can be traced back to the exact items that produced it. `contributingQuestionCounts` is supporting metadata within that chain — it records how many questions fed each dimension, not which ones.
 - **Direction** — assessment versions, questions, options, dimensions, and score weights must not be mutated once responses exist; future editing tools must create a new version rather than change an active one in place ([`docs/assessment-mvp.md`](docs/assessment-mvp.md)). The database does **not** structurally prohibit such updates, so the provenance chain only means what it claims for as long as this is honoured.
 - **Implemented** — `scripts/assessment-seed.ts` inserts questionnaires atomically and rejects any content drift on an existing version, even before responses exist. It does not reactivate retired versions. This guard protects seeding, not privileged direct SQL updates.
-- **Implemented (schema only)** — `aiInsights` is *designed* to record machine-inference provenance (`model`, `promptVersion`, `generatedAt`, nullable `confidence`) for insights when they are generated. There is no AI generation pipeline in this repository: the service exposes two read-only list helpers and nothing writes insights. Do not describe inference provenance as a working behaviour.
+- **Implemented (schema only)** — `aiInsights` is _designed_ to record machine-inference provenance (`model`, `promptVersion`, `generatedAt`, nullable `confidence`) for insights when they are generated. There is no AI generation pipeline in this repository: the service exposes two read-only list helpers and nothing writes insights. Do not describe inference provenance as a working behaviour.
 
 The harm boundary is a hard product rule. The seeded questionnaire and its dimension-mean output are **demonstration content**. Never describe them — in code, comments, UI, tests, or docs — as validated, predictive, clinical, diagnostic, or suitable for hiring decisions. [`docs/assessment-mvp.md`](docs/assessment-mvp.md) is the approved source of truth for assessment work, including the public launch gate.
 
