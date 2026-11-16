@@ -26,6 +26,7 @@
 		"coverage": "vitest run --config vitest.config.ts --coverage",
 		"test:e2e": "playwright test",
 		"test:transport": "playwright test --config playwright.transport.config.ts",
+		"test:worker-body": "node scripts/check-worker-body-rejection.mjs",
 		"db:generate": "drizzle-kit generate",
 		"db:migrate": "drizzle-kit migrate",
 		"db:seed": "tsx scripts/seed.ts",

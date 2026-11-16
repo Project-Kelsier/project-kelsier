@@ -41,6 +41,7 @@ pnpm build
 pnpm worker:check
 pnpm test:e2e
 pnpm test:transport
+pnpm test:worker-body
 ```
 
 Then create a tag that matches the package version:

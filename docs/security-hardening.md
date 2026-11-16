@@ -141,6 +141,7 @@ pnpm install --frozen-lockfile --ignore-scripts
 pnpm audit signatures
 pnpm audit --audit-level high
 pnpm rebuild
+pnpm test:worker-body
 pnpm version:check
 pnpm check
 pnpm typecheck
