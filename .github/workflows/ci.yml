@@ -184,6 +184,9 @@ jobs:
       - name: Validate Worker deployment configuration
         run: pnpm worker:check
 
+      - name: Verify Worker unread-body rejection
+        run: pnpm test:worker-body
+
       - name: Prepare assessment database for E2E
         run: pnpm db:migrate && pnpm db:seed
 

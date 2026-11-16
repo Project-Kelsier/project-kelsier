@@ -220,6 +220,7 @@ For organisation-scoped helpers, tests should prove that `organisations.deletedA
 - Prefer stable role- and text-based selectors over brittle implementation selectors.
 - Keep smoke coverage fast and focused. Add deeper scenarios only when a feature introduces real interaction risk.
 - `pnpm test:transport` uses `playwright.transport.config.ts` for production-preview RPC error coverage after `pnpm build`. Keep `*.transport.spec.ts` excluded from the normal development-server suite. The test owns and closes its preview, refuses hosted databases, and changes database environment variables only inside its isolated test worker. Preserve real transport and security controls; do not add production fault-injection endpoints.
+- `pnpm test:worker-body` checks unread and consumed streamed request bodies through a local service binding on both installed Miniflare paths across repeated processes. Keep the expected 403 status/body and fail on any reset; do not add retries or production buffering to hide regressions. CI runs this database-free probe on Linux.
 
 ## Quality Gates
 
@@ -243,6 +244,7 @@ pnpm coverage
 pnpm build
 pnpm test:e2e
 pnpm test:transport
+pnpm test:worker-body
 ```
 
 ### Required For Dependency Or Install-Path Changes
@@ -252,6 +254,7 @@ pnpm install --frozen-lockfile --ignore-scripts
 pnpm audit signatures
 pnpm audit --audit-level high
 pnpm rebuild
+pnpm test:worker-body
 pnpm version:check
 pnpm check
 pnpm typecheck
@@ -318,6 +321,7 @@ If you cannot run a check locally, say so explicitly in your handoff and explain
 - [`worker-configuration.d.ts`](worker-configuration.d.ts) contains Wrangler-generated binding and runtime API types. Refresh it with `pnpm cf-typegen` after changing bindings, compatibility dates/flags, or Wrangler. Runtime declarations may change after a Wrangler upgrade even when bindings are unchanged; review and commit the generated diff without hand-editing it. See [Cloudflare's type-generation guidance](https://developers.cloudflare.com/workers/languages/typescript/).
 - Prefer `pnpm preview` before `pnpm deploy` when validating runtime changes.
 - Run `pnpm worker:check` after Worker entrypoint or deployment-configuration changes. It performs a Wrangler dry run without deploying.
+- Cloudflare's Vite plugin emits server source maps and enables diagnostic upload in the generated deployment configuration. Keep maps outside `dist/client` and inspect them for embedded secrets or environment-file sources. Generated declarations and source maps do not authorize new platform features or deployment.
 
 ### Drizzle And PostgreSQL
 
