@@ -1,5 +1,7 @@
 # Hosted staging and dummy-production operations
 
+Cloudflare's Vite build emits server source maps under `dist/server` and enables their diagnostic upload in the generated Wrangler configuration. Static assets remain `dist/client`; never copy server maps into that public directory. Inspect generated code and maps for credentials or `.env` sources before deployment. This diagnostic behavior does not change account bindings, compatibility settings or the staging-only cleanup schedule.
+
 The maintainer explicitly placed public launch on hold on 2026-09-12. These operations cover staging and dummy production; neither label authorizes public launch or promotion. The decision table remains in [assessment-mvp.md](assessment-mvp.md#public-launch-gate). The repository version in [`package.json`](../package.json) may be newer than the last recorded hosted deployment.
 
 ## Hosted targets

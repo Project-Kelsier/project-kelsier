@@ -1,6 +1,6 @@
 {
 	"name": "project-kelsier",
-	"version": "0.4.8",
+	"version": "0.4.9",
 	"private": true,
 	"type": "module",
 	"packageManager": "pnpm@12.21.0+sha512.66fd8278ee28935ce951792d34367ff3af5c432a2756445823029533835b8da529bbe0be5130afd56ed0713fb8789e47bad82d93bd5ae2fe54b15562d6276ef0",
@@ -26,6 +26,7 @@
 		"coverage": "vitest run --config vitest.config.ts --coverage",
 		"test:e2e": "playwright test",
 		"test:transport": "playwright test --config playwright.transport.config.ts",
+		"test:worker-body": "node scripts/check-worker-body-rejection.mjs",
 		"db:generate": "drizzle-kit generate",
 		"db:migrate": "drizzle-kit migrate",
 		"db:seed": "tsx scripts/seed.ts",
@@ -50,7 +51,7 @@
 	},
 	"devDependencies": {
 		"@biomejs/biome": "2.6.8",
-		"@cloudflare/vite-plugin": "^1.60.2",
+		"@cloudflare/vite-plugin": "^1.69.1",
 		"@playwright/test": "^1.65.1",
 		"@tanstack/devtools-vite": "0.8.6",
 		"@testing-library/dom": "^10.4.2",
@@ -67,6 +68,6 @@
 		"typescript": "^7.0.2",
 		"vite": "^8.3.8",
 		"vitest": "^4.1.12",
-		"wrangler": "^4.141.0"
+		"wrangler": "^4.162.0"
 	}
 }
