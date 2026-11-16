@@ -318,6 +318,7 @@ If you cannot run a check locally, say so explicitly in your handoff and explain
 - [`worker-configuration.d.ts`](worker-configuration.d.ts) contains Wrangler-generated binding and runtime API types. Refresh it with `pnpm cf-typegen` after changing bindings, compatibility dates/flags, or Wrangler. Runtime declarations may change after a Wrangler upgrade even when bindings are unchanged; review and commit the generated diff without hand-editing it. See [Cloudflare's type-generation guidance](https://developers.cloudflare.com/workers/languages/typescript/).
 - Prefer `pnpm preview` before `pnpm deploy` when validating runtime changes.
 - Run `pnpm worker:check` after Worker entrypoint or deployment-configuration changes. It performs a Wrangler dry run without deploying.
+- Cloudflare's Vite plugin emits server source maps and enables diagnostic upload in the generated deployment configuration. Keep maps outside `dist/client` and inspect them for embedded secrets or environment-file sources. Generated declarations and source maps do not authorize new platform features or deployment.
 
 ### Drizzle And PostgreSQL
 
