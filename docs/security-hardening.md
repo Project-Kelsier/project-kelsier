@@ -164,6 +164,16 @@ pnpm test:e2e
 
 SHA pinning prevents a moved tag from changing executed workflow code. Version tags are easier to update but trust the action maintainer and GitHub tag state at every run. For this project, use SHA pinning for CI and deployment workflows, then update pins through reviewed maintenance PRs.
 
+### Review Assistant
+
+The on-demand [Claude workflow](../.github/workflows/claude.yml) uses the job-scoped `GITHUB_TOKEN` with repository contents read access, comment/review write access, and Actions read access. It does not use a repository-write PAT. The mention condition only selects events; the pinned action separately checks the caller's repository write access and human identity. Keep bot and non-write-user exceptions unset.
+
+The initial checkout explicitly selects the default branch without persisted checkout credentials. The action then fetches the PR head and restores its protected configuration paths from the PR base branch. Preserve `restrict_untrusted_prs: "true"`; its command deny list is additional protection, not a sandbox.
+
+The workflow overrides the action's auto permission mode with `default`, limits built-in tools to `Read,Glob,Grep`, explicitly denies shell/edit/file-write tools, and uses `--strict-mcp-config` to load only the action-supplied MCP configuration. Comment updates and existing CI inspection remain available. These controls apply to maintainer-authored PRs too. Keep the review-only system instruction, but do not treat prose or an `allowedTools` list as a security boundary.
+
+The action itself still installs tooling, invokes subprocesses, configures Git authentication, and holds the credentials required for review. Tool restrictions are not OS isolation or proof against prompt injection or a compromised upstream action. Review future action changes and any base-branch Claude hooks/MCP configuration before widening access. Never add deployment or database secrets to this job. For forked PRs, prefer an `@claude` conversation comment; GitHub may withhold secrets or token writes on review events.
+
 ## Cache Security
 
 - Do not allow untrusted PRs to save caches that privileged workflows later restore.

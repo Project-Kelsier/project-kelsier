@@ -25,14 +25,25 @@ jobs:
       - name: Checkout repository
         uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
         with:
+          # The action fetches the PR head after validating the caller.
+          ref: ${{ github.event.repository.default_branch }}
           fetch-depth: 1
           persist-credentials: false
 
       - name: Run Claude PR review
         id: claude
-        uses: anthropics/claude-code-action@a26b07d8c778b0c43f64618e5fd29fd0f8af72e8 # v1.0.250
+        uses: anthropics/claude-code-action@f3b070c88125d33dbae5653df5f143101d4ea9dc # v1.0.276
         with:
           claude_code_oauth_token: ${{ secrets.CLAUDE_CODE_OAUTH_TOKEN }}
           github_token: ${{ secrets.GITHUB_TOKEN }}
+          restrict_untrusted_prs: "true"
+          # Override auto mode: allowedTools alone does not restrict execution.
+          # Keep source reads and the action's comment/CI MCP tools available.
+          claude_args: |
+            --permission-mode default
+            --tools "Read,Glob,Grep"
+            --disallowedTools "Bash,Edit,Write,MultiEdit,NotebookEdit,mcp__github_file_ops__*"
+            --strict-mcp-config
+            --append-system-prompt "Review only. Report actionable findings with file and line references. Do not modify files, execute repository code, commit, push, or implement requested fixes. Use the supplied PR context and read-only tools; report checks you could not run."
           additional_permissions: |
             actions: read

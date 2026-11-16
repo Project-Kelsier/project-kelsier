@@ -16,11 +16,13 @@ Security baseline maintenance. Version assignment does not authorize deployment 
 - Updated PostgreSQL to 17.12 for security and data-integrity fixes, pinning local Compose and both CI database services to the same reviewed immutable image. Hosted database upgrades remain a separate operational change.
 - Patched launch-editor, Zod, Seroval and Miniflare's scoped Undici resolution without upgrading direct dependencies, removing fourteen identified findings from the November 16 local audit. This does not update existing hosted deployments.
 - Applied the separately authorized Vitest and coverage-v8 4.1.12 security patch for manual mock registration and Windows redirect traversal. The final November 16 full local audit reports zero known findings at every severity. React and the Vitest 5 migration remain deferred; the existing test configuration and Node Web Storage workaround are preserved.
+- Updated the pinned Claude review action to 1.0.276 with explicit review-only tool restrictions and default permission mode, preserving trusted-caller checks, untrusted-PR protections and read-only repository contents access.
 
 ### Changed
 
 - Updated the integrity-pinned package manager to pnpm 12.21.0, retaining the existing lockfile format, application dependency resolutions and install security policies.
 - Updated Node declarations to `@types/node` 26.6.6. No application code change or new runtime API usage was required.
+- Updated pnpm/action-setup to the reviewed 6.1.1 commit in both CI jobs, retaining disabled automatic caching and the existing explicit cache policy.
 
 ## [0.4.6] - Public release pending
 
