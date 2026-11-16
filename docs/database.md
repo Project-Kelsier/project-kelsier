@@ -23,6 +23,8 @@ Separate the databases when independent migrations, test-data resets, access con
 
 ## Current Implementation
 
+Postgres.js 4 uses server-selected parameter types. Keep schema timestamps timezone-aware and use explicit casts in raw SQL where the server cannot infer a parameter's type; do not add `infer: true` globally without reviewing the resulting date/array behavior. `PGSSLMODE` is honored by the driver, with explicit connection options and URL settings taking precedence. Review inherited TLS settings when diagnosing local or hosted connection failures. Driver errors can serialize their messages, so preserve the guest error-redaction boundary and avoid logging raw database errors. Local Worker preview validates the local connection path; hosted Hyperdrive compatibility requires its own staging smoke before promoting a driver upgrade.
+
 - `src/db/client.worker.ts` is the Worker-safe database client.
 - `src/db/client.node.ts` is Node-only.
 - `src/db/client.ts` is a runtime-safe shared surface for environment parsing and `DbClient` typing.

@@ -19,6 +19,8 @@ Deployment evidence on 2026-10-16: merged commit `1b369ae` (app `0.4.4`) is acti
 
 ### Deploying the same build to both accounts
 
+Staging-only driver verification on 2026-11-16: app **0.4.10** from `chore/postgres4-compatibility` was deployed as Worker version `fc204b99-06ca-4b34-ba97-4c7dc5a9076a`. This is a pre-merge Postgres.js 4.1.1 candidate based on the merged 0.4.8 routine stack; the separate Cloudflare 0.4.9 tooling PR is not included. Hosted checks passed through staging Hyperdrive for private page responses, secure guest cookies, cross-site/anonymous rejection, saved answers, completion/reload, single resume and deletion. Both owned synthetic attempts were removed. No schema/seed change was made. Dummy production retains its previously recorded 0.4.4 deployment. Staging preserved its Hyperdrive, rate-limit bindings and daily cron; this check does not verify execution of the next cleanup invocation or authorize public launch. The prior staging version `93095658-3eec-44c4-8d14-7e7050a043a0` is the recorded rollback target.
+
 `wrangler.jsonc` remains the staging configuration. Build once with `pnpm build`, then validate with `pnpm worker:check` and preview the result. After verifying the authenticated account, deploy staging with `CLOUDFLARE_ACCOUNT_ID` set to its ID. Preserve dashboard variables with `--keep-vars`.
 
 Dummy production needs a derived config because Hyperdrive IDs belong to their Cloudflare account and it must not duplicate the shared cleanup cron. After every build, regenerate an ignored config from `dist/server/wrangler.json`, retaining the built Worker/module settings and rate-limit bindings. The following Node command works from the repository root:
