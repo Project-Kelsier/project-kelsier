@@ -6,6 +6,14 @@ This project follows semantic versioning while it moves toward MVP. Versions bel
 
 ## [Unreleased]
 
+## [0.4.7] - Public release pending
+
+Security baseline maintenance. Version assignment does not authorize deployment or public release.
+
+### Security
+
+- Raised the supported Node minimum and the shared local/CI baseline to Node 26.13.1 LTS to include the November 11, 2026 runtime security fixes. Deployed Workers continue to use Cloudflare's runtime.
+
 ## [0.4.6] - Public release pending
 
 Development tooling and dependency maintenance. Version assignment does not authorize deployment or public release.

@@ -28,7 +28,7 @@ This repo should be easy for a new contributor to understand without private con
 - Testing: Vitest for unit tests and Playwright for end-to-end coverage. Review UI through the running app.
 - Quality gate: Biome for formatting, linting, and import organization.
 - Package manager: `pnpm`
-- Runtime support: Node `>=26.11.1 <27.0.0`; `.nvmrc` and CI pin the tested Node 26.12.0 baseline. Cloudflare Workers use the platform runtime.
+- Runtime support: Node `>=26.13.1 <27.0.0`; `.nvmrc` and CI pin the tested Node 26.13.1 LTS security baseline. Cloudflare Workers use the platform runtime.
 - Node version hint: [`.nvmrc`](.nvmrc)
 - Version source of truth: [`package.json`](package.json)
 
@@ -290,7 +290,7 @@ If you cannot run a check locally, say so explicitly in your handoff and explain
 ### pnpm
 
 - `package.json` pins the project package manager version.
-- [`.nvmrc`](.nvmrc) pins the tested Node 26.12.0 baseline for local version managers and CI (`node-version-file`). `package.json` permits `>=26.11.1 <27.0.0`; the supported minimum remains compatible and does not need to rise for every baseline refresh. Keep the baseline, supported range and contributor guidance consistent when changing the runtime.
+- [`.nvmrc`](.nvmrc) pins the tested Node 26.13.1 LTS baseline for local version managers and CI (`node-version-file`). `package.json` permits `>=26.13.1 <27.0.0`; the minimum includes the November 11, 2026 Node security fixes. Routine baseline refreshes need not raise the minimum, but security fixes can require it. Keep the baseline, supported range and contributor guidance consistent when changing the runtime.
 - Node 26 does not bundle Corepack. [`CONTRIBUTING.md`](CONTRIBUTING.md#local-setup) documents manual Corepack setup and stale Windows pnpm launcher recovery. Preserve the repository's `packageManager` pin and integrity checks; do not bypass engine enforcement to compensate for a broken launcher.
 - [`pnpm-workspace.yaml`](pnpm-workspace.yaml) owns pnpm 12 dependency build-script approvals and install policy through `allowBuilds`, strict engine/build enforcement, a strict 24-hour release-age gate, trust-downgrade rejection, and transitive exotic-source blocking.
 - Keep trust-policy exceptions exact, evidence-backed, and documented next to the package selector. Do not replace a narrow historical-metadata exception with a broad age-based trust bypass.

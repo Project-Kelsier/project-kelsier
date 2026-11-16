@@ -7,6 +7,7 @@ This document records Project Kelsier's baseline security posture for dependency
 The repository should preserve these defaults unless a reviewed change explicitly explains why they need to move:
 
 - Pin the project package manager in `package.json` `packageManager`.
+- Require Node 26.13.1 or newer within the supported Node 26 line for the November 2026 runtime security fixes. Keep the `.nvmrc` CI baseline and documented minimum aligned; npm dependency overrides do not patch Node's bundled libraries.
 - Use `pnpm install --frozen-lockfile --ignore-scripts` in CI.
 - Run `pnpm audit signatures` after dependency installation.
 - Run `pnpm audit --audit-level high` in CI to reject known high- and critical-severity vulnerabilities.
