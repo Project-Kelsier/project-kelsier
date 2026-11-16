@@ -6,6 +6,15 @@ This project follows semantic versioning while it moves toward MVP. Versions bel
 
 ## [Unreleased]
 
+## [0.4.10] - Public release pending
+
+Postgres.js driver maintenance. Version assignment does not authorize public release.
+
+### Changed
+
+- Updated Postgres.js to 4.1.1 with Drizzle unchanged, retaining separate Node and Worker database clients and their connection settings.
+- Verified the driver on mindphreak staging through Hyperdrive using disposable assessment completion/resume/deletion checks; dummy production and the database schema were unchanged.
+
 ## [0.4.9] - Public release pending
 
 Cloudflare tooling maintenance. Version assignment does not authorize deployment or public release.
