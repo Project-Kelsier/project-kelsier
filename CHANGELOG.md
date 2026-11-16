@@ -15,6 +15,8 @@ Routine stack maintenance. Version assignment does not authorize deployment or p
 - Updated the compatible TanStack Router, Start, router-plugin and development tools together, retaining exact dependency pins and the existing React runtime. The router plugin now requires Vite 6 or later and a Node release supporting require(esm); the repository's Vite 8 and Node 26 baselines satisfy those requirements.
 - Updated Biome to 2.6.8 with its matching configuration schema, dotenv to 18.0.10, Tailwind CSS and its Vite plugin to 4.3.5, and Lucide React to 1.73.0.
 - Updated Vite to 8.3.8 and its React build plugin to 6.3.0, retaining the existing plugin order, separate Vitest configuration and disabled React Compiler.
+- Updated Playwright to 1.65.1 and its matching Chromium, Firefox and WebKit revisions, preserving real browser interaction and production RPC transport coverage.
+- Updated jsdom to 31.0.1 while retaining Vitest 4.1.12 and its Node Web Storage isolation workaround.
 
 ## [0.4.7] - Public release pending
 
