@@ -7,6 +7,7 @@ This document records Project Kelsier's baseline security posture for dependency
 The repository should preserve these defaults unless a reviewed change explicitly explains why they need to move:
 
 - Pin the project package manager in `package.json` `packageManager`.
+- Require Node 26.13.1 or newer within the supported Node 26 line for the November 2026 runtime security fixes. Keep the `.nvmrc` CI baseline and documented minimum aligned; npm dependency overrides do not patch Node's bundled libraries.
 - Use `pnpm install --frozen-lockfile --ignore-scripts` in CI.
 - Run `pnpm audit signatures` after dependency installation.
 - Run `pnpm audit --audit-level high` in CI to reject known high- and critical-severity vulnerabilities.
@@ -108,9 +109,17 @@ The 2026-08-19 audit reported no known vulnerabilities. On 2026-09-12, [CI for c
 The reviewed overrides and trust exception in `pnpm-workspace.yaml` are:
 
 - `@esbuild-kit/core-utils>esbuild` is overridden to the compatible patched `0.25.12` release for GHSA-67mh-4wv8-2f99 because Drizzle Kit's deprecated loader chain still requests an older Esbuild range. Remove the override once that parent chain resolves a patched version naturally.
-- `miniflare@5.20260925.0-alpha>undici` is overridden to `7.29.1` for [GHSA-3wwx-pv8p-q78v](https://github.com/advisories/GHSA-3wwx-pv8p-q78v). Updating Node's bundled Undici does not update this separately installed dependency. Remove the override when the selected Cloudflare tooling resolves a patched version naturally.
+- `miniflare@5.20260925.0-alpha>undici` is overridden to `7.30.1`, preserving the earlier [GHSA-3wwx-pv8p-q78v](https://github.com/advisories/GHSA-3wwx-pv8p-q78v) fix and addressing the eight subsequently identified advisories listed below. The parent still pins `7.29.0`; keep the override exact and parent-scoped. Updating Node's bundled Undici does not update this separately installed dependency. Remove the override when the selected Cloudflare tooling resolves a patched version naturally.
 - `miniflare@5.20260925.0-alpha>sharp` is overridden to `0.35.5` for the librsvg issue [GHSA-wq5f-xc86-pv6w](https://github.com/advisories/GHSA-wq5f-xc86-pv6w). Remove the override when that upstream parent no longer pins vulnerable Sharp `0.35.4`.
 - `semver@6.3.1` is excluded from trust-downgrade comparison because Babel requires this official security-fixed 6.x release. The registry artifact has a valid signature, but it lacks the legacy trust metadata present on `6.3.0`. Keep this exception exact and remove it once Babel no longer resolves the legacy line.
+
+The November 16, 2026 transitive remediation retained all direct dependency versions and the existing install policies. The lockfile now resolves launch-editor `2.14.2`, Zod `4.6.7`, Seroval `1.8.1` for TanStack and `1.6.12` for Solid, and Miniflare's Undici `7.30.1`. Both Seroval versions satisfy their parents' existing ranges; `seroval-plugins@1.6.9` retains its compatible `^1.0` peer. jsdom's independent Undici `8.12.2` stays unchanged. These are tested resolutions, not permanent extra overrides.
+
+The Undici findings addressed at this checkpoint are [GHSA-f72v-6w45-q472](https://github.com/advisories/GHSA-f72v-6w45-q472), [GHSA-4qv8-2p9j-2685](https://github.com/advisories/GHSA-4qv8-2p9j-2685), [GHSA-2m5v-pch6-74hx](https://github.com/advisories/GHSA-2m5v-pch6-74hx), [GHSA-4w7w-5xrc-9h26](https://github.com/advisories/GHSA-4w7w-5xrc-9h26), [GHSA-xjj6-f33q-929c](https://github.com/advisories/GHSA-xjj6-f33q-929c), [GHSA-qrxm-fqhp-jwvm](https://github.com/advisories/GHSA-qrxm-fqhp-jwvm), [GHSA-9fm3-97px-rjf6](https://github.com/advisories/GHSA-9fm3-97px-rjf6) and [GHSA-55wc-3pg8-jfw6](https://github.com/advisories/GHSA-55wc-3pg8-jfw6).
+
+Full before/after audit and dependency-path checks first removed fourteen identified findings, leaving two moderate Vitest findings. The separately authorized matched Vitest/coverage `4.1.12` patch then removed those two. The subsequent pnpm `12.21.0` / Node-types `26.6.6` checkpoint preserved that result: the **final November 16 full audit reports zero known findings at every severity**, with registry signatures verified for all 516 packages. The extra package is pnpm's optional NetBSD executable in the package-manager lock document. Frozen install, approved rebuilds, quality/type/unit/coverage checks, production build, Worker dry run, database tests, browser/security tests and production error transport passed on the final graph. Passing `pnpm audit --audit-level high` alone does not mean the graph is free of advisories; always inspect and preserve the full audit, including moderate findings. These dated results do not establish that a hosted deployment is patched or guarantee the absence of unknown vulnerabilities.
+
+The former residuals were [GHSA-qxg6-89mg-rqv8](https://github.com/advisories/GHSA-qxg6-89mg-rqv8) and [GHSA-xp26-3454-mjgp](https://github.com/advisories/GHSA-xp26-3454-mjgp), affecting `@vitest/mocker@4.1.11` through Vitest and its matching coverage package. All resolved Vitest internals now use `4.1.12`. Both advisories concern public mocker/interceptor WebSocket registration; no such registration was found in authored application or test configuration. Offline Windows probes verified allowed-file handling, rejection of forward/backslash traversal and quoted manual mock output without exposing a server or executing that output. Keep test tooling local. React and Vitest 5 remain deferred, and the Vitest 4 Web Storage workaround remains required. Absence of demonstrated application exploitability is distinct from patching an affected dependency.
 
 The earlier Sharp and JS-YAML overrides were removed during the September package refresh. Sharp `0.35.4` addressed the earlier libheif advisory [GHSA-rgj7-g3m4-5g8c](https://github.com/advisories/GHSA-rgj7-g3m4-5g8c); the October librsvg finding requires the new Sharp override above. The lockfile retains JS-YAML `4.3.2` within xmlbuilder2's `^4.1.1` range without an override, addressing [GHSA-2883-xcg3-v3hh](https://github.com/advisories/GHSA-2883-xcg3-v3hh). Keep both resolved paths patched during future lockfile updates.
 
@@ -154,6 +163,16 @@ pnpm test:e2e
 - Validation and review checkouts disable credential persistence. The theming sync job retains credentials because its purpose includes pushing the merge back to `experiment/theming`.
 
 SHA pinning prevents a moved tag from changing executed workflow code. Version tags are easier to update but trust the action maintainer and GitHub tag state at every run. For this project, use SHA pinning for CI and deployment workflows, then update pins through reviewed maintenance PRs.
+
+### Review Assistant
+
+The on-demand [Claude workflow](../.github/workflows/claude.yml) uses the job-scoped `GITHUB_TOKEN` with repository contents read access, comment/review write access, and Actions read access. It does not use a repository-write PAT. The mention condition only selects events; the pinned action separately checks the caller's repository write access and human identity. Keep bot and non-write-user exceptions unset.
+
+The initial checkout explicitly selects the default branch without persisted checkout credentials. The action then fetches the PR head and restores its protected configuration paths from the PR base branch. Preserve `restrict_untrusted_prs: "true"`; its command deny list is additional protection, not a sandbox.
+
+The workflow overrides the action's auto permission mode with `default`, limits built-in tools to `Read,Glob,Grep`, explicitly denies shell/edit/file-write tools, and uses `--strict-mcp-config` to load only the action-supplied MCP configuration. Comment updates and existing CI inspection remain available. These controls apply to maintainer-authored PRs too. Keep the review-only system instruction, but do not treat prose or an `allowedTools` list as a security boundary.
+
+The action itself still installs tooling, invokes subprocesses, configures Git authentication, and holds the credentials required for review. Tool restrictions are not OS isolation or proof against prompt injection or a compromised upstream action. Review future action changes and any base-branch Claude hooks/MCP configuration before widening access. Never add deployment or database secrets to this job. For forked PRs, prefer an `@claude` conversation comment; GitHub may withhold secrets or token writes on review events.
 
 ## Cache Security
 

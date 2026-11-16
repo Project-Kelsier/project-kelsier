@@ -28,7 +28,7 @@ This repo should be easy for a new contributor to understand without private con
 - Testing: Vitest for unit tests and Playwright for end-to-end coverage. Review UI through the running app.
 - Quality gate: Biome for formatting, linting, and import organization.
 - Package manager: `pnpm`
-- Runtime support: Node `>=26.11.1 <27.0.0`; `.nvmrc` and CI pin the tested Node 26.12.0 baseline. Cloudflare Workers use the platform runtime.
+- Runtime support: Node `>=26.13.1 <27.0.0`; `.nvmrc` and CI pin the tested Node 26.13.1 LTS security baseline. Cloudflare Workers use the platform runtime.
 - Node version hint: [`.nvmrc`](.nvmrc)
 - Version source of truth: [`package.json`](package.json)
 
@@ -290,7 +290,7 @@ If you cannot run a check locally, say so explicitly in your handoff and explain
 ### pnpm
 
 - `package.json` pins the project package manager version.
-- [`.nvmrc`](.nvmrc) pins the tested Node 26.12.0 baseline for local version managers and CI (`node-version-file`). `package.json` permits `>=26.11.1 <27.0.0`; the supported minimum remains compatible and does not need to rise for every baseline refresh. Keep the baseline, supported range and contributor guidance consistent when changing the runtime.
+- [`.nvmrc`](.nvmrc) pins the tested Node 26.13.1 LTS baseline for local version managers and CI (`node-version-file`). `package.json` permits `>=26.13.1 <27.0.0`; the minimum includes the November 11, 2026 Node security fixes. Routine baseline refreshes need not raise the minimum, but security fixes can require it. Keep the baseline, supported range and contributor guidance consistent when changing the runtime.
 - Node 26 does not bundle Corepack. [`CONTRIBUTING.md`](CONTRIBUTING.md#local-setup) documents manual Corepack setup and stale Windows pnpm launcher recovery. Preserve the repository's `packageManager` pin and integrity checks; do not bypass engine enforcement to compensate for a broken launcher.
 - [`pnpm-workspace.yaml`](pnpm-workspace.yaml) owns pnpm 12 dependency build-script approvals and install policy through `allowBuilds`, strict engine/build enforcement, a strict 24-hour release-age gate, trust-downgrade rejection, and transitive exotic-source blocking.
 - Keep trust-policy exceptions exact, evidence-backed, and documented next to the package selector. Do not replace a narrow historical-metadata exception with a broad age-based trust bypass.
@@ -321,7 +321,7 @@ If you cannot run a check locally, say so explicitly in your handoff and explain
 
 ### Drizzle And PostgreSQL
 
-- [`docker-compose.yml`](docker-compose.yml) defines the local PostgreSQL 17 service. It publishes container port `5432` on host port `55432` to avoid common Windows reservations around `5432`.
+- [`docker-compose.yml`](docker-compose.yml) defines the local PostgreSQL 17.12 service, pinned to the same reviewed image as CI. It publishes container port `5432` on host port `55432` to avoid common Windows reservations around `5432`. Before replacing a persistent database container for an engine patch, verify a recoverable local backup and review intervening release notes; never delete the data volume to apply an update.
 - `pnpm dev` is the normal daily startup command. [`scripts/prepare-dev.mjs`](scripts/prepare-dev.mjs) starts and waits for the local PostgreSQL service, applies migrations, runs the idempotent seed, and refuses to prepare a hosted `DATABASE_URL` before Vite starts. `pnpm dev:app` deliberately bypasses that preparation.
 - [`drizzle.config.ts`](drizzle.config.ts) reads database credentials from `.env`.
 - Keep runtime database clients explicit. [`src/db/client.worker.ts`](src/db/client.worker.ts) is the Cloudflare Worker runtime client and uses Drizzle's Postgres.js driver through the generated `HYPERDRIVE` binding; [`src/db/client.node.ts`](src/db/client.node.ts) is Node-only for scripts, seed work, migration support, and tests that need postgres-js; [`src/db/client.ts`](src/db/client.ts) must remain a runtime-safe shared type/env helper and must not import concrete database drivers.
@@ -346,7 +346,8 @@ If you cannot run a check locally, say so explicitly in your handoff and explain
 - [`.github/workflows/claude.yml`](.github/workflows/claude.yml) provides on-demand, review-only Claude assistance for maintainers in pull request conversations. Invoke it by mentioning `@claude` in a pull request comment or review.
 - Claude review is intentionally not automatic because CodeRabbit already supplies automatic pull request review. Keep their responsibilities distinct before expanding either workflow.
 - Keep review-assistant actions pinned to reviewed full commit SHAs. Do not grant repository write access unless a separately reviewed workflow explicitly needs Claude to modify code.
-- CI PostgreSQL services use the same reviewed immutable image digest. Review upstream version/source metadata when updating the pin. CI checkouts disable credential persistence because later steps do not need authenticated Git access.
+- Claude review starts from the default branch; the action validates the caller before fetching PR code. Preserve its human/write-access checks, empty bot/non-write-user exceptions, and `restrict_untrusted_prs`. Use explicit `default` permission mode, `Read,Glob,Grep` built-in tools, denied shell/edit/file-write tools, and `--strict-mcp-config` to retain only the action-supplied comment/CI MCP servers. An allowed-tools list alone does not constrain auto mode. The reviewer reports findings and existing CI results; it does not run repository checks or implement fixes.
+- Local Compose and both CI PostgreSQL services use the same reviewed immutable image digest. Review upstream version/source metadata when updating all three pins together. CI checkouts disable credential persistence because later steps do not need authenticated Git access.
 - Workflows pin `ubuntu-26.04` so runner-image transitions are reviewed separately from dependency updates. Validate database and all Playwright browsers before changing that baseline. Action-internal Node runtimes are independent of the project's Node 26 requirement.
 - CI uses explicit cache restore/save actions with writes restricted to trusted main-branch pushes. Keep automatic caching disabled in both pnpm/action-setup and setup-node. The theming sync workflow intentionally retains checkout credentials for its authenticated push; validation and review jobs do not.
 - Cache keys and restore prefixes include the Ubuntu baseline and runner architecture. Update both when changing runners so native dependencies and browser binaries are not restored across incompatible platforms.

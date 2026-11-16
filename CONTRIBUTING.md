@@ -4,14 +4,14 @@
 
 This repo expects:
 
-- Node `>=26.11.1 <27.0.0`
+- Node `>=26.13.1 <27.0.0`
 - The pnpm version pinned in [`package.json`](./package.json) `packageManager`
 - Docker Desktop for local PostgreSQL development
 
 Docker Desktop must be running before `pnpm dev`. The command starts and waits for local PostgreSQL, applies migrations, runs the idempotent seed, and then starts Vite. It refuses to prepare a hosted `DATABASE_URL`. Use `pnpm dev:app` only when the local database is already prepared and you intentionally want to start Vite directly.
 
 The Node requirement and pnpm pin are declared in [`package.json`](./package.json).
-[`.nvmrc`](./.nvmrc) pins Node 26.12.0, the tested baseline used by local version managers and CI. `package.json` retains support for `>=26.11.1 <27.0.0`; existing 26.11.1 installations remain supported. Node 26 is a Current release as of October 16, 2026; it is the chosen development/CI runtime, while deployed Workers use Cloudflare's runtime.
+[`.nvmrc`](./.nvmrc) pins Node 26.13.1 LTS, the tested baseline used by local version managers and CI. `package.json` requires `>=26.13.1 <27.0.0` to include the [November 11, 2026 Node security fixes](https://nodejs.org/en/blog/release/v26.13.1/); upgrade older Node 26 installations before running repository tooling. Node is the development/CI runtime, while deployed Workers use Cloudflare's runtime.
 
 Node 26 no longer bundles Corepack. Install the reviewed Corepack release and enable pnpm before installing project dependencies:
 
@@ -123,6 +123,7 @@ Before sharing logs, PR descriptions, screenshots, or generated docs, redact `DA
 - Prefer small PRs with a single focused change.
 - Release-relevant PRs must update both [`package.json`](./package.json) version and [`CHANGELOG.md`](./CHANGELOG.md). CI enforces this with `pnpm version:check`.
 - Maintainers can request an on-demand, review-only Claude pass by mentioning `@claude` in a pull request comment or review. Claude is not an automatic or required approver.
+- Claude can inspect source and existing CI results and post findings, but cannot run repository commands or edit code through its review tools. Run the local checklist and CI separately. For forked PRs, use a PR conversation comment; review-event workflows may lack the required secret or write token. See the [review security controls](./docs/security-hardening.md#review-assistant).
 - If you touch routing, add or update at least one relevant test.
 - If you change shared tooling or config, update [`README.md`](./README.md) and this file when the workflow changes.
 - If you change dependencies, package-manager config, or CI install behavior, also review [`docs/security-hardening.md`](./docs/security-hardening.md).
