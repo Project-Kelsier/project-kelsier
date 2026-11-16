@@ -19,7 +19,7 @@ jobs:
 
     services:
       postgres:
-        image: postgres:17@sha256:67f41722b7a8cbdb868a44a4995c846eddfdc2973bccb291ce937dce88ad5675 # 17.11
+        image: postgres:17.12@sha256:0d938e975177bef9f1f61f3f9dbcf2e0aa0a139568f66d3415ed8892eb97f6ac
         env:
           POSTGRES_DB: kelsier_dev
           POSTGRES_USER: kelsier
@@ -78,7 +78,7 @@ jobs:
 
     services:
       postgres:
-        image: postgres:17@sha256:67f41722b7a8cbdb868a44a4995c846eddfdc2973bccb291ce937dce88ad5675 # 17.11
+        image: postgres:17.12@sha256:0d938e975177bef9f1f61f3f9dbcf2e0aa0a139568f66d3415ed8892eb97f6ac
         env:
           POSTGRES_DB: kelsier_dev
           POSTGRES_USER: kelsier

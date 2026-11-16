@@ -85,7 +85,11 @@ pnpm db:seed
 
 Review generated SQL before applying it to any hosted database. Initial/fresh database setup must be reproducible from committed migrations, including required extensions such as `pgcrypto`.
 
-CI runs migrations and the seed against a fresh PostgreSQL 17 service in a dedicated database job. Running the seed twice checks that repeated execution succeeds; the PostgreSQL integrity suite separately asserts questionnaire row identity preservation, retired-status preservation, and rejection of content drift. Repeat execution alone does not prove every fixture is unchanged. The validation job owns a separate fresh PostgreSQL service for browser tests and overrides the Hyperdrive local connection string to CI's PostgreSQL port.
+Local Compose and both CI database services pin PostgreSQL 17.12 to the same reviewed immutable image digest. Update all three pins together after reviewing the official image source and PostgreSQL release notes; a mutable tag alone does not update an existing container. Before replacing a persistent local container, take a database backup and verify that it restores into an isolated database, then preserve the existing data volume when applying the patch. Never use `docker compose down -v` as an upgrade step. Backups contain data and belong in ignored local storage, not Git or shared logs.
+
+For the 17.12 patch, review the [17.12 migration notes](https://www.postgresql.org/docs/release/17.12/) and intervening notes for the actual running version. Some index types require corrective reindexing, and earlier incremental backups may be unreliable; apply only remedies relevant to the inspected database. Updating Docker does not upgrade hosted Neon or establish hosted readiness.
+
+CI runs migrations and the seed against a fresh PostgreSQL service in a dedicated database job. Running the seed twice checks that repeated execution succeeds; the PostgreSQL integrity suite separately asserts questionnaire row identity preservation, retired-status preservation, and rejection of content drift. Repeat execution alone does not prove every fixture is unchanged. The validation job owns a separate fresh PostgreSQL service for browser tests and overrides the Hyperdrive local connection string to CI's PostgreSQL port.
 
 Both CI jobs use the same reviewed immutable image digest. The database job also runs the PostgreSQL integrity suite with `RUN_DB_TESTS=true`, covering ownership, concurrent lifecycle operations, seed immutability, and bounded cleanup.
 

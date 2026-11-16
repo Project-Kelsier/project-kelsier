@@ -13,6 +13,7 @@ Security baseline maintenance. Version assignment does not authorize deployment 
 ### Security
 
 - Raised the supported Node minimum and the shared local/CI baseline to Node 26.13.1 LTS to include the November 11, 2026 runtime security fixes. Deployed Workers continue to use Cloudflare's runtime.
+- Updated PostgreSQL to 17.12 for security and data-integrity fixes, pinning local Compose and both CI database services to the same reviewed immutable image. Hosted database upgrades remain a separate operational change.
 
 ## [0.4.6] - Public release pending
 
