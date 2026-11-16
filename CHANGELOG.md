@@ -14,6 +14,8 @@ Security baseline maintenance. Version assignment does not authorize deployment 
 
 - Raised the supported Node minimum and the shared local/CI baseline to Node 26.13.1 LTS to include the November 11, 2026 runtime security fixes. Deployed Workers continue to use Cloudflare's runtime.
 - Updated PostgreSQL to 17.12 for security and data-integrity fixes, pinning local Compose and both CI database services to the same reviewed immutable image. Hosted database upgrades remain a separate operational change.
+- Patched launch-editor, Zod, Seroval and Miniflare's scoped Undici resolution without upgrading direct dependencies, removing fourteen identified findings from the November 16 local audit. This does not update existing hosted deployments.
+- Applied the separately authorized Vitest and coverage-v8 4.1.12 security patch for manual mock registration and Windows redirect traversal. The final November 16 full local audit reports zero known findings at every severity. React and the Vitest 5 migration remain deferred; the existing test configuration and Node Web Storage workaround are preserved.
 
 ## [0.4.6] - Public release pending
 
