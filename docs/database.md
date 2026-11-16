@@ -16,10 +16,10 @@ Separate the databases when independent migrations, test-data resets, access con
 
 ## Runtime Boundaries
 
-| Runtime | Driver | Purpose |
-| --- | --- | --- |
-| Cloudflare Worker | Postgres.js through Cloudflare Hyperdrive | App runtime |
-| Node.js | postgres-js | Local scripts, seed, migration tooling |
+| Runtime           | Driver                                    | Purpose                                |
+| ----------------- | ----------------------------------------- | -------------------------------------- |
+| Cloudflare Worker | Postgres.js through Cloudflare Hyperdrive | App runtime                            |
+| Node.js           | postgres-js                               | Local scripts, seed, migration tooling |
 
 ## Current Implementation
 

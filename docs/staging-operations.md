@@ -6,10 +6,10 @@ The maintainer explicitly placed public launch on hold on 2026-09-12. These oper
 
 The maintainer confirmed these roles and approved temporarily sharing the existing Neon database on 2026-10-16. See [the database decision and separation triggers](database.md#temporary-shared-hosted-database). Worker names are `project-kelsier` in both accounts; always select the account explicitly.
 
-| Target | URL | Cloudflare account ID | Hyperdrive ID | Scheduled cleanup |
-| --- | --- | --- | --- | --- |
-| Staging | <https://project-kelsier.mindphreak.workers.dev/> | `91a80a519a166e4f74105b8868ab2c4f` | `280a2e296ce34b2796b63a6ed11f568a` | `17 3 * * *` for the shared database |
-| Dummy production | <https://project-kelsier.curiousphreak.workers.dev/> | `6015d7a8e1e0a004f327dc612cdd50b1` | `fb35dd8042e34e078d63b3f15f315c07` | None; staging owns cleanup |
+| Target           | URL                                                  | Cloudflare account ID              | Hyperdrive ID                      | Scheduled cleanup                    |
+| ---------------- | ---------------------------------------------------- | ---------------------------------- | ---------------------------------- | ------------------------------------ |
+| Staging          | <https://project-kelsier.mindphreak.workers.dev/>    | `91a80a519a166e4f74105b8868ab2c4f` | `280a2e296ce34b2796b63a6ed11f568a` | `17 3 * * *` for the shared database |
+| Dummy production | <https://project-kelsier.curiousphreak.workers.dev/> | `6015d7a8e1e0a004f327dc612cdd50b1` | `fb35dd8042e34e078d63b3f15f315c07` | None; staging owns cleanup           |
 
 Both Hyperdrive configurations disable query caching. Dummy production uses an origin connection limit of five to limit its additional pool demand. No credentials belong in this table or a committed deployment config.
 
