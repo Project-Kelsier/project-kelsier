@@ -87,6 +87,30 @@ Review generated SQL before applying it to any hosted database. Initial/fresh da
 
 Local Compose and both CI database services pin PostgreSQL 17.12 to the same reviewed immutable image digest. Update all three pins together after reviewing the official image source and PostgreSQL release notes; a mutable tag alone does not update an existing container. Before replacing a persistent local container, take a database backup and verify that it restores into an isolated database, then preserve the existing data volume when applying the patch. Never use `docker compose down -v` as an upgrade step. Backups contain data and belong in ignored local storage, not Git or shared logs.
 
+The pinned image uses Debian Trixie. Reusing a volume created by an older Bookworm-based `postgres:17` image can change glibc collation behavior independently of the PostgreSQL patch. After starting the replacement container, keep the app stopped until collation checks and any required repairs finish. Check database-default collation versions across connectable local databases:
+
+```sql
+SELECT datname, datcollversion,
+       pg_database_collation_actual_version(oid) AS actual_version
+FROM pg_database
+WHERE datallowconn
+  AND datcollversion IS DISTINCT FROM pg_database_collation_actual_version(oid);
+```
+
+Also connect to each local database, including templates used to create databases, and check its named collations:
+
+```sql
+SELECT collname, collversion,
+       pg_collation_actual_version(oid) AS actual_version
+FROM pg_collation
+WHERE collprovider <> 'd'
+  AND collversion IS DISTINCT FROM pg_collation_actual_version(oid);
+```
+
+The named-collation query excludes the special `default` entry (`collprovider = 'd'`), whose version is checked through `pg_database` above.
+
+For a mismatch, identify all dependent objects, including indexes using the database default. Check affected unique indexes for values that become duplicates under the new collation; use a sequential scan rather than trusting an affected index. Resolve conflicts deliberately before rebuilding affected indexes with `REINDEX` and rebuilding any other affected objects. A unique-index rebuild can fail if new comparison rules make existing values equal. Only after successful rebuilding, run `ALTER COLLATION <schema>.<collation> REFRESH VERSION` for each affected named collation, or `ALTER DATABASE <database> REFRESH COLLATION VERSION` for an affected database default. Refreshing metadata alone does not repair indexes or verify the rebuild. Recheck versions before resuming the app. See PostgreSQL's [collation maintenance guidance](https://www.postgresql.org/docs/17/sql-altercollation.html) and [collation inspection functions](https://www.postgresql.org/docs/17/functions-admin.html#FUNCTIONS-ADMIN-COLLATION).
+
 For the 17.12 patch, review the [17.12 migration notes](https://www.postgresql.org/docs/release/17.12/) and intervening notes for the actual running version. Some index types require corrective reindexing, and earlier incremental backups may be unreliable; apply only remedies relevant to the inspected database. Updating Docker does not upgrade hosted Neon or establish hosted readiness.
 
 CI runs migrations and the seed against a fresh PostgreSQL service in a dedicated database job. Running the seed twice checks that repeated execution succeeds; the PostgreSQL integrity suite separately asserts questionnaire row identity preservation, retired-status preservation, and rejection of content drift. Repeat execution alone does not prove every fixture is unchanged. The validation job owns a separate fresh PostgreSQL service for browser tests and overrides the Hyperdrive local connection string to CI's PostgreSQL port.
