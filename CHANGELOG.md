@@ -6,6 +6,15 @@ This project follows semantic versioning while it moves toward MVP. Versions bel
 
 ## [Unreleased]
 
+## [0.4.10] - Public release pending
+
+Postgres.js driver maintenance. Version assignment does not authorize public release.
+
+### Changed
+
+- Updated Postgres.js to 4.1.1 with Drizzle unchanged, retaining separate Node and Worker database clients and their connection settings.
+- Verified the driver on mindphreak staging through Hyperdrive using disposable assessment completion/resume/deletion checks; dummy production and the database schema were unchanged.
+
 ## [0.4.8] - Public release pending
 
 Routine stack maintenance. Version assignment does not authorize deployment or public release.
@@ -17,7 +26,6 @@ Routine stack maintenance. Version assignment does not authorize deployment or p
 - Updated Vite to 8.3.8 and its React build plugin to 6.3.0, retaining the existing plugin order, separate Vitest configuration and disabled React Compiler.
 - Updated Playwright to 1.65.1 and its matching Chromium, Firefox and WebKit revisions, preserving real browser interaction and production RPC transport coverage.
 - Updated jsdom to 31.0.1 while retaining Vitest 4.1.12 and its Node Web Storage isolation workaround.
-- Updated Postgres.js to 4.1.1 with Drizzle unchanged, retaining separate Node and Worker database clients and their connection settings.
 
 ## [0.4.7] - Public release pending
 
