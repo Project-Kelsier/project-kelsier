@@ -603,7 +603,31 @@ export function KelsierPage({
 				);
 			}
 
-			if (prefersReducedMotion) {
+			if (
+				prefersReducedMotion ||
+				window.matchMedia?.("(prefers-reduced-motion: reduce)").matches
+			) {
+				// Remove only properties owned by this animator, restoring base CSS.
+				const targets = [
+					starsRef.current,
+					heroContentRef.current,
+					heroRingRef.current,
+					portalSvgRef.current,
+					portalContentRef.current,
+					ctaEyebrowRef.current,
+					ctaHeadingRef.current,
+					ctaSubRef.current,
+					ctaCardRef.current,
+					ctaActionRef.current,
+					...featureAnimationRefs.current.flatMap(({ text, visual }) => [
+						text,
+						visual,
+					]),
+				];
+				for (const target of targets) {
+					target?.style.removeProperty("transform");
+					target?.style.removeProperty("opacity");
+				}
 				return;
 			}
 

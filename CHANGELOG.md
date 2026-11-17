@@ -6,6 +6,14 @@ This project follows semantic versioning while it moves toward MVP. Versions bel
 
 ## [Unreleased]
 
+## [0.4.12] - Public release pending
+
+### Fixed
+
+- Restored scroll animation scheduling after pending-frame cancellation and callback exceptions.
+- Cleared animation-owned inline styles when reduced motion is enabled, preserving static hero-ring centering and recalculating animation when motion is restored.
+- Added deterministic lifecycle and cross-browser reduced-motion regression coverage.
+
 ## [0.4.11] - Public release pending
 
 React runtime maintenance. Version assignment does not authorize deployment or public release.
