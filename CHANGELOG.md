@@ -19,6 +19,8 @@ React runtime maintenance. Version assignment does not authorize deployment or p
 - Restored scroll animation scheduling after pending-frame cancellation and callback exceptions.
 - Cleared animation-owned inline styles when reduced motion is enabled, preserving static hero-ring centering and recalculating animation when motion is restored.
 - Added deterministic lifecycle and cross-browser reduced-motion regression coverage.
+- Reset assessment client state when questionnaire identity changes while preserving same-questionnaire drafts.
+- Serialized conflicting assessment mutations with typed operation transitions and lifetime-aware response handling, retaining recoverable state when a server outcome is uncertain.
 
 ## [0.4.10] - Public release pending
 
