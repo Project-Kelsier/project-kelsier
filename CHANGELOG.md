@@ -6,6 +6,14 @@ This project follows semantic versioning while it moves toward MVP. Versions bel
 
 ## [Unreleased]
 
+## [0.4.11] - Public release pending
+
+React runtime maintenance. Version assignment does not authorize deployment or public release.
+
+### Changed
+
+- Updated React and React DOM together to 19.3.1, retaining React types, TanStack, Vite, jsdom and Vitest at their accepted versions.
+
 ## [0.4.10] - Public release pending
 
 Postgres.js driver maintenance. Version assignment does not authorize public release.
