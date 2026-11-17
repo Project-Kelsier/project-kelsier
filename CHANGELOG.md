@@ -12,7 +12,8 @@ React runtime maintenance. Version assignment does not authorize deployment or p
 
 ### Changed
 
-- Updated React and React DOM together to 19.3.1, retaining React types, TanStack, Vite, jsdom and Vitest at their accepted versions.
+- Updated React and React DOM together to 19.3.1, retaining React types, TanStack, Vite and jsdom at their accepted versions.
+- Migrated Vitest and coverage-v8 together to 5.1.0, preserving the separate test configuration and removing the Node Web Storage workaround after verifying browser storage ownership and isolation.
 
 ### Fixed
 

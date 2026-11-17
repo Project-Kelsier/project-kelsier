@@ -311,7 +311,7 @@ If you cannot run a check locally, say so explicitly in your handoff and explain
 ### Vite And Vitest
 
 - [`vitest.config.ts`](vitest.config.ts) intentionally does not reuse the full Vite app plugin stack.
-- Vitest 4 workers disable Node's experimental Web Storage so jsdom owns `localStorage` and `sessionStorage`. Reassess this workaround during the Vitest 5 upgrade; do not replace browser storage with a shared Node storage file.
+- Vitest 5 uses jsdom-owned `localStorage` and `sessionStorage` on Node 26 without a Web Storage flag. Preserve the browser storage ownership and cross-file isolation regression tests; never substitute a shared Node storage file.
 - [`vite.config.ts`](vite.config.ts) is configured for TanStack Start on Cloudflare Workers.
 - Local Vite serving defaults Wrangler logging to `warn` to suppress duplicate environment-source notices while preserving warnings and errors. Respect an explicitly supplied `WRANGLER_LOG` when deeper diagnostics are needed.
 - Do not pull the full TanStack Start or Cloudflare Workers runtime plugin stack into Vitest config unless there is a proven test need.
