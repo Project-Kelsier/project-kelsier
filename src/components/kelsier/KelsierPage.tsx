@@ -24,6 +24,7 @@ import {
 } from "#/lib/assessmentQuestionnaire";
 import { KelsierFooter } from "./KelsierFooter";
 import { KelsierHeader } from "./KelsierHeader";
+import { useAssessmentOperation } from "./useAssessmentOperation";
 import {
 	clamp,
 	ease,
@@ -277,12 +278,14 @@ const QuestionCard = forwardRef<HTMLDivElement, HTMLAttributes<HTMLDivElement>>(
 function DeleteAttemptControl({
 	isConfirmationVisible,
 	isDeleting,
+	disabled = false,
 	onCancel,
 	onConfirm,
 	onRequest,
 }: {
 	isConfirmationVisible: boolean;
 	isDeleting: boolean;
+	disabled?: boolean;
 	onCancel: () => void;
 	onConfirm: () => void;
 	onRequest: () => void;
@@ -309,11 +312,14 @@ function DeleteAttemptControl({
 							ref={keepAttemptRef}
 							variant="secondary"
 							onClick={onCancel}
-							disabled={isDeleting}
+							disabled={disabled || isDeleting}
 						>
 							Keep attempt
 						</KelsierButton>
-						<KelsierButton onClick={onConfirm} disabled={isDeleting}>
+						<KelsierButton
+							onClick={onConfirm}
+							disabled={disabled || isDeleting}
+						>
 							{isDeleting ? "Deleting…" : "Confirm deletion"}
 						</KelsierButton>
 					</div>
@@ -321,6 +327,7 @@ function DeleteAttemptControl({
 			) : (
 				<KelsierButton
 					ref={deleteRequestRef}
+					disabled={disabled}
 					variant="secondary"
 					onClick={onRequest}
 				>
@@ -391,9 +398,7 @@ function KelsierAssessmentPage({
 	const [isAssessmentStarted, setIsAssessmentStarted] = useState(
 		Boolean(initialGuestAssessmentResult),
 	);
-	const [isAssessmentComplete, setIsAssessmentComplete] = useState(
-		Boolean(initialGuestAssessmentResult),
-	);
+
 	const [currentQuestionIndex, setCurrentQuestionIndex] = useState(0);
 	const [answers, setAnswers] = useState<Record<string, string>>(
 		initialGuestAssessmentEntry?.answers ?? {},
@@ -403,16 +408,26 @@ function KelsierAssessmentPage({
 		useState<GuestAssessmentEntry | null>(initialGuestAssessmentEntry);
 	const [assessmentResult, setAssessmentResult] =
 		useState<GuestAssessmentResult | null>(initialGuestAssessmentResult);
-	const [isStarting, setIsStarting] = useState(false);
-	const [isResuming, setIsResuming] = useState(false);
-	const [isStartingFresh, setIsStartingFresh] = useState(false);
-	const [isSaving, setIsSaving] = useState(false);
+	const { operation, begin, isCurrent, settle } = useAssessmentOperation(
+		questionnaire.id,
+	);
+	const isPending = operation.status === "pending";
+	const isUncertain = operation.status === "uncertain";
+	const kind =
+		operation.status === "idle" ? null : operation.ticket.intent.kind;
+	const isStarting = isPending && kind === "starting";
+	const isResuming = isPending && kind === "resuming";
+	const isStartingFresh = isPending && kind === "replacing";
+	const isSaving = isPending && (kind === "saving" || kind === "completing");
+	const isDeleting = isPending && kind === "deleting";
+	const isAssessmentComplete = assessmentResult !== null;
+
 	const [hasSaveError, setHasSaveError] = useState(false);
 	const saveErrorRef = useRef<HTMLParagraphElement>(null);
 	useEffect(() => {
 		if (hasSaveError && !isSaving) saveErrorRef.current?.focus();
 	}, [hasSaveError, isSaving]);
-	const [isDeleting, setIsDeleting] = useState(false);
+
 	const [isDeleteConfirmationVisible, setIsDeleteConfirmationVisible] =
 		useState(false);
 	const [persistenceMessage, setPersistenceMessage] = useState("");
@@ -462,34 +477,41 @@ function KelsierAssessmentPage({
 			return;
 		}
 
-		setIsStarting(true);
+		const ticket = begin({ kind: "starting" });
+		if (!ticket) return;
 		setPersistenceMessage("Creating your private guest attempt…");
 
 		try {
 			const createdAttempt = await persistenceActions.startAttempt();
+			if (!isCurrent(ticket)) return;
 			setAttempt(createdAttempt);
 			setGuestAssessmentEntry(null);
 			setAssessmentResult(null);
 			setAnswers({});
 			setCurrentQuestionIndex(0);
 			setIsAssessmentStarted(true);
-			setIsAssessmentComplete(false);
 			setPersistenceMessage("Your private attempt is ready.");
 		} catch {
+			if (!isCurrent(ticket)) return;
+			settle(ticket, true);
 			setPersistenceMessage(
-				"We couldn’t start a saved attempt. Please try again shortly.",
+				"We couldn’t confirm creation. Reload to check your saved assessment.",
 			);
 		} finally {
-			setIsStarting(false);
+			settle(ticket);
 		}
-	}, [isStarting, persistenceActions]);
+	}, [begin, isCurrent, settle, isStarting, persistenceActions]);
 
 	const resumeAssessment = useCallback(async () => {
 		if (!guestAssessmentEntry || isResuming) {
 			return;
 		}
 
-		setIsResuming(true);
+		const ticket = begin({
+			kind: "resuming",
+			attemptId: guestAssessmentEntry.attemptId,
+		});
+		if (!ticket) return;
 		setPersistenceMessage("Restoring your saved snapshot…");
 		resumeContinuationTokenRef.current ??=
 			generateAssessmentContinuationToken();
@@ -499,6 +521,7 @@ function KelsierAssessmentPage({
 				guestAssessmentEntry.attemptId,
 				resumeContinuationTokenRef.current,
 			);
+			if (!isCurrent(ticket)) return;
 			setAttempt(progress);
 			setAnswers(progress.answers);
 			setCurrentQuestionIndex(
@@ -507,25 +530,38 @@ function KelsierAssessmentPage({
 			setGuestAssessmentEntry(null);
 			setAssessmentResult(null);
 			setIsAssessmentStarted(true);
-			setIsAssessmentComplete(false);
 			setPersistenceMessage(
 				"Your snapshot has been resumed. This is its single resume.",
 			);
 		} catch {
+			if (!isCurrent(ticket)) return;
+			settle(ticket, true);
 			setPersistenceMessage(
 				"We couldn’t resume this snapshot. Start fresh if it has already used its single resume.",
 			);
 		} finally {
-			setIsResuming(false);
+			settle(ticket);
 		}
-	}, [guestAssessmentEntry, isResuming, persistenceActions, questions.length]);
+	}, [
+		begin,
+		isCurrent,
+		settle,
+		guestAssessmentEntry,
+		isResuming,
+		persistenceActions,
+		questions.length,
+	]);
 
 	const startFreshAssessment = useCallback(async () => {
 		if (!guestAssessmentEntry || isStartingFresh) {
 			return;
 		}
 
-		setIsStartingFresh(true);
+		const ticket = begin({
+			kind: "replacing",
+			attemptId: guestAssessmentEntry.attemptId,
+		});
+		if (!ticket) return;
 		setPersistenceMessage("Replacing the unfinished snapshot…");
 		freshContinuationTokenRef.current ??= generateAssessmentContinuationToken();
 
@@ -534,22 +570,31 @@ function KelsierAssessmentPage({
 				guestAssessmentEntry.attemptId,
 				freshContinuationTokenRef.current,
 			);
+			if (!isCurrent(ticket)) return;
 			setAttempt(createdAttempt);
 			setGuestAssessmentEntry(null);
 			setAssessmentResult(null);
 			setAnswers({});
 			setCurrentQuestionIndex(0);
 			setIsAssessmentStarted(true);
-			setIsAssessmentComplete(false);
 			setPersistenceMessage("A fresh private snapshot is ready.");
 		} catch {
+			if (!isCurrent(ticket)) return;
+			settle(ticket, true);
 			setPersistenceMessage(
 				"We couldn’t start a fresh snapshot. Please try again shortly.",
 			);
 		} finally {
-			setIsStartingFresh(false);
+			settle(ticket);
 		}
-	}, [guestAssessmentEntry, isStartingFresh, persistenceActions]);
+	}, [
+		begin,
+		isCurrent,
+		settle,
+		guestAssessmentEntry,
+		isStartingFresh,
+		persistenceActions,
+	]);
 
 	const handleDeleteAttempt = useCallback(async () => {
 		const attemptId =
@@ -561,11 +606,13 @@ function KelsierAssessmentPage({
 			return;
 		}
 
-		setIsDeleting(true);
+		const ticket = begin({ kind: "deleting", attemptId });
+		if (!ticket) return;
 		setPersistenceMessage("Deleting your saved guest attempt…");
 
 		try {
 			const result = await persistenceActions.deleteAttempt(attemptId);
+			if (!isCurrent(ticket)) return;
 
 			if (!result.deleted) {
 				setPersistenceMessage(
@@ -580,18 +627,22 @@ function KelsierAssessmentPage({
 			setAnswers({});
 			setCurrentQuestionIndex(0);
 			setIsAssessmentStarted(false);
-			setIsAssessmentComplete(false);
 			setIsDeleteConfirmationVisible(false);
 			setPersistenceMessage("Your saved guest attempt has been deleted.");
 			scrollToAssessment();
 		} catch {
+			if (!isCurrent(ticket)) return;
+			settle(ticket, true);
 			setPersistenceMessage(
-				"We couldn’t delete the saved attempt. Please try again.",
+				"We couldn’t confirm deletion. Reload to check the saved assessment.",
 			);
 		} finally {
-			setIsDeleting(false);
+			settle(ticket);
 		}
 	}, [
+		begin,
+		isCurrent,
+		settle,
 		attempt,
 		assessmentResult,
 		guestAssessmentEntry,
@@ -797,7 +848,13 @@ function KelsierAssessmentPage({
 			return;
 		}
 
-		setIsSaving(true);
+		const ticket = begin({
+			kind:
+				currentQuestionIndex === questions.length - 1 ? "completing" : "saving",
+			attemptId: attempt.attemptId,
+			questionId: currentQuestion.id,
+		});
+		if (!ticket) return;
 		setHasSaveError(false);
 		setPersistenceMessage("Saving your answer…");
 
@@ -811,25 +868,31 @@ function KelsierAssessmentPage({
 
 			if (currentQuestionIndex === questions.length - 1) {
 				const result = await persistenceActions.completeAttempt(answerInput);
+				if (!isCurrent(ticket)) return;
 				setAssessmentResult(result);
-				setIsAssessmentComplete(true);
 				setPersistenceMessage("Your demonstration result is ready.");
 				return;
 			}
 
 			await persistenceActions.saveAnswer(answerInput);
+			if (!isCurrent(ticket)) return;
 
-			setCurrentQuestionIndex((index) => index + 1);
+			setCurrentQuestionIndex(currentQuestionIndex + 1);
 			setPersistenceMessage("Answer saved.");
 		} catch {
+			if (!isCurrent(ticket)) return;
+			settle(ticket, true);
 			setPersistenceMessage(
-				"Your answer wasn’t saved. Your selection is still here. Please try again.",
+				"We couldn’t confirm your answer was saved. Your selection is still here. Please try again.",
 			);
 			setHasSaveError(true);
 		} finally {
-			setIsSaving(false);
+			settle(ticket);
 		}
 	}, [
+		begin,
+		isCurrent,
+		settle,
 		attempt,
 		currentQuestion.required,
 		currentQuestion.id,
@@ -847,6 +910,18 @@ function KelsierAssessmentPage({
 	return (
 		<div className="kelsier-page" data-hydrated={isHydrated || undefined}>
 			<KelsierHeader navRef={navRef} />
+			{isUncertain && (
+				<div role="status" className="relative z-[101] p-4">
+					<p>
+						The server outcome is uncertain. Reload to check your saved
+						assessment, or retry the same available action. Reloading may
+						require an explicit resume.
+					</p>
+					<button type="button" onClick={() => window.location.reload()}>
+						Reload saved assessment
+					</button>
+				</div>
+			)}
 
 			<main>
 				<section className="k-hero" ref={heroSectionRef} id="hero">
@@ -1081,7 +1156,9 @@ function KelsierAssessmentPage({
 									{guestAssessmentEntry.resumeAvailable ? (
 										<KelsierButton
 											onClick={resumeAssessment}
-											disabled={isResuming || isStartingFresh}
+											disabled={
+												isPending || (isUncertain && kind !== "resuming")
+											}
 										>
 											{isResuming ? "Resuming…" : "Continue this snapshot"}
 										</KelsierButton>
@@ -1093,7 +1170,9 @@ function KelsierAssessmentPage({
 												: "primary"
 										}
 										onClick={startFreshAssessment}
-										disabled={isResuming || isStartingFresh}
+										disabled={
+											isPending || (isUncertain && kind !== "replacing")
+										}
 									>
 										{isStartingFresh
 											? "Starting fresh…"
@@ -1114,6 +1193,7 @@ function KelsierAssessmentPage({
 								<DeleteAttemptControl
 									isConfirmationVisible={isDeleteConfirmationVisible}
 									isDeleting={isDeleting}
+									disabled={isPending || isUncertain}
 									onCancel={() => setIsDeleteConfirmationVisible(false)}
 									onConfirm={handleDeleteAttempt}
 									onRequest={() => setIsDeleteConfirmationVisible(true)}
@@ -1146,7 +1226,7 @@ function KelsierAssessmentPage({
 								<div className="k-cta-action" ref={ctaActionRef}>
 									<KelsierButton
 										onClick={startAssessment}
-										disabled={isStarting}
+										disabled={isPending || isUncertain}
 									>
 										{isStarting ? "Starting…" : "Start and save progress"}
 									</KelsierButton>
@@ -1226,6 +1306,7 @@ function KelsierAssessmentPage({
 								<DeleteAttemptControl
 									isConfirmationVisible={isDeleteConfirmationVisible}
 									isDeleting={isDeleting}
+									disabled={isPending || isUncertain}
 									onCancel={() => setIsDeleteConfirmationVisible(false)}
 									onConfirm={handleDeleteAttempt}
 									onRequest={() => setIsDeleteConfirmationVisible(true)}
@@ -1248,7 +1329,7 @@ function KelsierAssessmentPage({
 								className="mt-[18px] flex flex-col gap-2.5"
 								aria-label={currentQuestion.prompt}
 								aria-describedby="assessment-answer-help"
-								disabled={isSaving}
+								disabled={isPending || isUncertain}
 							>
 								{currentQuestion.options.map((option) => {
 									const isSelected = selectedOptionId === option.id;
@@ -1282,14 +1363,20 @@ function KelsierAssessmentPage({
 								<KelsierButton
 									variant="secondary"
 									onClick={handleBack}
-									disabled={currentQuestionIndex === 0 || isSaving}
+									disabled={
+										currentQuestionIndex === 0 || isPending || isUncertain
+									}
 								>
 									Back
 								</KelsierButton>
 								<KelsierButton
 									onClick={handleNext}
 									disabled={
-										isSaving || (currentQuestion.required && !selectedOptionId)
+										isPending ||
+										(isUncertain &&
+											kind !== "saving" &&
+											kind !== "completing") ||
+										(currentQuestion.required && !selectedOptionId)
 									}
 								>
 									{isSaving
@@ -1311,6 +1398,7 @@ function KelsierAssessmentPage({
 							<DeleteAttemptControl
 								isConfirmationVisible={isDeleteConfirmationVisible}
 								isDeleting={isDeleting}
+								disabled={isPending || isUncertain}
 								onCancel={() => setIsDeleteConfirmationVisible(false)}
 								onConfirm={handleDeleteAttempt}
 								onRequest={() => setIsDeleteConfirmationVisible(true)}
