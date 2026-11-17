@@ -370,7 +370,13 @@ function getQuestionAt(
 	return question;
 }
 
-export function KelsierPage({
+export function KelsierPage(
+	props: Parameters<typeof KelsierAssessmentPage>[0],
+) {
+	return <KelsierAssessmentPage key={props.questionnaire.id} {...props} />;
+}
+
+function KelsierAssessmentPage({
 	questionnaire,
 	initialGuestAssessmentEntry = null,
 	initialGuestAssessmentResult = null,
