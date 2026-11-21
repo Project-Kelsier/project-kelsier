@@ -6,6 +6,17 @@ This project follows semantic versioning while it moves toward MVP. Versions bel
 
 ## [Unreleased]
 
+## [0.4.13] - Public release pending
+
+Assessment concurrency and recovery fixes. Version assignment does not authorize deployment or public release.
+
+### Fixed
+
+- Serialized conflicting assessment mutations through typed operation transitions and synchronous admission.
+- Guarded success, failure and finalization with operation lifetime tickets so obsolete responses cannot overwrite newer assessment presentation.
+- Derived completion from the authoritative result and retained recoverable assessment state for uncertain server outcomes.
+- Added deterministic concurrency and browser save/delete conflict regression coverage.
+
 ## [0.4.12] - Public release pending
 
 Animation, accessibility and questionnaire identity fixes. Version assignment does not authorize deployment or public release.
