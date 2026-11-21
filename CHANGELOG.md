@@ -6,22 +6,44 @@ This project follows semantic versioning while it moves toward MVP. Versions bel
 
 ## [Unreleased]
 
+## [0.4.14] - Public release pending
+
+Vitest tooling migration. Version assignment does not authorize deployment or public release.
+
+### Changed
+
+- Migrated Vitest and coverage-v8 together to exact matching 5.1.0 pins, preserving React, Vite, jsdom, Node and TanStack versions.
+- Removed the Node Web Storage workaround after verifying jsdom storage ownership and cross-file isolation; retained regression coverage.
+
+## [0.4.13] - Public release pending
+
+Assessment concurrency and recovery fixes. Version assignment does not authorize deployment or public release.
+
+### Fixed
+
+- Serialized conflicting assessment mutations through typed operation transitions and synchronous admission.
+- Guarded success, failure and finalization with operation lifetime tickets so obsolete responses cannot overwrite newer assessment presentation.
+- Derived completion from the authoritative result and retained recoverable assessment state for uncertain server outcomes.
+- Added deterministic concurrency and browser save/delete conflict regression coverage.
+
+## [0.4.12] - Public release pending
+
+Animation, accessibility and questionnaire identity fixes. Version assignment does not authorize deployment or public release.
+
+### Fixed
+
+- Restored scroll animation scheduling after pending-frame cancellation and callback exceptions.
+- Cleared animation-owned inline styles for reduced motion while preserving static hero-ring centering.
+- Reset assessment client state when questionnaire identity changes while preserving same-questionnaire drafts.
+- Added lifecycle, cross-browser reduced-motion and blocked-storage theme regression coverage.
+
 ## [0.4.11] - Public release pending
 
 React runtime maintenance. Version assignment does not authorize deployment or public release.
 
 ### Changed
 
-- Updated React and React DOM together to 19.3.1, retaining React types, TanStack, Vite and jsdom at their accepted versions.
-- Migrated Vitest and coverage-v8 together to 5.1.0, preserving the separate test configuration and removing the Node Web Storage workaround after verifying browser storage ownership and isolation.
-
-### Fixed
-
-- Restored scroll animation scheduling after pending-frame cancellation and callback exceptions.
-- Cleared animation-owned inline styles when reduced motion is enabled, preserving static hero-ring centering and recalculating animation when motion is restored.
-- Added deterministic lifecycle and cross-browser reduced-motion regression coverage.
-- Reset assessment client state when questionnaire identity changes while preserving same-questionnaire drafts.
-- Serialized conflicting assessment mutations with typed operation transitions and lifetime-aware response handling, retaining recoverable state when a server outcome is uncertain.
+- Updated React and React DOM together to 19.3.1, retaining React types, TanStack, Vite, jsdom and Vitest at their accepted versions.
 
 ## [0.4.10] - Public release pending
 
