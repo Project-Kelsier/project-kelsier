@@ -370,7 +370,13 @@ function getQuestionAt(
 	return question;
 }
 
-export function KelsierPage({
+export function KelsierPage(
+	props: Parameters<typeof KelsierAssessmentPage>[0],
+) {
+	return <KelsierAssessmentPage key={props.questionnaire.id} {...props} />;
+}
+
+function KelsierAssessmentPage({
 	questionnaire,
 	initialGuestAssessmentEntry = null,
 	initialGuestAssessmentResult = null,
@@ -603,7 +609,31 @@ export function KelsierPage({
 				);
 			}
 
-			if (prefersReducedMotion) {
+			if (
+				prefersReducedMotion ||
+				window.matchMedia?.("(prefers-reduced-motion: reduce)").matches
+			) {
+				// Remove only properties owned by this animator, restoring base CSS.
+				const targets = [
+					starsRef.current,
+					heroContentRef.current,
+					heroRingRef.current,
+					portalSvgRef.current,
+					portalContentRef.current,
+					ctaEyebrowRef.current,
+					ctaHeadingRef.current,
+					ctaSubRef.current,
+					ctaCardRef.current,
+					ctaActionRef.current,
+					...featureAnimationRefs.current.flatMap(({ text, visual }) => [
+						text,
+						visual,
+					]),
+				];
+				for (const target of targets) {
+					target?.style.removeProperty("transform");
+					target?.style.removeProperty("opacity");
+				}
 				return;
 			}
 

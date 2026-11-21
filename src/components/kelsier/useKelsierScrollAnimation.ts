@@ -60,8 +60,11 @@ export function useKelsierScrollAnimation(callback: ScrollCallback) {
 
 		isTickingRef.current = true;
 		frameRef.current = window.requestAnimationFrame(() => {
-			callback(window.scrollY);
-			isTickingRef.current = false;
+			try {
+				callback(window.scrollY);
+			} finally {
+				isTickingRef.current = false;
+			}
 		});
 	}, [callback]);
 
@@ -79,6 +82,7 @@ export function useKelsierScrollAnimation(callback: ScrollCallback) {
 			window.removeEventListener("scroll", onScroll);
 			window.removeEventListener("resize", onScroll);
 			window.cancelAnimationFrame(frameRef.current);
+			isTickingRef.current = false;
 		};
 	}, [callback, onScroll]);
 }

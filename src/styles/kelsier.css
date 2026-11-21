@@ -910,4 +910,9 @@ body.kelsier-body::after {
 		color: var(--k-text);
 		transition: none;
 	}
+
+	/* Preserve static centering when motion transforms are removed. */
+	.k-hero-ring {
+		transform: translate(-50%, -50%);
+	}
 }
