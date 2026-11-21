@@ -1,4 +1,5 @@
 import {
+	act,
 	fireEvent,
 	render,
 	screen,
@@ -690,7 +691,7 @@ describe("KelsierPage", () => {
 		fireEvent.click(screen.getByRole("button", { name: "Next question" }));
 
 		const saveError = await within(screen.getByRole("status")).findByText(
-			/Your answer wasn’t saved/,
+			/We couldn’t confirm your answer was saved/,
 		);
 		// The live announcement renders before the effect focuses its visible copy.
 		await waitFor(() =>
@@ -855,5 +856,116 @@ describe("KelsierPage", () => {
 		expect(
 			screen.getByRole("button", { name: "Start and save progress" }),
 		).toBeTruthy();
+	});
+
+	it("rejects deletion while a saved answer is pending", async () => {
+		let resolveSave!: (value: { currentQuestionIndex: number }) => void;
+		const saveAnswer = vi.fn(
+			() =>
+				new Promise<{ currentQuestionIndex: number }>((resolve) => {
+					resolveSave = resolve;
+				}),
+		);
+		const deleteAttempt = vi.fn(
+			assessmentPersistenceActionsFixture.deleteAttempt,
+		);
+		render(
+			<KelsierPageComponent
+				questionnaire={assessmentQuestionnaireFixture}
+				persistenceActions={{
+					...assessmentPersistenceActionsFixture,
+					saveAnswer,
+					deleteAttempt,
+				}}
+			/>,
+		);
+		fireEvent.click(
+			screen.getByRole("button", { name: "Start and save progress" }),
+		);
+		await screen.findByRole("radio", { name: "Restructure immediately" });
+		fireEvent.click(
+			screen.getByRole("radio", { name: "Restructure immediately" }),
+		);
+		fireEvent.click(
+			screen.getByRole("button", { name: "Delete saved attempt" }),
+		);
+		fireEvent.click(screen.getByRole("button", { name: "Next question" }));
+		fireEvent.click(screen.getByRole("button", { name: "Confirm deletion" }));
+		expect(deleteAttempt).not.toHaveBeenCalled();
+		await act(async () => resolveSave({ currentQuestionIndex: 1 }));
+		expect(
+			await screen.findByRole("heading", {
+				name: "Your preferred way to resolve conflict is…",
+			}),
+		).toBeTruthy();
+	});
+
+	it("ignores a save response after a different questionnaire is activated", async () => {
+		let resolveSave: (value: { currentQuestionIndex: number }) => void = () => {
+			throw new Error("save not started");
+		};
+		const saveAnswer = vi.fn(
+			() =>
+				new Promise<{ currentQuestionIndex: number }>((resolve) => {
+					resolveSave = resolve;
+				}),
+		);
+		const props = {
+			questionnaire: assessmentQuestionnaireFixture,
+			persistenceActions: {
+				...assessmentPersistenceActionsFixture,
+				saveAnswer,
+			},
+		};
+		const view = render(<KelsierPageComponent {...props} />);
+		fireEvent.click(
+			screen.getByRole("button", { name: "Start and save progress" }),
+		);
+		await screen.findByRole("radio", { name: "Restructure immediately" });
+		fireEvent.click(
+			screen.getByRole("radio", { name: "Restructure immediately" }),
+		);
+		fireEvent.click(screen.getByRole("button", { name: "Next question" }));
+		view.rerender(
+			<KelsierPageComponent
+				{...props}
+				questionnaire={{ ...assessmentQuestionnaireFixture, id: "q-b" }}
+			/>,
+		);
+		await act(async () => resolveSave({ currentQuestionIndex: 1 }));
+		expect(
+			screen.getByRole("button", { name: "Start and save progress" }),
+		).toBeTruthy();
+		expect(screen.queryByText("Answer saved.")).toBeNull();
+	});
+	it("retains the active assessment when deletion has an uncertain outcome", async () => {
+		render(
+			<KelsierPageComponent
+				questionnaire={assessmentQuestionnaireFixture}
+				persistenceActions={{
+					...assessmentPersistenceActionsFixture,
+					deleteAttempt: async () => {
+						throw new Error("offline");
+					},
+				}}
+			/>,
+		);
+		fireEvent.click(
+			screen.getByRole("button", { name: "Start and save progress" }),
+		);
+		await screen.findByRole("radio", { name: "Restructure immediately" });
+		fireEvent.click(
+			screen.getByRole("button", { name: "Delete saved attempt" }),
+		);
+		fireEvent.click(screen.getByRole("button", { name: "Confirm deletion" }));
+		expect(
+			await screen.findByRole("button", { name: "Reload saved assessment" }),
+		).toBeTruthy();
+		expect(
+			screen.getByRole("radio", { name: "Restructure immediately" }),
+		).toBeTruthy();
+		expect(
+			screen.getByRole("button", { name: "Confirm deletion" }),
+		).toHaveProperty("disabled", true);
 	});
 });
