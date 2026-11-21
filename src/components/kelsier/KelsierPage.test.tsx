@@ -820,4 +820,40 @@ describe("KelsierPage", () => {
 			screen.getByRole("button", { name: "Start and save progress" }),
 		).toBeTruthy();
 	});
+
+	it("resets an active view when the questionnaire identity changes", async () => {
+		const props = {
+			questionnaire: assessmentQuestionnaireFixture,
+			persistenceActions: assessmentPersistenceActionsFixture,
+		};
+		const view = render(<KelsierPageComponent {...props} />);
+		fireEvent.click(
+			screen.getByRole("button", { name: "Start and save progress" }),
+		);
+		await screen.findByRole("radio", { name: "Restructure immediately" });
+		fireEvent.click(
+			screen.getByRole("radio", { name: "Restructure immediately" }),
+		);
+		view.rerender(
+			<KelsierPageComponent
+				{...props}
+				questionnaire={{ ...assessmentQuestionnaireFixture }}
+			/>,
+		);
+		expect(
+			screen.getByRole("radio", { name: "Restructure immediately" }),
+		).toHaveProperty("checked", true);
+		view.rerender(
+			<KelsierPageComponent
+				{...props}
+				questionnaire={{
+					...assessmentQuestionnaireFixture,
+					id: "another-questionnaire",
+				}}
+			/>,
+		);
+		expect(
+			screen.getByRole("button", { name: "Start and save progress" }),
+		).toBeTruthy();
+	});
 });
