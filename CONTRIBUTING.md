@@ -66,6 +66,7 @@ pnpm build
 ## Testing Notes
 
 - Unit tests use Vitest with [`vitest.config.ts`](./vitest.config.ts).
+- Keep Vitest and `@vitest/coverage-v8` on the same exact version. Vitest 5 uses jsdom-owned browser storage without `--no-experimental-webstorage`; preserve the storage ownership and cross-file isolation tests. Its default mock-history clearing means assertions should establish mock calls within the test or `beforeEach`, rather than depend on earlier tests or `beforeAll` calls.
 - Real PostgreSQL integrity tests require `RUN_DB_TESTS=true` and the local database; the dedicated CI database job runs them after migration and two seed passes. See [`AGENTS.md`](./AGENTS.md#query-helper-tests).
 - E2E tests use Playwright with [`playwright.config.ts`](./playwright.config.ts).
 - `pnpm test:worker-body` verifies streamed request rejection across a local service binding on both installed Miniflare paths, with an unread-body case and consuming control across repeated processes. CI runs it before browser tests; it uses no database or hosted Worker.

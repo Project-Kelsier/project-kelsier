@@ -14,6 +14,7 @@ Vitest tooling migration. Version assignment does not authorize deployment or pu
 
 - Migrated Vitest and coverage-v8 together to exact matching 5.1.0 pins, preserving React, Vite, jsdom, Node and TanStack versions.
 - Removed the Node Web Storage workaround after verifying jsdom storage ownership and cross-file isolation; retained regression coverage.
+- Aligned contributor, assessment and operational documentation with the merged React, animation and assessment-ordering changes while preserving dated hosted evidence.
 
 ## [0.4.13] - Public release pending
 

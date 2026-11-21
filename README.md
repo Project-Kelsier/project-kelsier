@@ -35,6 +35,7 @@ pnpm worker:check
 pnpm deploy
 pnpm test:e2e
 pnpm test:transport
+pnpm test:worker-body
 pnpm db:generate
 pnpm db:migrate
 pnpm db:seed
@@ -89,6 +90,7 @@ pnpm db:seed
 - Cloudflare builds generate private server source maps and enable diagnostic upload. Keep them outside public assets and inspect them before deployment; see [hosted operations](./docs/staging-operations.md).
 - Local Vite serving defaults `WRANGLER_LOG` to `warn` so repeated environment-source notices do not obscure useful startup output. Set `WRANGLER_LOG=log` or `WRANGLER_LOG=debug` explicitly when deeper Wrangler diagnostics are needed.
 - Vitest uses [`vitest.config.ts`](./vitest.config.ts) instead of sharing [`vite.config.ts`](./vite.config.ts). This avoids the full TanStack Start and Cloudflare runtime plugin stack keeping the unit test process open.
+- Vitest 5 and its coverage provider are pinned to the same version. jsdom owns browser storage on Node 26 without the former Web Storage flag; regression tests verify ownership and cross-file isolation.
 - Review UI through the running app with `pnpm dev`; Vitest and Playwright cover component behavior and browser journeys.
 - Playwright starts Vite directly in [`playwright.config.ts`](./playwright.config.ts) instead of using `pnpm dev`. This is a Windows-friendly workaround so the dev server shuts down cleanly after E2E runs.
 - Prepare local PostgreSQL before running browser tests. Each browser project simulates a separate client IP to avoid sharing a creation-rate bucket; the real rate limits remain enabled. See [testing notes](./CONTRIBUTING.md#testing-notes).
@@ -127,6 +129,7 @@ GitHub Actions runs the baseline checks on pushes to `main` and on pull requests
 - `pnpm coverage`
 - `pnpm build`
 - `pnpm worker:check`
+- `pnpm test:worker-body` for streamed request rejection through both installed Miniflare paths
 - `pnpm test:e2e`
 - `pnpm test:transport` against the built preview after local database preparation
 

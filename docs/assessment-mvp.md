@@ -52,6 +52,8 @@ The assessment should ideally be completed in one sitting so its demonstration o
 - Fresh-start retries reuse the new continuation capability to recover the owned, unexpired replacement after a lost response. Recovery does not create another attempt or consume resume, and stops after completion, resume, deletion, or expiry.
 - Describe the output as a current snapshot. Do not imply that a changed response means the person has a different personality or that the demonstration instrument measures stable traits.
 
+**Implemented client recovery:** conflicting mutations are serialized before RPC submission, and obsolete responses cannot update a different controller lifetime. Questionnaire identity changes reset the client view; same-identity refreshes preserve drafts. Only a returned/stored result establishes completion. When a request outcome is uncertain, the client retains the assessment and allows a supported same-action retry or explicit reload. Reload may require the single explicit resume; it is not a side-effect-free progress read. Creation and deletion uncertainty use reload rather than blind retry. Client cancellation is not server rollback, and an initial start cannot always be recovered if its cookie was never received.
+
 ### Guest credential and deletion
 
 - Generate an opaque, high-entropy guest token on the server.
@@ -113,7 +115,7 @@ The maintainer explicitly confirmed **no public launch yet** on 2026-09-12. Host
 
 ## Phased Delivery
 
-Current recorded checkpoint (2026-10-16): both hosted targets were verified on app `0.4.4`; the repository's newer maintenance version is not a deployment record. The historical implementation notes below retain their original dates. See [hosted operations](staging-operations.md#hosted-targets) for the latest recorded versions, shared-database decision, and outstanding monitoring/reviewer gates.
+Latest recorded hosted checkpoint (2026-11-16): staging was verified on the pre-merge Postgres.js candidate, app `0.4.10`; dummy production retains its recorded `0.4.4` deployment. Subsequent React, animation and assessment-operation merges are repository changes, not deployment records. The historical implementation notes below retain their original dates. See [hosted operations](staging-operations.md#hosted-targets) for recorded Worker versions, the shared-database decision, and outstanding monitoring/reviewer gates.
 
 1. Record these decisions and keep the hardcoded questionnaire running.
 2. Add PostgreSQL-backed CI infrastructure and useful multi-owner fixtures as a standalone tooling change.

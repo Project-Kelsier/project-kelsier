@@ -333,3 +333,4 @@ Sources:
 - GitHub advisory: <https://github.com/TanStack/router/security/advisories/GHSA-g7cv-rxg3-hmpx>
 
 The November 17 React programme uses React/DOM 19.3.1 and matched Vitest/coverage 5.1.0. The full local audit reports zero known findings at every severity and all 468 registry packages verify signatures. Browser-owned storage and cross-file isolation pass with and without the previous Node flag; Vitest 5 no longer needs that workaround. Local unit, database integrity, browser/security, Worker body rejection and production transport checks pass. These are local graph observations and do not update the hosted deployment.
+Revalidation on 2026-11-21 for PR #50, after merged React/runtime, animation/identity and assessment-ordering PRs #47–#49, again reports zero known findings at every severity and 468 verified registry signatures. The repository candidate is app 0.4.14; these dependency and client changes have not been deployed by this verification.
