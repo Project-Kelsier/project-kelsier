@@ -8,11 +8,13 @@ This project follows semantic versioning while it moves toward MVP. Versions bel
 
 ## [0.4.14] - Public release pending
 
-Vitest tooling migration. Version assignment does not authorize deployment or public release.
+Vitest tooling migration and compatible stack maintenance. Version assignment does not authorize deployment or public release.
 
 ### Changed
 
-- Migrated Vitest and coverage-v8 together to exact matching 5.1.0 pins, preserving React, Vite, jsdom, Node and TanStack versions.
+- Migrated Vitest and coverage-v8 together to exact matching 5.1.1 pins, preserving React, Vite, jsdom and Node versions.
+- Updated compatible TanStack Start/devtools packages, Lucide React, the Cloudflare Vite plugin and Wrangler; regenerated Worker runtime types.
+- Updated the SHA-pinned Claude review action to 1.0.286 after reviewing its trusted-configuration hardening, retaining human/write-access checks and review-only permissions.
 - Removed the Node Web Storage workaround after verifying jsdom storage ownership and cross-file isolation; retained regression coverage.
 - Aligned contributor, assessment and operational documentation with the merged React, animation and assessment-ordering changes while preserving dated hosted evidence.
 
