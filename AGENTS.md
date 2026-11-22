@@ -218,6 +218,7 @@ For organisation-scoped helpers, tests should prove that `organisations.deletedA
 ### E2E Tests
 
 - Put browser tests under [`e2e`](e2e).
+- Import `test` and `expect` from [`e2e/fixtures.ts`](e2e/fixtures.ts). Its automatic fixtures fail on unexpected browser console errors, uncaught page errors and hydration warnings, including additional pages in the test context. Diagnostics are attached to the Playwright result. Intentional failures use `browserErrors.expectFailure` only around the affected operation; it requires a matching failed request or navigation response, never permits hydration or uncaught errors, and rejects a second failed RPC during recovery. Keep recovery assertions and avoid global error allowlists.
 - Prefer stable role- and text-based selectors over brittle implementation selectors.
 - Keep smoke coverage fast and focused. Add deeper scenarios only when a feature introduces real interaction risk.
 - `pnpm test:transport` uses `playwright.transport.config.ts` for production-preview RPC error coverage after `pnpm build`. Keep `*.transport.spec.ts` excluded from the normal development-server suite. The test owns and closes its preview, refuses hosted databases, and changes database environment variables only inside its isolated test worker. Preserve real transport and security controls; do not add production fault-injection endpoints.
@@ -311,7 +312,7 @@ If you cannot run a check locally, say so explicitly in your handoff and explain
 ### Vite And Vitest
 
 - [`vitest.config.ts`](vitest.config.ts) intentionally does not reuse the full Vite app plugin stack.
-- Vitest 4 workers disable Node's experimental Web Storage so jsdom owns `localStorage` and `sessionStorage`. Reassess this workaround during the Vitest 5 upgrade; do not replace browser storage with a shared Node storage file.
+- Vitest 5 uses jsdom-owned `localStorage` and `sessionStorage` on Node 26 without a Web Storage flag. Preserve the browser storage ownership and cross-file isolation regression tests; never substitute a shared Node storage file.
 - [`vite.config.ts`](vite.config.ts) is configured for TanStack Start on Cloudflare Workers.
 - Local Vite serving defaults Wrangler logging to `warn` to suppress duplicate environment-source notices while preserving warnings and errors. Respect an explicitly supplied `WRANGLER_LOG` when deeper diagnostics are needed.
 - Do not pull the full TanStack Start or Cloudflare Workers runtime plugin stack into Vitest config unless there is a proven test need.
@@ -344,7 +345,7 @@ If you cannot run a check locally, say so explicitly in your handoff and explain
 
 - [`playwright.config.ts`](playwright.config.ts) starts Vite directly for Windows-friendly cleanup.
 - Preserve that behavior unless you have validated a replacement across local and CI execution.
-- The local browser projects simulate distinct client IPs with reserved `192.0.2.x` addresses so concurrent projects do not consume one shared creation-rate bucket. Keep the real rate limits enabled; these headers belong only to the local Playwright setup.
+- The shared browser fixture simulates distinct client IPs with reserved `192.0.2.x` addresses only on the configured local app origin, so concurrent projects do not consume one shared creation-rate bucket or send edge headers to external assets. Use `localClient.setIp()` for an isolated rate-limit scenario, not global extra HTTP headers. Request interceptors should use `route.fallback()` when forwarding requests so the fixture can add the local header. Keep the real rate limits enabled.
 
 ### GitHub Review Assistants
 

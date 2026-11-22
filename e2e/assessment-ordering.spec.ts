@@ -1,4 +1,4 @@
-import { expect, test } from "@playwright/test";
+import { expect, test } from "./fixtures";
 
 test("blocks deletion until the pending save settles", async ({ page }) => {
 	await page.goto("/");
@@ -18,7 +18,7 @@ test("blocks deletion until the pending save settles", async ({ page }) => {
 			entered();
 			await gate;
 		}
-		await route.continue();
+		await route.fallback();
 	});
 	try {
 		await page.getByRole("button", { name: "Next question" }).click();

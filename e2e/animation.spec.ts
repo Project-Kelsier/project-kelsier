@@ -1,4 +1,4 @@
-import { expect, test } from "@playwright/test";
+import { expect, test } from "./fixtures";
 
 test("reduced motion restores visible content and static ring centering", async ({
 	page,
