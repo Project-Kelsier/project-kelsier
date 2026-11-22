@@ -17,6 +17,7 @@ Vitest tooling migration and compatible stack maintenance. Version assignment do
 - Updated the SHA-pinned Claude review action to 1.0.286 after reviewing its trusted-configuration hardening, retaining human/write-access checks and review-only permissions.
 - Removed the Node Web Storage workaround after verifying jsdom storage ownership and cross-file isolation; retained regression coverage.
 - Aligned contributor, assessment and operational documentation with the merged React, animation and assessment-ordering changes while preserving dated hosted evidence.
+- Added automatic Playwright browser-error checks with scoped, verified expectations for intentional failures; restricted simulated edge headers to the local app to prevent external-font CORS errors.
 
 ## [0.4.13] - Public release pending
 

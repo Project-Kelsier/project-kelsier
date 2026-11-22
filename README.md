@@ -133,6 +133,8 @@ GitHub Actions runs the baseline checks on pushes to `main` and on pull requests
 - `pnpm test:e2e`
 - `pnpm test:transport` against the built preview after local database preparation
 
+Browser tests use the shared [Playwright fixtures](./e2e/fixtures.ts) to fail on unexpected console errors, uncaught exceptions and hydration warnings. Intentional failure tests declare narrow, verified expectations; server and database diagnostics remain visible.
+
 CodeRabbit supplies automatic pull request review. Maintainers can request a separate, review-only Claude pass by mentioning `@claude` in a pull request comment or review; Claude is not an automatic or required approver.
 
 The separate database job applies migrations, seeds twice, and runs `src/db/assessmentIntegrity.test.ts` with `RUN_DB_TESTS=true`. Both jobs use the same pinned PostgreSQL image digest and disable persisted checkout credentials.
