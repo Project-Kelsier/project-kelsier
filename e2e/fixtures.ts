@@ -157,13 +157,17 @@ export const test = base.extend<{
 					if (url.origin !== new URL(page.url()).origin) return;
 					if (
 						(scope.failure.kind === "rpc" &&
-							url.pathname.startsWith("/_serverFn/") &&
-							request.method() === scope.failure.method) ||
+							url.pathname.startsWith("/_serverFn/")) ||
 						(scope.failure.kind === "scripts" &&
 							request.resourceType() === "script")
 					) {
-						scope.urls.add(request.url());
 						scope.failedRequests++;
+						// Count all RPC failures, but witness only the declared method.
+						if (
+							scope.failure.kind !== "rpc" ||
+							request.method() === scope.failure.method
+						)
+							scope.urls.add(request.url());
 					}
 				};
 				page.on("console", onConsole);
