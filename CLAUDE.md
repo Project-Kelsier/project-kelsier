@@ -51,6 +51,7 @@ The harm boundary is a hard product rule. The seeded questionnaire and its dimen
 
 - **Single-package pnpm application** on Node `>=26.13.1 <27.0.0` tooling. [`pnpm-workspace.yaml`](pnpm-workspace.yaml) declares `packages: [.]` and exists to own install policy and documented CVE overrides, not to define multiple workspaces.
 - **React 19 with TanStack Start, TanStack Router, and Vite.** Start is the framework, Router its file-based routing layer ([`vite.config.ts`](vite.config.ts)).
+- **Vitest 5 with a matched coverage provider**, isolated from the application plugin stack in [`vitest.config.ts`](vitest.config.ts). jsdom owns browser storage without the former Node Web Storage workaround; regression tests enforce ownership and cross-file isolation.
 - **TanStack Start server functions are the API boundary** (`createServerFn`, [`src/server`](src/server)). There is no separate HTTP framework.
 - **Production targets Cloudflare Workers** via Wrangler and `@cloudflare/vite-plugin` in SSR mode — the edge runtime, not Node.
 - **Drizzle ORM over PostgreSQL.** Local development uses Docker PostgreSQL on `localhost:55432`; hosted access is Neon reached through the Cloudflare **Hyperdrive** binding. Staging and dummy production temporarily share the database through separate account-specific bindings ([database decision](docs/database.md#temporary-shared-hosted-database)).
@@ -85,6 +86,8 @@ Layout, file placement, and generated-file rules live in `AGENTS.md` ([Directory
 - Never attach names, emails, analytics identifiers, raw IPs, or user-agent strings to attempts.
 - **Convention** — data minimization extends to identity: the `users` table is a thin domain anchor storing only `authUserId`. Do not add auth identity fields (email, display name, avatar) to it.
 
+**Implemented client operation boundary.** [`useAssessmentOperation.ts`](src/components/kelsier/useAssessmentOperation.ts) admits one mutation synchronously and validates lifetime tickets before applying responses. Completion derives from an authoritative result. A changed questionnaire ID remounts the assessment view; same-ID refreshes preserve drafts. Uncertain RPC outcomes preserve the assessment and permit supported same-intent retry or explicit reload. This does not roll back committed mutations or provide cross-tab exclusion; initial start recovery can remain unavailable if the guest cookie was never received.
+
 **Assessment flow.** Content is versioned (`assessmentVersions` → `assessmentQuestions` → `assessmentOptions`). A guest response is an `assessmentAttempt` holding `assessmentAnswers`, producing one `assessmentResult`. The landing page loads the active version through a server function; starting creates a cookie-authorized attempt; each answer is acknowledged before navigation; one interrupted attempt may be resumed exactly once; completion atomically stores the final answer, the result, and the completion timestamp. Active version content and score weights are treated as fixed scoring inputs once responses exist (**Direction**, per [`docs/assessment-mvp.md`](docs/assessment-mvp.md)) — editing tools must create a new version rather than mutate an active one. Nothing in the database prevents a direct update, so treat this as a rule to uphold, not a guarantee to rely on.
 
 ## Commands
@@ -109,6 +112,7 @@ pnpm test             # Vitest unit tests
 pnpm coverage         # Vitest with v8 coverage
 pnpm test:e2e         # Playwright
 pnpm test:transport   # Built-preview RPC error checks; build and seed locally first
+pnpm test:worker-body # Streamed request rejection through both Miniflare paths
 
 pnpm db:generate      # Generate a Drizzle migration from schema changes
 pnpm db:migrate       # Apply migrations to DATABASE_URL; verify the target first

@@ -1,4 +1,4 @@
-import { expect, test } from "@playwright/test";
+import { expect, test } from "./fixtures";
 
 test("rejects cross-site writes and requests without the owner cookie", async ({
 	page,
@@ -96,12 +96,11 @@ test("preserves rate-limit status and retry headers while allowing deletion", as
 	page,
 	context,
 	browserName,
+	localClient,
 }) => {
 	// Isolate this intentional exhaustion from the other real-rate-limit tests.
 	const client = { chromium: 21, firefox: 22, webkit: 23 }[browserName];
-	await context.setExtraHTTPHeaders({
-		"CF-Connecting-IP": `192.0.2.${client}`,
-	});
+	localClient.setIp(`192.0.2.${client}`);
 	await page.goto("/");
 	await expect(
 		page.locator(".kelsier-page[data-hydrated='true']"),

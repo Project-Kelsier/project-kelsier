@@ -1,4 +1,4 @@
-import { expect, test } from "@playwright/test";
+import { expect, test } from "./fixtures";
 
 test("home page renders the Kelsier hero and interactive questionnaire", async ({
 	context,
@@ -206,6 +206,7 @@ test("saves progress and allows exactly one explicit resume", async ({
 
 test("restores a saved theme before the client app hydrates", async ({
 	page,
+	browserErrors,
 }) => {
 	let clientBundleWasBlocked = false;
 	await page.addInitScript(() => {
@@ -217,10 +218,12 @@ test("restores a saved theme before the client app hydrates", async ({
 			return route.abort();
 		}
 
-		return route.continue();
+		return route.fallback();
 	});
 
-	await page.goto("/", { waitUntil: "domcontentloaded" });
+	await browserErrors.expectFailure(page, { kind: "scripts" }, async () => {
+		await page.goto("/", { waitUntil: "domcontentloaded" });
+	});
 
 	expect(clientBundleWasBlocked).toBe(true);
 	await expect(page.locator("html")).toHaveAttribute(
@@ -259,8 +262,18 @@ test("terms route renders placeholder page", async ({ page }) => {
 
 test("unknown routes render the Kelsier invalid route page", async ({
 	page,
+	baseURL,
+	browserErrors,
 }) => {
-	await page.goto("/unknown-team-signal");
+	const url = new URL("/unknown-team-signal", baseURL).href;
+	await browserErrors.expectFailure(
+		page,
+		{ kind: "not-found", url },
+		async () => {
+			const response = await page.goto(url);
+			expect(response?.status()).toBe(404);
+		},
+	);
 	await expect(
 		page.getByRole("heading", {
 			name: "This route sits beyond the mapped team dynamic.",

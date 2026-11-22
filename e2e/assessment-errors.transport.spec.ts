@@ -1,9 +1,11 @@
-import { expect, test } from "@playwright/test";
 import { type PreviewServer, preview } from "vite";
+import { expect, test } from "./fixtures";
 
 test("redacts unexpected database errors through the production RPC transport", async ({
 	page,
 	request,
+	browserErrors,
+	localClient,
 }) => {
 	const database =
 		process.env.DATABASE_URL ??
@@ -43,7 +45,7 @@ test("redacts unexpected database errors through the production RPC transport", 
 		process.env.WRANGLER_LOG = "error";
 		configureDatabase(database);
 		server = await startPreview();
-		await page.setExtraHTTPHeaders({ "CF-Connecting-IP": "192.0.2.41" });
+		localClient.setIp("192.0.2.41");
 		await page.goto(base);
 		await expect(
 			page.locator(".kelsier-page[data-hydrated='true']"),
@@ -52,14 +54,22 @@ test("redacts unexpected database errors through the production RPC transport", 
 		// Capture the application's real RPC encoding, but abort before creation
 		// reaches the server so the test never leaves an assessment fixture behind.
 		await page.route("**/_serverFn/**", (route) => route.abort());
-		const [creation] = await Promise.all([
-			page.waitForRequest(
-				(candidate) =>
-					candidate.method() === "POST" &&
-					new URL(candidate.url()).pathname.startsWith("/_serverFn/"),
-			),
-			page.getByRole("button", { name: "Start and save progress" }).click(),
-		]);
+		const creation = await browserErrors.expectFailure(
+			page,
+			{ kind: "rpc", method: "POST" },
+			async () => {
+				const [creation] = await Promise.all([
+					page.waitForEvent(
+						"requestfailed",
+						(candidate) =>
+							candidate.method() === "POST" &&
+							new URL(candidate.url()).pathname.startsWith("/_serverFn/"),
+					),
+					page.getByRole("button", { name: "Start and save progress" }).click(),
+				]);
+				return creation;
+			},
+		);
 		const headers = await creation.allHeaders();
 		for (const name of ["cookie", "host", "content-length"])
 			delete headers[name];
@@ -75,6 +85,9 @@ test("redacts unexpected database errors through the production RPC transport", 
 			`postgres://kelsier:${secretCanary}@127.0.0.1:1/kelsier_dev?connect_timeout=1`,
 		);
 		server = await startPreview();
+		console.info(
+			"[Expected failure] Replaying the RPC against an unreachable local database; expecting a redacted 500 response.",
+		);
 		const response = await request.post(creation.url(), {
 			headers,
 			data: payload,
